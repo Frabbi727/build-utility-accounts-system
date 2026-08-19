@@ -8,6 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $payment_id
+ * @property int $service_charge_bill_id
+ * @property string $amount
+ */
 #[Fillable(['payment_id', 'service_charge_bill_id', 'amount'])]
 class PaymentAllocation extends Model
 {

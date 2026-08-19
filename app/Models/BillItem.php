@@ -8,6 +8,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $service_charge_bill_id
+ * @property int $account_id
+ * @property string $description
+ * @property string $amount
+ */
 #[Fillable(['service_charge_bill_id', 'account_id', 'description', 'amount'])]
 class BillItem extends Model
 {

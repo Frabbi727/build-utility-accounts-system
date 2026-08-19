@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\ReceiptController;
 use App\Livewire\Accounting\OpeningBalances;
 use App\Livewire\Accounting\PeriodList;
 use App\Livewire\AccountList;
@@ -10,6 +11,7 @@ use App\Livewire\ExpenseList;
 use App\Livewire\FlatList;
 use App\Livewire\FlatStatement;
 use App\Livewire\GenerateBills;
+use App\Livewire\Masters\AdHocChargeList;
 use App\Livewire\Masters\BuildingList;
 use App\Livewire\Masters\ChargeHeadList;
 use App\Livewire\Masters\FlatChargeOverrides;
@@ -70,11 +72,15 @@ Route::middleware('auth')->group(function (): void {
     // Owners reach their own statement from the dashboard; the policy guards the record.
     Route::get('flats/{flat}/statement', FlatStatement::class)->name('flats.statement');
 
+    // Likewise the receipt: PaymentPolicy lets an owner print their own and no one else's.
+    Route::get('payments/{payment}/receipt', ReceiptController::class)->name('payments.receipt');
+
     Route::middleware('role:admin|accountant|committee')->group(function (): void {
         Route::get('flats', FlatList::class)->name('flats.index');
         Route::get('buildings', BuildingList::class)->name('buildings.index');
         Route::get('floors', FloorList::class)->name('floors.index');
         Route::get('charge-heads', ChargeHeadList::class)->name('charge-heads.index');
+        Route::get('ad-hoc-charges', AdHocChargeList::class)->name('ad-hoc-charges.index');
         Route::get('flats/{flat}/charges', FlatChargeOverrides::class)->name('flats.charges');
         Route::get('owners', OwnerList::class)->name('owners.index');
         Route::get('tenants', TenantList::class)->name('tenants.index');

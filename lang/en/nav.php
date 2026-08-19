@@ -20,6 +20,7 @@ return [
     'tenants' => 'Tenants',
     'vendors' => 'Vendors',
     'staff' => 'Staff',
+    'ad_hoc_charges' => 'One-off charges',
     'charge_heads' => 'Charge Heads',
     'opening_balances' => 'Opening Balances',
     'periods' => 'Accounting Periods',

@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Enums\AccountCode;
 use App\Models\Flat;
 use App\Models\JournalLine;
+use App\Models\Payment;
 use App\Services\JournalService;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -28,7 +29,7 @@ class FlatStatement extends Component
     {
         $receivable = $journal->account(AccountCode::ServiceChargeReceivable);
 
-        $lines = JournalLine::with('journalEntry')
+        $lines = JournalLine::with('journalEntry.source')
             ->where('flat_id', $this->flat->id)
             ->where('account_id', $receivable->id)
             ->get()
@@ -39,6 +40,8 @@ class FlatStatement extends Component
         $rows = $lines->map(function (JournalLine $line) use (&$running): array {
             $running = bcadd($running, bcsub((string) $line->debit, (string) $line->credit, 2), 2);
 
+            $source = $line->journalEntry->source;
+
             return [
                 'date' => $line->journalEntry->entry_date,
                 'description' => $line->journalEntry->description,
@@ -46,6 +49,8 @@ class FlatStatement extends Component
                 'debit' => (string) $line->debit,
                 'credit' => (string) $line->credit,
                 'balance' => $running,
+                // A collection line links back to its printable receipt.
+                'payment' => $source instanceof Payment ? $source : null,
             ];
         });
 

@@ -18,10 +18,11 @@ use Illuminate\Support\Carbon;
  * @property string $bill_no
  * @property Carbon $billing_month
  * @property Carbon $due_date
+ * @property Carbon|null $last_late_fee_on
  * @property string $total_amount
  * @property BillStatus $status
  */
-#[Fillable(['flat_id', 'bill_no', 'billing_month', 'due_date', 'total_amount', 'status'])]
+#[Fillable(['flat_id', 'bill_no', 'billing_month', 'due_date', 'last_late_fee_on', 'total_amount', 'status'])]
 class ServiceChargeBill extends Model
 {
     /** @use HasFactory<ServiceChargeBillFactory> */
@@ -35,6 +36,7 @@ class ServiceChargeBill extends Model
         return [
             'billing_month' => 'date',
             'due_date' => 'date',
+            'last_late_fee_on' => 'date',
             'total_amount' => 'decimal:2',
             'status' => BillStatus::class,
         ];

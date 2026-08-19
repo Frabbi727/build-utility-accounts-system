@@ -15,9 +15,19 @@ class PaymentPolicy
         return $user->isStaff();
     }
 
+    /**
+     * Staff read every receipt; an owner reads only their own flat's, which is what
+     * makes the printable receipt reachable from the owner's statement.
+     */
     public function view(User $user, Payment $payment): bool
     {
-        return $user->isStaff();
+        if ($user->isStaff()) {
+            return true;
+        }
+
+        return $user->owner !== null
+            && $payment->flat !== null
+            && $payment->flat->owner_id === $user->owner->id;
     }
 
     public function create(User $user): bool

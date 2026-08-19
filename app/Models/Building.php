@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\LateFeeType;
 use Database\Factories\BuildingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,8 +15,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $name_bn
  * @property string|null $address
  * @property int $due_day_of_month
+ * @property LateFeeType $late_fee_type
+ * @property string $late_fee_amount
+ * @property int $late_fee_grace_days
  */
-#[Fillable(['name', 'name_bn', 'address', 'due_day_of_month'])]
+#[Fillable(['name', 'name_bn', 'address', 'due_day_of_month', 'late_fee_type', 'late_fee_amount', 'late_fee_grace_days'])]
 class Building extends Model
 {
     /** @use HasFactory<BuildingFactory> */
@@ -28,6 +32,9 @@ class Building extends Model
     {
         return [
             'due_day_of_month' => 'integer',
+            'late_fee_type' => LateFeeType::class,
+            'late_fee_amount' => 'decimal:2',
+            'late_fee_grace_days' => 'integer',
         ];
     }
 

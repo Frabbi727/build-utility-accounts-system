@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Masters;
 
+use App\Enums\LateFeeType;
 use App\Enums\Role;
 use App\Livewire\Masters\BuildingList;
 use App\Models\Building;
@@ -93,5 +94,56 @@ class BuildingScreenTest extends TestCase
         Livewire::actingAs($this->userWithRole(Role::Owner))
             ->test(BuildingList::class)
             ->assertForbidden();
+    }
+
+    public function test_a_late_fee_policy_can_be_set_and_edited(): void
+    {
+        Livewire::actingAs($this->userWithRole(Role::Accountant))
+            ->test(BuildingList::class)
+            ->call('create')
+            ->set('name', 'Rose Tower')
+            ->set('dueDayOfMonth', 10)
+            ->set('lateFeeType', 'percent')
+            ->set('lateFeeAmount', '2.50')
+            ->set('lateFeeGraceDays', 5)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $building = Building::where('name', 'Rose Tower')->sole();
+
+        $this->assertSame(LateFeeType::Percent, $building->late_fee_type);
+        $this->assertSame('2.50', (string) $building->late_fee_amount);
+        $this->assertSame(5, $building->late_fee_grace_days);
+
+        Livewire::actingAs($this->userWithRole(Role::Accountant))
+            ->test(BuildingList::class)
+            ->call('edit', $building->id)
+            ->assertSet('lateFeeType', 'percent')
+            ->assertSet('lateFeeAmount', '2.50')
+            ->assertSet('lateFeeGraceDays', 5);
+    }
+
+    public function test_a_building_defaults_to_charging_no_late_fee(): void
+    {
+        Livewire::actingAs($this->userWithRole(Role::Accountant))
+            ->test(BuildingList::class)
+            ->call('create')
+            ->set('name', 'Lily Court')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame(LateFeeType::None, Building::where('name', 'Lily Court')->sole()->late_fee_type);
+    }
+
+    public function test_a_negative_late_fee_is_rejected(): void
+    {
+        Livewire::actingAs($this->userWithRole(Role::Accountant))
+            ->test(BuildingList::class)
+            ->call('create')
+            ->set('name', 'Iris Place')
+            ->set('lateFeeType', 'fixed')
+            ->set('lateFeeAmount', '-50')
+            ->call('save')
+            ->assertHasErrors('lateFeeAmount');
     }
 }

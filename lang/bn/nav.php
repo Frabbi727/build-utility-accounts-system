@@ -20,6 +20,7 @@ return [
     'tenants' => 'ভাড়াটিয়া',
     'vendors' => 'সরবরাহকারী',
     'staff' => 'কর্মচারী',
+    'ad_hoc_charges' => 'এককালীন চার্জ',
     'charge_heads' => 'চার্জ খাত',
     'opening_balances' => 'প্রারম্ভিক জের',
     'periods' => 'হিসাবকাল',

@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Enums\AccountCode;
 use App\Enums\AccountType;
 use App\Enums\ChargeBasis;
+use App\Enums\LateFeeType;
 use App\Models\Account;
 use App\Models\Building;
 use App\Models\ChargeHead;
@@ -22,6 +23,18 @@ class BuildingFactory extends Factory
             'address' => fake()->address(),
             'due_day_of_month' => 10,
         ];
+    }
+
+    /**
+     * A building that charges a late fee on overdue bills.
+     */
+    public function lateFee(LateFeeType $type, string $amount, int $graceDays = 0): static
+    {
+        return $this->state(fn (): array => [
+            'late_fee_type' => $type,
+            'late_fee_amount' => $amount,
+            'late_fee_grace_days' => $graceDays,
+        ]);
     }
 
     /**

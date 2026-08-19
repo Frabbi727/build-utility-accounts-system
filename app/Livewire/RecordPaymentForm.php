@@ -14,6 +14,9 @@ class RecordPaymentForm extends Component
 {
     public ?int $flatId = null;
 
+    /** The payment just recorded, so the receipt is one click away. */
+    public ?int $lastPaymentId = null;
+
     public string $amount = '';
 
     public string $method = 'cash';
@@ -48,6 +51,9 @@ class RecordPaymentForm extends Component
         );
 
         session()->flash('status', __('billing.payment_recorded', ['receipt' => $payment->receipt_no]));
+
+        // Kept so the operator can print the receipt straight after taking the money.
+        $this->lastPaymentId = $payment->id;
 
         $this->reset(['amount', 'reference']);
     }

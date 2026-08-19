@@ -2,10 +2,12 @@
 
 namespace App\Livewire\Masters;
 
+use App\Enums\LateFeeType;
 use App\Livewire\Concerns\WithCrudModal;
 use App\Models\Building;
 use App\Support\CurrentBuilding;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Component;
 
@@ -21,6 +23,12 @@ class BuildingList extends Component
 
     public int $dueDayOfMonth = 10;
 
+    public string $lateFeeType = 'none';
+
+    public string $lateFeeAmount = '0.00';
+
+    public int $lateFeeGraceDays = 0;
+
     /**
      * @return array<string, mixed>
      */
@@ -32,6 +40,9 @@ class BuildingList extends Component
             'address' => ['nullable', 'string', 'max:255'],
             // Capped at 28 so every month has the day.
             'dueDayOfMonth' => ['required', 'integer', 'min:1', 'max:28'],
+            'lateFeeType' => ['required', Rule::enum(LateFeeType::class)],
+            'lateFeeAmount' => ['required', 'numeric', 'min:0'],
+            'lateFeeGraceDays' => ['required', 'integer', 'min:0', 'max:60'],
         ];
     }
 
@@ -44,6 +55,9 @@ class BuildingList extends Component
         $this->nameBn = $record?->name_bn;
         $this->address = $record?->address;
         $this->dueDayOfMonth = $record->due_day_of_month ?? 10;
+        $this->lateFeeType = $record?->late_fee_type->value ?? LateFeeType::None->value;
+        $this->lateFeeAmount = $record === null ? '0.00' : (string) $record->late_fee_amount;
+        $this->lateFeeGraceDays = $record->late_fee_grace_days ?? 0;
     }
 
     protected function findRecord(int $id): Building
@@ -65,6 +79,9 @@ class BuildingList extends Component
             'name_bn' => $this->nameBn,
             'address' => $this->address,
             'due_day_of_month' => $this->dueDayOfMonth,
+            'late_fee_type' => LateFeeType::from($this->lateFeeType),
+            'late_fee_amount' => $this->lateFeeAmount,
+            'late_fee_grace_days' => $this->lateFeeGraceDays,
         ])->save();
 
         // A first building should become the one the operator is working in.
@@ -83,6 +100,7 @@ class BuildingList extends Component
 
         return view('livewire.masters.building-list', [
             'buildings' => Building::withCount(['flats', 'chargeHeads'])->orderBy('name')->get(),
+            'lateFeeTypes' => LateFeeType::cases(),
         ])->layout('components.layouts.app');
     }
 }

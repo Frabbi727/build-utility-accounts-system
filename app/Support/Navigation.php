@@ -48,6 +48,7 @@ class Navigation
                 ['label' => 'nav.buildings', 'route' => 'buildings.index', 'access' => self::STAFF],
                 ['label' => 'nav.floors', 'route' => 'floors.index', 'access' => self::STAFF],
                 ['label' => 'nav.charge_heads', 'route' => 'charge-heads.index', 'access' => self::STAFF],
+                ['label' => 'nav.ad_hoc_charges', 'route' => 'ad-hoc-charges.index', 'access' => self::STAFF],
             ],
         ],
         ['label' => 'nav.reports', 'route' => 'reports.index', 'access' => self::STAFF],

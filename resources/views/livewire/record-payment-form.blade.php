@@ -2,6 +2,14 @@
     <h1 class="mb-1 text-lg font-semibold text-slate-900">{{ __('billing.record_payment') }}</h1>
     <p class="mb-6 text-sm text-slate-500">{{ __('billing.allocation_help') }}</p>
 
+    @if ($lastPaymentId !== null)
+        <div class="mb-6 flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-4 py-3">
+            <span class="text-sm text-slate-600">{{ __('billing.receipt_ready') }}</span>
+            <a href="{{ route('payments.receipt', $lastPaymentId) }}" target="_blank"
+               class="text-sm font-medium text-slate-900 underline">{{ __('billing.view_receipt') }}</a>
+        </div>
+    @endif
+
     <form wire:submit="save" class="space-y-4 rounded-lg border border-slate-200 bg-white p-6">
         <div>
             <label class="block text-sm font-medium text-slate-700">{{ __('billing.flat') }}</label>

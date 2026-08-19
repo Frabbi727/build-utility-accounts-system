@@ -68,6 +68,28 @@
                                   :hint="__('masters.due_day_help')" required>
                         <x-form.input type="number" min="1" max="28" wire:model="dueDayOfMonth" />
                     </x-form.field>
+
+                    <div class="sm:col-span-2 border-t border-slate-200 pt-4">
+                        <h3 class="text-sm font-semibold text-slate-900">{{ __('masters.late_fee_policy') }}</h3>
+                        <p class="mt-1 text-xs text-slate-500">{{ __('masters.late_fee_help') }}</p>
+                    </div>
+
+                    <x-form.field :label="__('masters.late_fee_type')" name="lateFeeType" required>
+                        <x-form.select wire:model.live="lateFeeType"
+                                       :options="collect($lateFeeTypes)->mapWithKeys(fn ($t) => [$t->value => $t->label()])->all()" />
+                    </x-form.field>
+
+                    <x-form.field :label="__('masters.late_fee_amount')" name="lateFeeAmount"
+                                  :hint="\App\Enums\LateFeeType::from($lateFeeType)->amountLabel()" required>
+                        <x-form.input type="number" step="0.01" min="0" wire:model="lateFeeAmount"
+                                      :disabled="$lateFeeType === 'none'" />
+                    </x-form.field>
+
+                    <x-form.field :label="__('masters.late_fee_grace_days')" name="lateFeeGraceDays"
+                                  :hint="__('masters.late_fee_grace_help')" required>
+                        <x-form.input type="number" min="0" max="60" wire:model="lateFeeGraceDays"
+                                      :disabled="$lateFeeType === 'none'" />
+                    </x-form.field>
                 </div>
 
                 <div class="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-6 py-3">

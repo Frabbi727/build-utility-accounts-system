@@ -38,6 +38,16 @@ class Account extends Model
         ];
     }
 
+    /**
+     * The display name in the active locale.
+     */
+    public function displayName(): string
+    {
+        return app()->getLocale() === 'bn'
+            ? ($this->name_bn ?? $this->name)
+            : $this->name;
+    }
+
     /** @return BelongsTo<Account, $this> */
     public function parent(): BelongsTo
     {

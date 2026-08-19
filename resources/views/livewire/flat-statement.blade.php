@@ -37,6 +37,10 @@
                             @if ($row['memo'])
                                 <span class="ml-1 font-mono text-xs text-slate-400">{{ $row['memo'] }}</span>
                             @endif
+                            @if ($row['payment'] !== null)
+                                <a href="{{ route('payments.receipt', $row['payment']) }}"
+                                   class="ml-2 text-xs font-medium text-slate-600 underline hover:text-slate-900">{{ __('billing.view_receipt') }}</a>
+                            @endif
                         </td>
                         <td class="px-4 py-2 text-right tabular-nums">{{ $row['debit'] !== '0.00' ? number_format((float) $row['debit'], 2) : '' }}</td>
                         <td class="px-4 py-2 text-right tabular-nums">{{ $row['credit'] !== '0.00' ? number_format((float) $row['credit'], 2) : '' }}</td>
