@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan list:*)",
+      "Bash(php artisan route:list:*)",
+      "Bash(php artisan migrate:status:*)",
+      "Bash(php artisan config:show:*)",
+      "Bash(php artisan about:*)",
+      "Bash(php artisan test:*)",
+      "Bash(php artisan make:*)",
+      "Bash(php artisan boost:mcp:*)",
+      "Bash(composer test:*)",
+      "Bash(composer check:*)",
+      "Bash(composer lint:*)",
+      "Bash(composer analyse:*)",
+      "Bash(composer show:*)",
+      "Bash(vendor/bin/pint:*)",
+      "Bash(vendor/bin/phpstan:*)",
+      "Bash(npm run build:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ]
+  }
+}

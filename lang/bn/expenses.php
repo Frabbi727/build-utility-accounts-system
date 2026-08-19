@@ -1,0 +1,40 @@
+<?php
+
+return [
+    'vendor_bill_posted' => ':vendor এর ভেন্ডর বিল — :bill',
+    'vendor_bill_paid' => 'ভেন্ডর বিল :bill এর পরিশোধ — ভাউচার :voucher',
+    'expense_posted' => 'ব্যয় :voucher — :description',
+
+    'expenses' => 'ব্যয়',
+    'expense_help' => 'নগদ বা ব্যাংক থেকে সরাসরি পরিশোধিত ব্যয়। ব্যয় পোস্ট হয় এবং নগদ/ব্যাংক ব্যালেন্স সঙ্গে সঙ্গে কমে।',
+    'category' => 'খাত',
+    'select_category' => 'খাত নির্বাচন করুন',
+    'spent_on' => 'ব্যয়ের তারিখ',
+    'save_expense' => 'ব্যয় সংরক্ষণ',
+    'expense_recorded' => 'ব্যয় রেকর্ড হয়েছে — ভাউচার :voucher।',
+    'voucher' => 'ভাউচার',
+    'no_expenses' => 'এখনো কোনো ব্যয় রেকর্ড হয়নি।',
+
+    'vendor_bills' => 'ভেন্ডর বিল',
+    'vendor_bill_help' => 'ভেন্ডরকে কত দেনা তা রেকর্ড করে। ব্যয় এখনই স্বীকৃত হয়; বিল পরিশোধের সময় নগদ যায়।',
+    'vendor' => 'ভেন্ডর',
+    'select_vendor' => 'ভেন্ডর নির্বাচন করুন',
+    'bill_no' => 'বিল নং',
+    'bill_date' => 'বিলের তারিখ',
+    'due_date' => 'পরিশোধের শেষ তারিখ',
+    'save_vendor_bill' => 'ভেন্ডর বিল সংরক্ষণ',
+    'vendor_bill_recorded' => 'ভেন্ডর বিল রেকর্ড হয়েছে — :bill।',
+    'vendor_bill_settled' => 'ভেন্ডর পরিশোধ রেকর্ড হয়েছে — ভাউচার :voucher।',
+    'settle_bill' => 'ভেন্ডর বিল পরিশোধ',
+    'confirm_payment' => 'পরিশোধ নিশ্চিত করুন',
+    'cancel' => 'বাতিল',
+    'pay' => 'পরিশোধ',
+    'paid_on' => 'পরিশোধের তারিখ',
+    'status' => 'অবস্থা',
+    'no_vendor_bills' => 'এখনো কোনো ভেন্ডর বিল রেকর্ড হয়নি।',
+    'statuses' => [
+        'unpaid' => 'অপরিশোধিত',
+        'partially_paid' => 'আংশিক পরিশোধিত',
+        'paid' => 'পরিশোধিত',
+    ],
+];

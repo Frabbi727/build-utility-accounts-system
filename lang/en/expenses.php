@@ -1,0 +1,40 @@
+<?php
+
+return [
+    'vendor_bill_posted' => 'Vendor bill from :vendor — :bill',
+    'vendor_bill_paid' => 'Payment against vendor bill :bill — voucher :voucher',
+    'expense_posted' => 'Expense :voucher — :description',
+
+    'expenses' => 'Expenses',
+    'expense_help' => 'A direct expenditure paid straight from cash or bank. Posts the expense and reduces the cash or bank balance immediately.',
+    'category' => 'Category',
+    'select_category' => 'Select a category',
+    'spent_on' => 'Spent on',
+    'save_expense' => 'Save expense',
+    'expense_recorded' => 'Expense recorded — voucher :voucher.',
+    'voucher' => 'Voucher',
+    'no_expenses' => 'No expenses recorded yet.',
+
+    'vendor_bills' => 'Vendor Bills',
+    'vendor_bill_help' => 'Records what a vendor is owed. The expense is recognised now; the cash leaves when you settle the bill.',
+    'vendor' => 'Vendor',
+    'select_vendor' => 'Select a vendor',
+    'bill_no' => 'Bill No.',
+    'bill_date' => 'Bill date',
+    'due_date' => 'Due date',
+    'save_vendor_bill' => 'Save vendor bill',
+    'vendor_bill_recorded' => 'Vendor bill recorded — :bill.',
+    'vendor_bill_settled' => 'Vendor payment recorded — voucher :voucher.',
+    'settle_bill' => 'Settle vendor bill',
+    'confirm_payment' => 'Confirm payment',
+    'cancel' => 'Cancel',
+    'pay' => 'Pay',
+    'paid_on' => 'Paid on',
+    'status' => 'Status',
+    'no_vendor_bills' => 'No vendor bills recorded yet.',
+    'statuses' => [
+        'unpaid' => 'Unpaid',
+        'partially_paid' => 'Partially paid',
+        'paid' => 'Paid',
+    ],
+];
