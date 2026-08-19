@@ -5,7 +5,6 @@ namespace App\Livewire;
 use App\Enums\AccountType;
 use App\Enums\PaymentMethod;
 use App\Models\Account;
-use App\Models\Flat;
 use App\Models\Vendor;
 use App\Models\VendorBill;
 use App\Services\Expenses\PayVendorBill;
@@ -49,7 +48,7 @@ class VendorBillList extends Component
 
     public function save(RecordVendorBill $recorder): void
     {
-        $this->authorize('manage', Flat::class);
+        $this->authorize('create', VendorBill::class);
 
         $this->validate([
             'vendorId' => ['required', 'integer', 'exists:vendors,id'],
@@ -80,7 +79,7 @@ class VendorBillList extends Component
 
     public function startPayment(int $billId): void
     {
-        $this->authorize('manage', Flat::class);
+        $this->authorize('create', VendorBill::class);
 
         $bill = VendorBill::findOrFail($billId);
 
@@ -96,7 +95,7 @@ class VendorBillList extends Component
 
     public function pay(PayVendorBill $payer): void
     {
-        $this->authorize('manage', Flat::class);
+        $this->authorize('create', VendorBill::class);
 
         $this->validate([
             'payingBillId' => ['required', 'integer', 'exists:vendor_bills,id'],
@@ -121,7 +120,7 @@ class VendorBillList extends Component
 
     public function render(): View
     {
-        $this->authorize('viewAny', Flat::class);
+        $this->authorize('viewAny', VendorBill::class);
 
         return view('livewire.vendor-bill-list', [
             'bills' => VendorBill::with(['vendor', 'items.account'])

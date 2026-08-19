@@ -2,6 +2,7 @@
 
 return [
     'dashboard' => 'Dashboard',
+    'billing' => 'Billing',
     'flats' => 'Flats',
     'accounts' => 'Chart of Accounts',
     'generate_bills' => 'Generate Bills',
@@ -11,4 +12,17 @@ return [
     'vendor_bills' => 'Vendor Bills',
     'logout' => 'Log out',
     'reports' => 'Reports',
+    'masters' => 'Masters',
+    'settings' => 'Settings',
+    'buildings' => 'Buildings',
+    'floors' => 'Floors',
+    'owners' => 'Owners',
+    'tenants' => 'Tenants',
+    'vendors' => 'Vendors',
+    'staff' => 'Staff',
+    'charge_heads' => 'Charge Heads',
+    'opening_balances' => 'Opening Balances',
+    'periods' => 'Accounting Periods',
+    'users' => 'Users & Roles',
+    'setup' => 'Setup',
 ];

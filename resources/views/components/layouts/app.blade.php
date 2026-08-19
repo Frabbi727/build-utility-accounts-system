@@ -10,26 +10,22 @@
 <body class="h-full bg-slate-50 text-slate-800 antialiased">
 <div class="min-h-full">
     <nav class="border-b border-slate-200 bg-white">
-        <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-            <div class="flex items-center gap-6">
+        <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <div class="flex flex-wrap items-center gap-4">
                 <a href="{{ route('dashboard') }}" class="text-sm font-semibold text-slate-900">
                     {{ config('app.name') }}
                 </a>
+
                 @auth
-                    <div class="flex items-center gap-4 text-sm">
-                        @can('viewAny', App\Models\Flat::class)
-                            <a href="{{ route('flats.index') }}" class="text-slate-600 hover:text-slate-900">{{ __('nav.flats') }}</a>
-                            <a href="{{ route('accounts.index') }}" class="text-slate-600 hover:text-slate-900">{{ __('nav.accounts') }}</a>
-                            <a href="{{ route('expenses.index') }}" class="text-slate-600 hover:text-slate-900">{{ __('nav.expenses') }}</a>
-                            <a href="{{ route('vendor-bills.index') }}" class="text-slate-600 hover:text-slate-900">{{ __('nav.vendor_bills') }}</a>
-                            <a href="{{ route('billing.generate') }}" class="text-slate-600 hover:text-slate-900">{{ __('nav.generate_bills') }}</a>
-                            <a href="{{ route('payments.create') }}" class="text-slate-600 hover:text-slate-900">{{ __('nav.record_payment') }}</a>
-                            <a href="{{ route('reports.index') }}" class="text-slate-600 hover:text-slate-900">{{ __('nav.reports') }}</a>
-                        @endcan
-                    </div>
+                    <x-layouts.partials.nav />
                 @endauth
             </div>
+
             <div class="flex items-center gap-4 text-sm">
+                @auth
+                    <x-layouts.partials.building-switcher />
+                @endauth
+
                 <form method="POST" action="{{ route('locale.switch') }}">
                     @csrf
                     <input type="hidden" name="locale" value="{{ app()->getLocale() === 'bn' ? 'en' : 'bn' }}">
@@ -37,6 +33,7 @@
                         {{ app()->getLocale() === 'bn' ? 'English' : 'বাংলা' }}
                     </button>
                 </form>
+
                 @auth
                     <span class="text-slate-500">{{ auth()->user()->name }}</span>
                     <form method="POST" action="{{ route('logout') }}">
@@ -52,6 +49,12 @@
         @if (session('status'))
             <div class="mb-6 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
                 {{ session('status') }}
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                {{ session('error') }}
             </div>
         @endif
 

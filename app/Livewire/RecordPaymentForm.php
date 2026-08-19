@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Enums\PaymentMethod;
 use App\Models\Flat;
+use App\Models\Payment;
 use App\Services\Billing\RecordPayment;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
@@ -28,7 +29,7 @@ class RecordPaymentForm extends Component
 
     public function save(RecordPayment $recorder): void
     {
-        $this->authorize('manage', Flat::class);
+        $this->authorize('create', Payment::class);
 
         $this->validate([
             'flatId' => ['required', 'integer', 'exists:flats,id'],

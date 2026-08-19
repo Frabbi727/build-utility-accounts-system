@@ -3,8 +3,9 @@
 namespace App\Livewire;
 
 use App\Models\Building;
-use App\Models\Flat;
+use App\Models\ServiceChargeBill;
 use App\Services\Billing\GenerateMonthlyBills;
+use App\Support\CurrentBuilding;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -17,13 +18,13 @@ class GenerateBills extends Component
 
     public function mount(): void
     {
-        $this->buildingId = Building::query()->value('id');
+        $this->buildingId = app(CurrentBuilding::class)->id();
         $this->month = now()->format('Y-m');
     }
 
     public function generate(GenerateMonthlyBills $generator): void
     {
-        $this->authorize('manage', Flat::class);
+        $this->authorize('create', ServiceChargeBill::class);
 
         $this->validate([
             'buildingId' => ['required', 'integer', 'exists:buildings,id'],

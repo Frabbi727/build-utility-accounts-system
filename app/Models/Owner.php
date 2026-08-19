@@ -9,6 +9,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int|null $user_id
+ * @property string $name
+ * @property string|null $phone
+ * @property string|null $email
+ * @property string|null $national_id
+ */
 #[Fillable(['user_id', 'name', 'phone', 'email', 'national_id'])]
 class Owner extends Model
 {

@@ -2,6 +2,7 @@
 
 return [
     'dashboard' => 'ড্যাশবোর্ড',
+    'billing' => 'বিলিং',
     'flats' => 'ফ্ল্যাট',
     'accounts' => 'হিসাব তালিকা',
     'generate_bills' => 'বিল তৈরি',
@@ -11,4 +12,17 @@ return [
     'vendor_bills' => 'ভেন্ডর বিল',
     'logout' => 'লগ আউট',
     'reports' => 'প্রতিবেদন',
+    'masters' => 'মাস্টার তথ্য',
+    'settings' => 'সেটিংস',
+    'buildings' => 'ভবন',
+    'floors' => 'তলা',
+    'owners' => 'মালিক',
+    'tenants' => 'ভাড়াটিয়া',
+    'vendors' => 'সরবরাহকারী',
+    'staff' => 'কর্মচারী',
+    'charge_heads' => 'চার্জ খাত',
+    'opening_balances' => 'প্রারম্ভিক জের',
+    'periods' => 'হিসাবকাল',
+    'users' => 'ব্যবহারকারী ও ভূমিকা',
+    'setup' => 'সেটআপ',
 ];

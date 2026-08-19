@@ -24,6 +24,25 @@ class FlatPolicy
         return $user->isStaff();
     }
 
+    public function create(User $user): bool
+    {
+        return $user->canManageMoney();
+    }
+
+    public function update(User $user, Flat $flat): bool
+    {
+        return $user->canManageMoney();
+    }
+
+    public function delete(User $user, Flat $flat): bool
+    {
+        return $user->canManageMoney();
+    }
+
+    /**
+     * The catch-all used by the billing and collection screens, which act on
+     * flats without holding a particular one.
+     */
     public function manage(User $user): bool
     {
         return $user->canManageMoney();

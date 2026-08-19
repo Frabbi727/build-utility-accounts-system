@@ -2,7 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Enums\AccountCode;
+use App\Enums\AccountType;
+use App\Enums\ChargeBasis;
+use App\Models\Account;
 use App\Models\Building;
+use App\Models\ChargeHead;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /** @extends Factory<Building> */
@@ -12,28 +17,58 @@ class BuildingFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->streetName().' Tower',
+            'name' => fake()->unique()->streetName().' Tower',
             'name_bn' => null,
             'address' => fake()->address(),
-            'service_charge_mode' => Building::MODE_FLAT_RATE,
-            'service_charge_rate' => '3000.00',
             'due_day_of_month' => 10,
         ];
     }
 
-    public function perSqft(string $rate = '3.50'): static
+    /**
+     * A building billing one flat-rate charge head — the simplest shape a test needs.
+     */
+    public function flatRate(string $amount = '3000.00'): static
     {
-        return $this->state(fn (): array => [
-            'service_charge_mode' => Building::MODE_PER_SQFT,
-            'service_charge_rate' => $rate,
-        ]);
+        return $this->withChargeHead(ChargeBasis::PerFlat, $amount, 'Service Charge');
     }
 
-    public function flatRate(string $rate = '3000.00'): static
+    /**
+     * A building billing one per-square-foot charge head.
+     */
+    public function perSqft(string $rate = '3.50'): static
     {
-        return $this->state(fn (): array => [
-            'service_charge_mode' => Building::MODE_FLAT_RATE,
-            'service_charge_rate' => $rate,
-        ]);
+        return $this->withChargeHead(ChargeBasis::PerSqft, $rate, 'Service Charge');
+    }
+
+    /**
+     * A building billing one equal-share head, split across its active flats.
+     */
+    public function equalShare(string $monthlyTotal = '8000.00'): static
+    {
+        return $this->withChargeHead(ChargeBasis::EqualShare, $monthlyTotal, 'Cleaning Contract');
+    }
+
+    private function withChargeHead(ChargeBasis $basis, string $amount, string $name): static
+    {
+        return $this->afterCreating(function (Building $building) use ($basis, $amount, $name): void {
+            ChargeHead::factory()->create([
+                'building_id' => $building->id,
+                'account_id' => $this->serviceChargeIncomeId(),
+                'name' => $name,
+                'basis' => $basis,
+                'amount' => $amount,
+            ]);
+        });
+    }
+
+    /**
+     * The seeded income account, created on the fly for tests that skip the seeder.
+     */
+    private function serviceChargeIncomeId(): int
+    {
+        return Account::firstOrCreate(
+            ['code' => AccountCode::ServiceChargeIncome->value],
+            ['name' => 'Service Charge Income', 'type' => AccountType::Income],
+        )->id;
     }
 }

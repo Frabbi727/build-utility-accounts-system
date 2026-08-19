@@ -6,7 +6,6 @@ use App\Enums\AccountType;
 use App\Enums\PaymentMethod;
 use App\Models\Account;
 use App\Models\Expense;
-use App\Models\Flat;
 use App\Services\Expenses\RecordExpense;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
@@ -34,7 +33,7 @@ class ExpenseList extends Component
 
     public function save(RecordExpense $recorder): void
     {
-        $this->authorize('manage', Flat::class);
+        $this->authorize('create', Expense::class);
 
         $this->validate([
             'accountId' => ['required', 'integer', 'exists:accounts,id'],
@@ -60,7 +59,7 @@ class ExpenseList extends Component
 
     public function render(): View
     {
-        $this->authorize('viewAny', Flat::class);
+        $this->authorize('viewAny', Expense::class);
 
         return view('livewire.expense-list', [
             'expenses' => Expense::with(['account', 'vendor', 'staff'])

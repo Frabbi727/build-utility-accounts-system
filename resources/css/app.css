@@ -7,3 +7,39 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/*
+ * The @tailwindcss/forms plugin is not installed, so `border-slate-300` on an input
+ * sets a colour with no width and the control renders with browser defaults. These
+ * base rules give every form control the same look across the app.
+ */
+@layer base {
+    input[type='text'],
+    input[type='email'],
+    input[type='password'],
+    input[type='number'],
+    input[type='date'],
+    input[type='month'],
+    input[type='search'],
+    input[type='tel'],
+    select,
+    textarea {
+        @apply rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+        @apply border-slate-500 outline-none ring-1 ring-slate-500;
+    }
+
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+        @apply bg-slate-50 text-slate-500;
+    }
+}
+
+[x-cloak] {
+    display: none !important;
+}

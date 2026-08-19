@@ -13,19 +13,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $name
  * @property string|null $name_bn
  * @property string|null $address
- * @property string $service_charge_mode
- * @property string $service_charge_rate
  * @property int $due_day_of_month
  */
-#[Fillable(['name', 'name_bn', 'address', 'service_charge_mode', 'service_charge_rate', 'due_day_of_month'])]
+#[Fillable(['name', 'name_bn', 'address', 'due_day_of_month'])]
 class Building extends Model
 {
     /** @use HasFactory<BuildingFactory> */
     use HasFactory;
-
-    public const MODE_FLAT_RATE = 'flat_rate';
-
-    public const MODE_PER_SQFT = 'per_sqft';
 
     /**
      * @return array<string, string>
@@ -33,7 +27,6 @@ class Building extends Model
     protected function casts(): array
     {
         return [
-            'service_charge_rate' => 'decimal:2',
             'due_day_of_month' => 'integer',
         ];
     }
@@ -50,15 +43,35 @@ class Building extends Model
         return $this->hasMany(Flat::class);
     }
 
-    /**
-     * The monthly service charge for a flat under this building's charging model.
-     */
-    public function serviceChargeFor(Flat $flat): string
+    /** @return HasMany<Flat, $this> */
+    public function activeFlats(): HasMany
     {
-        if ($this->service_charge_mode === self::MODE_PER_SQFT) {
-            return bcmul((string) $this->service_charge_rate, (string) $flat->size_sqft, 2);
-        }
+        return $this->flats()->where('is_active', true);
+    }
 
-        return bcadd((string) $this->service_charge_rate, '0', 2);
+    /**
+     * What this building bills every month, one head per bill line.
+     *
+     * @return HasMany<ChargeHead, $this>
+     */
+    public function chargeHeads(): HasMany
+    {
+        return $this->hasMany(ChargeHead::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /** @return HasMany<Staff, $this> */
+    public function staff(): HasMany
+    {
+        return $this->hasMany(Staff::class);
+    }
+
+    /**
+     * The display name in the active locale.
+     */
+    public function displayName(): string
+    {
+        return app()->getLocale() === 'bn'
+            ? ($this->name_bn ?? $this->name)
+            : $this->name;
     }
 }

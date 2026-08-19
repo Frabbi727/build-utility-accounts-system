@@ -51,4 +51,12 @@ class User extends Authenticatable
     {
         return $this->hasAnyRole(Role::moneyHandlers());
     }
+
+    /**
+     * Administrators alone manage users, roles, the chart of accounts and periods.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(Role::Admin->value);
+    }
 }

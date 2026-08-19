@@ -23,8 +23,6 @@ class DemoBuildingSeeder extends Seeder
             [
                 'name_bn' => 'শাপলা টাওয়ার',
                 'address' => 'House 12, Road 5, Dhanmondi, Dhaka',
-                'service_charge_mode' => Building::MODE_PER_SQFT,
-                'service_charge_rate' => '3.50',
                 'due_day_of_month' => 10,
             ],
         );

@@ -194,6 +194,45 @@ Phase 1 (accounting core) is being built per `documents/building-management-app-
 
 Money is `decimal(15, 2)` in the database and compared with `bccomp`/`bcadd` — never floats.
 
+### Charge heads, not a rate column
+
+What a building bills every month lives in `charge_heads` — one row per component
+(guard salary, lift, water, cleaning), each with its own income account and a
+`ChargeBasis` of `per_flat`, `per_sqft` or `equal_share`. `buildings` deliberately
+carries **no** `service_charge_rate`; that column was dropped in
+`2026_08_19_120300_convert_building_service_charge_to_charge_heads`. Do not
+reintroduce a rate on the building — it would be a second source of truth for money.
+
+`App\Services\Billing\ChargeCalculator` is the only place a flat's monthly amount is
+computed. Bill generation and the on-screen previews both call it, so there is no
+second implementation to drift. Per-flat exceptions live in `flat_charge_overrides`
+(a negotiated amount, or an exemption).
+
+`equal_share` divides the head's monthly total across active flats; `bcdiv` truncates,
+so the leftover paisa is added to the **lowest-id active flat**. That keeps the split
+deterministic and makes the heads sum to the contract total exactly.
+
+### Admin layer
+
+Master data screens are Livewire components on `App\Livewire\Concerns\WithCrudModal`,
+which supplies create/edit/delete and guarantees `authorizeAction()` runs before every
+mutation. Forms are built from `resources/views/components/form/*` and
+`resources/views/components/ui/*` — reuse those rather than hand-rolling markup.
+
+`App\Support\CurrentBuilding` (session-backed, scoped) is the building the operator is
+working in. It scopes operational screens (flats, floors, charge heads, staff, bill
+generation, dashboard counts). **Financial reports are org-wide**: `journal_lines`
+carries a `flat_id` dimension but no building one, so expenses and vendor bills have
+nothing to filter on.
+
+`App\Support\Navigation` builds the menu from a data structure and drops entries whose
+route does not exist, so adding a route lights up its menu item automatically.
+
+Access: staff roles read master data, `canManageMoney()` (admin + accountant) changes
+it, and users, the chart of accounts, accounting periods and the setup wizard are
+**admin only**. Accounts whose code appears in `App\Enums\AccountCode` are reserved —
+their code and type cannot be edited and they cannot be deleted.
+
 ## Conventions
 
 - Domain code goes under `app/Models`, `app/Http/Controllers`, `app/Http/Requests`; keep to the existing directory structure.

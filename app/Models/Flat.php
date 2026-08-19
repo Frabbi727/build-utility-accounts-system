@@ -53,6 +53,16 @@ class Flat extends Model
         return $this->belongsTo(Owner::class);
     }
 
+    /**
+     * Charge heads this flat pays differently, or not at all.
+     *
+     * @return HasMany<FlatChargeOverride, $this>
+     */
+    public function chargeOverrides(): HasMany
+    {
+        return $this->hasMany(FlatChargeOverride::class);
+    }
+
     /** @return HasMany<Tenant, $this> */
     public function tenants(): HasMany
     {
