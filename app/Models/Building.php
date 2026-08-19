@@ -57,6 +57,16 @@ class Building extends Model
     }
 
     /**
+     * The kinds of unit this building has — Shop, Office, Flat, Garage.
+     *
+     * @return HasMany<UnitType, $this>
+     */
+    public function unitTypes(): HasMany
+    {
+        return $this->hasMany(UnitType::class);
+    }
+
+    /**
      * What this building bills every month, one head per bill line.
      *
      * @return HasMany<ChargeHead, $this>

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -60,6 +61,35 @@ class ChargeHead extends Model
     public function overrides(): HasMany
     {
         return $this->hasMany(FlatChargeOverride::class);
+    }
+
+    /**
+     * The unit types this head applies to. **Empty means every unit** — that is what keeps
+     * a building that has never heard of unit types billing exactly as it always did.
+     *
+     * @return BelongsToMany<UnitType, $this>
+     */
+    public function unitTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(UnitType::class);
+    }
+
+    /**
+     * Whether this head is charged to a given unit.
+     */
+    public function appliesTo(Flat $flat): bool
+    {
+        $restrictedTo = $this->relationLoaded('unitTypes')
+            ? $this->unitTypes->modelKeys()
+            : $this->unitTypes()->pluck('unit_types.id')->all();
+
+        if ($restrictedTo === []) {
+            return true;
+        }
+
+        // A flat with no type is not "every type" — a head restricted to shops must not
+        // reach a unit nobody has classified yet.
+        return $flat->unit_type_id !== null && in_array($flat->unit_type_id, $restrictedTo, true);
     }
 
     /**

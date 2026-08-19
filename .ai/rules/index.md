@@ -11,4 +11,5 @@ to catch what a path match alone misses.
 | [billing-charge-heads.md](billing-charge-heads.md) | `app/Services/Billing/**`, `app/Models/{Building,ChargeHead,Flat,FlatChargeOverride}.php`, `app/Livewire/Masters/**` |
 | [single-building.md](single-building.md) | `app/Services/Reporting/**`, `app/Livewire/Reports/**`, `database/migrations/**` |
 | [admin-screens.md](admin-screens.md) | `app/Livewire/**`, `app/Policies/**`, `resources/views/**` |
+| [metered-utilities.md](metered-utilities.md) | `app/Services/Billing/**`, `app/Models/{Utility,Meter,MeterReading,UtilityTariff,UtilityTariffSlab,UnitType,CostDistribution,CostDistributionLine}.php`, `app/Livewire/Utilities/**`, `app/Livewire/Billing/**` |
 | [localization.md](localization.md) | `lang/**`, `resources/views/**`, `app/Livewire/**` |

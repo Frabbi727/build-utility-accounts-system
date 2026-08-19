@@ -15,7 +15,7 @@
 
         <div>
             <label class="block text-sm font-medium text-slate-700">{{ __('billing.month') }}</label>
-            <input type="month" wire:model="month" class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-sm">
+            <input type="month" wire:model.live="month" class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-sm">
             @error('month') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
         </div>
 

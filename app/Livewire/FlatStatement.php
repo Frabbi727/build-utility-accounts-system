@@ -6,6 +6,7 @@ use App\Enums\AccountCode;
 use App\Models\Flat;
 use App\Models\JournalLine;
 use App\Models\Payment;
+use App\Models\ServiceChargeBill;
 use App\Services\JournalService;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -56,6 +57,14 @@ class FlatStatement extends Component
 
         return view('livewire.flat-statement', [
             'rows' => $rows,
+            // The breakdown behind each accrual: what the owner is actually being asked
+            // to pay for, including the working on any metered line.
+            'bills' => ServiceChargeBill::with('items')
+                ->where('flat_id', $this->flat->id)
+                ->orderByDesc('billing_month')
+                ->orderByDesc('id')
+                ->limit(12)
+                ->get(),
             'outstanding' => $journal->balanceFor($receivable, $this->flat->id),
             'advance' => $journal->balanceFor($journal->account(AccountCode::AdvanceFromOwners), $this->flat->id),
         ])->layout('components.layouts.app');

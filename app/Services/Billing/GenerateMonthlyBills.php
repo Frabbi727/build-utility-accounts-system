@@ -4,11 +4,12 @@ namespace App\Services\Billing;
 
 use App\Enums\AccountCode;
 use App\Enums\BillStatus;
-use App\Models\AdHocCharge;
 use App\Models\Building;
 use App\Models\Flat;
 use App\Models\ServiceChargeBill;
+use App\Services\Billing\LineSources\BillLineSource;
 use App\Services\JournalService;
+use App\Support\BillLineData;
 use App\Support\JournalLineData;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -18,28 +19,33 @@ use Illuminate\Support\Facades\DB;
  * Generates one service charge bill per active flat for a billing month and posts
  * the matching accrual, so outstanding dues are answerable from the ledger alone.
  *
- * A bill carries one item per active charge head on the building. The accrual
- * debits Service Charge Receivable once for the bill total, carrying the flat
- * dimension, and credits each head's own income account:
+ * What a bill contains is decided by the registered `BillLineSource`s — recurring charge
+ * heads, metered utilities, distributed costs, one-off charges. This class owns only how
+ * a line becomes money, and does it identically for all of them:
  *
  *     Dr Service Charge Receivable       total   (flat dimension)
- *         Cr <head 1 income account>             amount 1
- *         Cr <head 2 income account>             amount 2
+ *         Cr <line 1 income account>             amount 1
+ *         Cr <line 2 income account>             amount 2
  *         ...
  *
- * Any unapplied ad-hoc charges for the flat ride along as extra lines on the same bill.
+ * Two invariants live here rather than in the sources, so no source can forget them:
+ * zero-amount lines are dropped (JournalService requires every line to be a debit or a
+ * credit, and a zero is neither), and a flat is billed if *any* source produced a line.
  */
 class GenerateMonthlyBills
 {
+    /**
+     * @param  list<BillLineSource>  $sources  in the order their lines appear on the bill
+     */
     public function __construct(
         private readonly JournalService $journal,
-        private readonly ChargeCalculator $charges,
         private readonly ApplyAdvances $advances,
+        private readonly array $sources,
     ) {}
 
     /**
      * Idempotent per (flat, billing month): re-running skips flats already billed.
-     * Flats whose charge heads total nothing are skipped rather than billed zero.
+     * Flats whose sources total nothing are skipped rather than billed zero.
      *
      * @return Collection<int, ServiceChargeBill>
      */
@@ -77,24 +83,31 @@ class GenerateMonthlyBills
     ): ?ServiceChargeBill {
         $flat->setRelation('building', $building);
 
-        $lines = $this->charges->for($flat);
+        /** @var array<int, list<BillLineData>> $bySource */
+        $bySource = [];
+        $total = '0.00';
 
-        // Anything effective on or before this month and not yet billed. A charge added
-        // after its month was billed is picked up here rather than being lost.
-        $adHoc = AdHocCharge::where('flat_id', $flat->id)
-            ->whereNull('applied_to_bill_id')
-            ->whereDate('effective_month', '<=', $billingMonth)
-            ->orderBy('id')
-            ->get();
+        foreach ($this->sources as $index => $source) {
+            // Zeros are dropped here, once, so no source has to remember to.
+            $lines = array_values(array_filter(
+                $source->linesFor($flat, $billingMonth),
+                fn (BillLineData $line): bool => ! $line->isZero(),
+            ));
 
-        if ($lines === [] && $adHoc->isEmpty()) {
+            $bySource[$index] = $lines;
+
+            foreach ($lines as $line) {
+                $total = bcadd($total, $line->amount, 2);
+            }
+        }
+
+        // A flat with nothing to charge is not billed zero — but one charged by any
+        // single source is billed, even if the others produced nothing.
+        if (bccomp($total, '0', 2) <= 0) {
             return null;
         }
 
-        $total = array_reduce($lines, fn (string $sum, array $line): string => bcadd($sum, $line['amount'], 2), '0.00');
-        $total = $adHoc->reduce(fn (string $sum, AdHocCharge $charge): string => bcadd($sum, (string) $charge->amount, 2), $total);
-
-        return DB::transaction(function () use ($flat, $billingMonth, $dueDate, $lines, $adHoc, $total, $receivableId): ServiceChargeBill {
+        return DB::transaction(function () use ($flat, $billingMonth, $dueDate, $bySource, $total, $receivableId): ServiceChargeBill {
             $bill = ServiceChargeBill::create([
                 'flat_id' => $flat->id,
                 'bill_no' => $this->nextBillNo($billingMonth),
@@ -106,35 +119,20 @@ class GenerateMonthlyBills
 
             $journalLines = [JournalLineData::debit($receivableId, $total, $flat->id, $bill->bill_no)];
 
-            foreach ($lines as $line) {
-                $head = $line['charge_head'];
+            foreach ($bySource as $index => $lines) {
+                foreach ($lines as $line) {
+                    $bill->items()->create($line->toArray());
 
-                $bill->items()->create([
-                    'account_id' => $head->account_id,
-                    'description' => $head->displayName(),
-                    'amount' => $line['amount'],
-                ]);
+                    $journalLines[] = JournalLineData::credit(
+                        $line->accountId,
+                        $line->amount,
+                        null,
+                        $line->description,
+                    );
+                }
 
-                $journalLines[] = JournalLineData::credit($head->account_id, $line['amount'], null, $head->name);
-            }
-
-            foreach ($adHoc as $charge) {
-                $bill->items()->create([
-                    'account_id' => $charge->account_id,
-                    'description' => $charge->description,
-                    'amount' => $charge->amount,
-                ]);
-
-                $journalLines[] = JournalLineData::credit(
-                    $charge->account_id,
-                    (string) $charge->amount,
-                    null,
-                    $charge->description,
-                );
-
-                // Stamped so a re-run cannot bill the same charge twice.
-                $charge->applied_to_bill_id = $bill->id;
-                $charge->save();
+                // Stamped so a re-run cannot bill the same source record twice.
+                $this->sources[$index]->markBilled($lines, $bill);
             }
 
             $this->journal->post(

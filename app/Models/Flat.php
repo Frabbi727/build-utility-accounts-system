@@ -14,11 +14,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $building_id
  * @property int|null $floor_id
  * @property int|null $owner_id
+ * @property int|null $unit_type_id
  * @property string $number
  * @property string $size_sqft
  * @property bool $is_active
  */
-#[Fillable(['building_id', 'floor_id', 'owner_id', 'number', 'size_sqft', 'is_active'])]
+#[Fillable(['building_id', 'floor_id', 'owner_id', 'unit_type_id', 'number', 'size_sqft', 'is_active'])]
 class Flat extends Model
 {
     /** @use HasFactory<FlatFactory> */
@@ -51,6 +52,16 @@ class Flat extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(Owner::class);
+    }
+
+    /**
+     * What kind of unit this is. Null when the building never needed the distinction.
+     *
+     * @return BelongsTo<UnitType, $this>
+     */
+    public function unitType(): BelongsTo
+    {
+        return $this->belongsTo(UnitType::class);
     }
 
     /**

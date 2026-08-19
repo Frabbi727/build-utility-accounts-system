@@ -13,11 +13,12 @@ use App\Services\JournalService;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Tests\Concerns\AssertsLedger;
 use Tests\TestCase;
 
 class RecordExpenseTest extends TestCase
 {
-    use RefreshDatabase;
+    use AssertsLedger, RefreshDatabase;
 
     private JournalService $journal;
 
@@ -134,13 +135,5 @@ class RecordExpenseTest extends TestCase
         );
 
         $this->assertSame($expense->id, $expense->journalEntries()->firstOrFail()->source_id);
-    }
-
-    private function assertLedgerIsBalanced(): void
-    {
-        $debits = (string) (JournalLine::sum('debit') ?: '0');
-        $credits = (string) (JournalLine::sum('credit') ?: '0');
-
-        $this->assertSame(0, bccomp($debits, $credits, 2), "Ledger out of balance: {$debits} vs {$credits}.");
     }
 }

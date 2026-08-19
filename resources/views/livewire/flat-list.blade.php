@@ -153,6 +153,14 @@
                         </x-form.select>
                     </x-form.field>
 
+                    <x-form.field :label="__('masters.unit_type')" name="unitTypeId">
+                        <x-form.select wire:model="unitTypeId" :placeholder="__('masters.unit_type_any')">
+                            @foreach ($unitTypes as $unitType)
+                                <option value="{{ $unitType->id }}">{{ $unitType->displayName() }}</option>
+                            @endforeach
+                        </x-form.select>
+                    </x-form.field>
+
                     <x-form.field name="isActive" class="sm:col-span-2">
                         <x-form.checkbox wire:model="isActive" :label="__('masters.active')" />
                     </x-form.field>

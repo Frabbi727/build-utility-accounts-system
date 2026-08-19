@@ -58,6 +58,8 @@ class RouteSmokeTest extends TestCase
             'dashboard', 'flats.index', 'buildings.index', 'floors.index', 'charge-heads.index',
             'owners.index', 'tenants.index', 'vendors.index', 'staff.index',
             'accounts.index', 'expenses.index', 'vendor-bills.index',
+            'ad-hoc-charges.index', 'unit-types.index', 'shared-costs.index',
+            'utilities.index', 'meters.index', 'tariffs.index', 'readings.index',
             'reports.index', 'reports.owner-dues', 'reports.collections', 'reports.expenses',
             'reports.cash-book', 'reports.income-expenditure', 'reports.balance-sheet',
             'reports.trial-balance',

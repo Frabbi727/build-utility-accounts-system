@@ -29,6 +29,8 @@ class FlatList extends Component
 
     public ?int $ownerId = null;
 
+    public ?int $unitTypeId = null;
+
     public string $sizeSqft = '0';
 
     public bool $isActive = true;
@@ -73,6 +75,12 @@ class FlatList extends Component
                 Rule::exists('floors', 'id')->where('building_id', app(CurrentBuilding::class)->id()),
             ],
             'ownerId' => ['nullable', 'integer', 'exists:owners,id'],
+            'unitTypeId' => [
+                'nullable', 'integer',
+                // Scoped to this building: no foreign key can express that a flat's unit
+                // type must belong to the same building as the flat.
+                Rule::exists('unit_types', 'id')->where('building_id', app(CurrentBuilding::class)->id()),
+            ],
             'sizeSqft' => ['required', 'numeric', 'min:0'],
             'isActive' => ['boolean'],
         ];
@@ -86,6 +94,7 @@ class FlatList extends Component
         $this->number = $record->number ?? '';
         $this->floorId = $record?->floor_id;
         $this->ownerId = $record?->owner_id;
+        $this->unitTypeId = $record?->unit_type_id;
         $this->sizeSqft = $record === null ? '0' : (string) $record->size_sqft;
         $this->isActive = $record->is_active ?? true;
     }
@@ -109,6 +118,7 @@ class FlatList extends Component
             'building_id' => app(CurrentBuilding::class)->getOrFail()->id,
             'floor_id' => $this->floorId,
             'owner_id' => $this->ownerId,
+            'unit_type_id' => $this->unitTypeId,
             'number' => $this->number,
             'size_sqft' => $this->sizeSqft,
             'is_active' => $this->isActive,
@@ -228,6 +238,9 @@ class FlatList extends Component
             'monthlyCharges' => $this->monthlyCharges($flats->getCollection(), $building, $charges),
             'floors' => $building === null ? collect() : $building->floors()->orderBy('level')->get(),
             'owners' => Owner::orderBy('name')->get(),
+            'unitTypes' => $building === null
+                ? collect()
+                : $building->unitTypes()->orderBy('sort_order')->orderBy('name')->get(),
         ])->layout('components.layouts.app');
     }
 }

@@ -28,6 +28,7 @@
             <x-slot:head>
                 <th class="px-4 py-2">{{ __('masters.name') }}</th>
                 <th class="px-4 py-2">{{ __('masters.basis') }}</th>
+                <th class="px-4 py-2">{{ __('masters.applies_to') }}</th>
                 <th class="px-4 py-2 text-right">{{ __('masters.amount') }}</th>
                 <th class="px-4 py-2">{{ __('masters.income_account') }}</th>
                 <th class="px-4 py-2">{{ __('masters.status') }}</th>
@@ -38,6 +39,13 @@
                 <tr>
                     <td class="px-4 py-2 font-medium text-slate-900">{{ $head->displayName() }}</td>
                     <td class="px-4 py-2 text-slate-600">{{ $head->basis->label() }}</td>
+                    <td class="px-4 py-2 text-slate-600">
+                        @if ($head->unitTypes->isEmpty())
+                            <span class="text-slate-400">{{ __('masters.unit_type_any') }}</span>
+                        @else
+                            {{ $head->unitTypes->map(fn ($type) => $type->displayName())->join(', ') }}
+                        @endif
+                    </td>
                     <td class="px-4 py-2 text-right"><x-money :amount="$head->amount" /></td>
                     <td class="px-4 py-2 text-slate-600">
                         {{ $head->account->code }} —
@@ -151,6 +159,18 @@
                     <x-form.field name="isActive" class="flex items-end">
                         <x-form.checkbox wire:model="isActive" :label="__('masters.active')" />
                     </x-form.field>
+
+                    @if ($unitTypes->isNotEmpty())
+                        <x-form.field :label="__('masters.applies_to')" name="unitTypeIds"
+                                      :hint="__('masters.applies_to_help')" class="sm:col-span-2">
+                            <div class="flex flex-wrap gap-4">
+                                @foreach ($unitTypes as $unitType)
+                                    <x-form.checkbox wire:model="unitTypeIds" value="{{ $unitType->id }}"
+                                                     :label="$unitType->displayName()" />
+                                @endforeach
+                            </div>
+                        </x-form.field>
+                    @endif
                 </div>
 
                 <div class="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-6 py-3">

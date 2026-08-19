@@ -30,6 +30,7 @@ class Navigation
             'label' => 'nav.billing', 'access' => self::MONEY, 'items' => [
                 ['label' => 'nav.generate_bills', 'route' => 'billing.generate', 'access' => self::MONEY],
                 ['label' => 'nav.record_payment', 'route' => 'payments.create', 'access' => self::MONEY],
+                ['label' => 'nav.shared_costs', 'route' => 'shared-costs.index', 'access' => self::MONEY],
             ],
         ],
         [
@@ -48,7 +49,16 @@ class Navigation
                 ['label' => 'nav.buildings', 'route' => 'buildings.index', 'access' => self::STAFF],
                 ['label' => 'nav.floors', 'route' => 'floors.index', 'access' => self::STAFF],
                 ['label' => 'nav.charge_heads', 'route' => 'charge-heads.index', 'access' => self::STAFF],
+                ['label' => 'nav.unit_types', 'route' => 'unit-types.index', 'access' => self::STAFF],
                 ['label' => 'nav.ad_hoc_charges', 'route' => 'ad-hoc-charges.index', 'access' => self::STAFF],
+            ],
+        ],
+        [
+            'label' => 'nav.utilities', 'access' => self::STAFF, 'items' => [
+                ['label' => 'nav.readings', 'route' => 'readings.index', 'access' => self::STAFF],
+                ['label' => 'nav.utilities_list', 'route' => 'utilities.index', 'access' => self::STAFF],
+                ['label' => 'nav.meters', 'route' => 'meters.index', 'access' => self::STAFF],
+                ['label' => 'nav.tariffs', 'route' => 'tariffs.index', 'access' => self::STAFF],
             ],
         ],
         ['label' => 'nav.reports', 'route' => 'reports.index', 'access' => self::STAFF],

@@ -43,6 +43,14 @@ class ChargeHeadList extends Component
 
     public bool $isActive = true;
 
+    /**
+     * Unit type ids this head is restricted to. **Empty means every unit** — the same
+     * convention the pivot table and ChargeCalculator use.
+     *
+     * @var list<int>
+     */
+    public array $unitTypeIds = [];
+
     private function building(): ?Building
     {
         return app(CurrentBuilding::class)->get();
@@ -66,6 +74,11 @@ class ChargeHeadList extends Component
             'amount' => ['required', 'numeric', 'min:0'],
             'sortOrder' => ['required', 'integer', 'min:0', 'max:999'],
             'isActive' => ['boolean'],
+            'unitTypeIds' => ['array'],
+            'unitTypeIds.*' => [
+                'integer',
+                Rule::exists('unit_types', 'id')->where('building_id', app(CurrentBuilding::class)->id()),
+            ],
         ];
     }
 
@@ -81,6 +94,7 @@ class ChargeHeadList extends Component
         $this->amount = $record === null ? '' : (string) $record->amount;
         $this->sortOrder = $record->sort_order ?? 0;
         $this->isActive = $record->is_active ?? true;
+        $this->unitTypeIds = $record === null ? [] : $record->unitTypes()->pluck('unit_types.id')->all();
     }
 
     protected function findRecord(int $id): ChargeHead
@@ -107,6 +121,9 @@ class ChargeHeadList extends Component
             'sort_order' => $this->sortOrder,
             'is_active' => $this->isActive,
         ])->save();
+
+        // An empty set is meaningful, not a no-op: it restores "applies to every unit".
+        $head->unitTypes()->sync($this->unitTypeIds);
 
         session()->flash('status', __('masters.saved'));
 
@@ -154,7 +171,10 @@ class ChargeHeadList extends Component
 
         return view('livewire.masters.charge-head-list', [
             'building' => $building,
-            'heads' => $building === null ? collect() : $building->chargeHeads()->with('account')->get(),
+            'heads' => $building === null ? collect() : $building->chargeHeads()->with(['account', 'unitTypes'])->get(),
+            'unitTypes' => $building === null
+                ? collect()
+                : $building->unitTypes()->orderBy('sort_order')->orderBy('name')->get(),
             'preview' => $building === null ? collect() : $this->preview($building, $charges),
             'bases' => ChargeBasis::cases(),
             'incomeAccounts' => Account::where('is_postable', true)

@@ -7,18 +7,18 @@ use App\Enums\BillStatus;
 use App\Enums\PaymentMethod;
 use App\Models\Building;
 use App\Models\Flat;
-use App\Models\JournalLine;
 use App\Services\Billing\GenerateMonthlyBills;
 use App\Services\Billing\RecordPayment;
 use App\Services\JournalService;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Tests\Concerns\AssertsLedger;
 use Tests\TestCase;
 
 class BillingCycleTest extends TestCase
 {
-    use RefreshDatabase;
+    use AssertsLedger, RefreshDatabase;
 
     private JournalService $journal;
 
@@ -86,20 +86,5 @@ class BillingCycleTest extends TestCase
             $this->journal->account(AccountCode::AdvanceFromOwners), $flat->id
         ));
         $this->assertLedgerIsBalanced();
-    }
-
-    /**
-     * The system-wide double-entry invariant: total debits equal total credits.
-     */
-    private function assertLedgerIsBalanced(): void
-    {
-        $debits = (string) (JournalLine::sum('debit') ?: '0');
-        $credits = (string) (JournalLine::sum('credit') ?: '0');
-
-        $this->assertSame(
-            0,
-            bccomp($debits, $credits, 2),
-            "Ledger is out of balance: debits {$debits} vs credits {$credits}."
-        );
     }
 }

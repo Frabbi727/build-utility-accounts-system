@@ -6,7 +6,6 @@ use App\Enums\AccountCode;
 use App\Enums\PaymentMethod;
 use App\Enums\VendorBillStatus;
 use App\Exceptions\InvalidJournalEntryException;
-use App\Models\JournalLine;
 use App\Models\Vendor;
 use App\Models\VendorBill;
 use App\Services\Expenses\PayVendorBill;
@@ -15,11 +14,12 @@ use App\Services\JournalService;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Tests\Concerns\AssertsLedger;
 use Tests\TestCase;
 
 class VendorBillTest extends TestCase
 {
-    use RefreshDatabase;
+    use AssertsLedger, RefreshDatabase;
 
     private JournalService $journal;
 
@@ -154,13 +154,5 @@ class VendorBillTest extends TestCase
 
         $this->assertSame($bill->id, $bill->journalEntries()->firstOrFail()->source_id);
         $this->assertSame($payment->id, $payment->journalEntries()->firstOrFail()->source_id);
-    }
-
-    private function assertLedgerIsBalanced(): void
-    {
-        $debits = (string) (JournalLine::sum('debit') ?: '0');
-        $credits = (string) (JournalLine::sum('credit') ?: '0');
-
-        $this->assertSame(0, bccomp($debits, $credits, 2), "Ledger out of balance: {$debits} vs {$credits}.");
     }
 }

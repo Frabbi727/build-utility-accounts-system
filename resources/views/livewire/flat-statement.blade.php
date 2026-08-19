@@ -52,4 +52,23 @@
             </tbody>
         </table>
     </div>
+
+    @if ($bills->isNotEmpty())
+        <div class="mt-8">
+            <h2 class="mb-3 text-sm font-semibold text-slate-900">{{ __('reports.bill_breakdown') }}</h2>
+
+            <div class="space-y-4">
+                @foreach ($bills as $bill)
+                    <div class="rounded-lg border border-slate-200 bg-white p-4">
+                        <div class="mb-2 flex items-baseline justify-between">
+                            <p class="font-medium text-slate-900">{{ $bill->bill_no }}</p>
+                            <p class="text-sm text-slate-500">{{ $bill->billing_month->format('F Y') }}</p>
+                        </div>
+
+                        <x-bill-lines :bill="$bill" />
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 </div>

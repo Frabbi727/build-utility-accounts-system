@@ -1,0 +1,52 @@
+<?php
+
+return [
+    'distributions' => 'Shared costs',
+    'distribution' => 'Shared cost',
+    'new_distribution' => 'New shared cost',
+    'edit_distribution' => 'Edit shared cost',
+    'help' => 'Spread a one-off cost — a generator repair, road work, a bonus — across the units.',
+    'no_distributions' => 'No shared costs yet',
+
+    'title' => 'Title',
+    'description' => 'Description',
+    'total_amount' => 'Total amount',
+    'recovery_account' => 'Recovery account',
+    'recovery_account_hint' => 'The income account this recovery is credited to — not the expense account the building was billed on.',
+    'source_expense' => 'Recovers expense',
+    'source_expense_hint' => 'Optional. Records which expense this recovers, so reports can show spent against recovered.',
+    'basis' => 'Split by',
+    'utility' => 'Measured utility',
+    'months' => 'Spread over months',
+    'months_hint' => 'More than one creates a separate shared cost per month, each with its own lines.',
+
+    'basis_equal' => 'Equally',
+    'basis_per_sqft' => 'By floor area',
+    'basis_by_consumption' => 'By consumption',
+    'basis_help_equal' => 'Every unit pays the same.',
+    'basis_help_per_sqft' => 'A larger unit pays proportionally more.',
+    'basis_help_by_consumption' => 'Weighted by what each unit consumed of the chosen utility that month.',
+
+    'status_draft' => 'Draft',
+    'status_approved' => 'Approved',
+    'lines' => 'Per-unit split',
+    'weight' => 'Weight',
+    'amount' => 'Amount',
+    'recalculate' => 'Recalculate',
+    'approve' => 'Approve',
+    'revert' => 'Back to draft',
+    'allocated' => 'Allocated',
+    'unallocated_warning' => 'The lines add up to :allocated, not :total.',
+    'lines_frozen' => 'These lines are frozen. Later changes to the units will not move them.',
+    'edit_lines_hint' => 'Adjust any amount before approving. The total must still match.',
+
+    'approved_notice' => 'Approved. Nothing is posted to the ledger until the bill is generated.',
+    'billed' => 'Billed',
+    'bill_line' => ':title (:month)',
+
+    'error_no_units' => 'There are no active units to spread this cost across.',
+    'error_zero_weight' => 'Every unit weighs nothing, so there is no basis on which to divide the cost.',
+    'error_readings_missing' => 'Some meter readings for this month are not confirmed yet. Confirm them first, or the split would be computed against a partial denominator.',
+    'error_already_approved' => 'This shared cost is approved and its lines are frozen.',
+    'error_already_billed' => 'This shared cost has already reached a bill and can no longer be changed.',
+];

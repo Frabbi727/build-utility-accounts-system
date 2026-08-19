@@ -10,6 +10,7 @@ return [
     'debit' => 'Debit',
     'credit' => 'Credit',
     'total' => 'Total',
+    'bill_breakdown' => 'Bill breakdown',
     'balanced' => 'Debits equal credits — the ledger is balanced.',
     'out_of_balance' => 'The ledger is out of balance. Investigate immediately.',
     'no_entries' => 'No entries yet.',

@@ -15,16 +15,27 @@ use Illuminate\Support\Collection;
  * All arithmetic goes through bc* on decimal strings — never floats.
  *
  * Equal-share rounding: an equal-share head's amount is the building's monthly
- * total, split across active flats. bcdiv truncates, so the split usually leaves a
- * few paisa unallocated. That remainder is added to the lowest-id active flat, which
- * makes the split deterministic and keeps the heads summing to the contract total
- * exactly. A flat's equal-share amount therefore depends on how many flats are
- * active when the bill is generated, which is inherent to equal-share billing.
+ * total, split across the active flats the head applies to. bcdiv truncates, so the
+ * split usually leaves a few paisa unallocated. That remainder is added to the
+ * lowest-id of those flats, which makes the split deterministic and keeps the head
+ * summing to the contract total exactly. A flat's equal-share amount therefore
+ * depends on how many flats are active when the bill is generated, which is inherent
+ * to equal-share billing.
+ *
+ * Applicability: a head restricted to certain unit types is billed only to units of
+ * those types, and its equal-share divisor counts only those units. Two heads with
+ * different restrictions therefore have different divisors *and* different remainder
+ * absorbers, which is why the context below is cached per head rather than per
+ * building. A head with no restriction applies to every unit.
  */
 class ChargeCalculator
 {
     /**
-     * Per-building active flat count and lowest active flat id, resolved once.
+     * Active flat count and lowest active flat id **per charge head**, resolved once.
+     *
+     * Keyed by head, not by building: a head restricted to shops divides across the
+     * shops, so it has its own divisor and its own remainder absorber. Keying this by
+     * building would give every head the first head's answer.
      *
      * @var array<int, array{count: int, first_id: int|null}>
      */
@@ -42,7 +53,11 @@ class ChargeCalculator
         $overrides = $this->overridesFor($flat);
         $lines = [];
 
-        foreach ($building->chargeHeads()->where('is_active', true)->get() as $head) {
+        foreach ($building->chargeHeads()->where('is_active', true)->with('unitTypes')->get() as $head) {
+            if (! $head->appliesTo($flat)) {
+                continue;
+            }
+
             $override = $overrides->get($head->id);
 
             if ($override?->is_exempt === true) {
@@ -91,7 +106,7 @@ class ChargeCalculator
 
     private function equalShare(ChargeHead $head, Flat $flat, Building $building): string
     {
-        $context = $this->contextFor($building);
+        $context = $this->contextFor($head, $building);
 
         if ($context['count'] === 0) {
             return '0.00';
@@ -111,13 +126,29 @@ class ChargeCalculator
     }
 
     /**
+     * The active flats this head is shared across, counted once per head.
+     *
      * @return array{count: int, first_id: int|null}
      */
-    private function contextFor(Building $building): array
+    private function contextFor(ChargeHead $head, Building $building): array
     {
-        return $this->context[$building->id] ??= [
-            'count' => $building->activeFlats()->count(),
-            'first_id' => $building->activeFlats()->min('id'),
+        if (isset($this->context[$head->id])) {
+            return $this->context[$head->id];
+        }
+
+        $unitTypeIds = $head->relationLoaded('unitTypes')
+            ? $head->unitTypes->modelKeys()
+            : $head->unitTypes()->pluck('unit_types.id')->all();
+
+        $flats = $building->activeFlats();
+
+        if ($unitTypeIds !== []) {
+            $flats->whereIn('unit_type_id', $unitTypeIds);
+        }
+
+        return $this->context[$head->id] = [
+            'count' => (clone $flats)->count(),
+            'first_id' => (clone $flats)->min('id'),
         ];
     }
 
