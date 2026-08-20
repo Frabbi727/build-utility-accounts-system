@@ -9,6 +9,7 @@ use App\Models\Owner;
 use App\Models\ServiceChargeBill;
 use App\Models\User;
 use App\Services\Billing\GenerateMonthlyBills;
+use App\Support\CurrentBuilding;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -133,5 +134,55 @@ class BillPrintTest extends TestCase
             ->get(route('bills.print', $this->bill))
             ->assertSuccessful()
             ->assertSee(__('billing.total_payable_now', [], 'bn'));
+    }
+
+    public function test_it_prints_every_bill_for_the_month_in_the_current_building(): void
+    {
+        $second = Flat::factory()->for($this->building)->create(['number' => 'B-1']);
+
+        $other = Building::factory()->flatRate('1500.00')->create();
+        Flat::factory()->for($other)->create(['number' => 'Z-9']);
+        app(GenerateMonthlyBills::class)->handle($other, Carbon::parse('2026-06-01'));
+
+        // The second flat was created after June's run, so bill it for June too.
+        app(GenerateMonthlyBills::class)->handle($this->building, Carbon::parse('2026-06-01'));
+
+        app(CurrentBuilding::class)->set($this->building->id);
+
+        $this->actingAs($this->userWithRole(Role::Accountant))
+            ->get(route('bills.print-month', ['month' => '2026-06']))
+            ->assertSuccessful()
+            ->assertSee('A-4')
+            ->assertSee($second->number)
+            ->assertDontSee('Z-9');
+    }
+
+    public function test_a_month_with_no_bills_says_so(): void
+    {
+        app(CurrentBuilding::class)->set($this->building->id);
+
+        $this->actingAs($this->userWithRole(Role::Accountant))
+            ->get(route('bills.print-month', ['month' => '2026-01']))
+            ->assertSuccessful()
+            ->assertSee(__('billing.no_bills_for_month'));
+    }
+
+    public function test_a_malformed_month_is_rejected(): void
+    {
+        app(CurrentBuilding::class)->set($this->building->id);
+
+        $this->actingAs($this->userWithRole(Role::Accountant))
+            ->get(route('bills.print-month', ['month' => 'June']))
+            ->assertSessionHasErrors('month');
+    }
+
+    public function test_an_owner_may_not_batch_print(): void
+    {
+        $user = $this->userWithRole(Role::Owner);
+        Owner::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user)
+            ->get(route('bills.print-month', ['month' => '2026-06']))
+            ->assertForbidden();
     }
 }

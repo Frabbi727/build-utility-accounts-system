@@ -114,6 +114,7 @@ Route::middleware('auth')->group(function (): void {
         Route::get('reports/income-expenditure', IncomeExpenditure::class)->name('reports.income-expenditure');
         Route::get('reports/balance-sheet', BalanceSheet::class)->name('reports.balance-sheet');
         Route::get('reports/trial-balance', TrialBalance::class)->name('reports.trial-balance');
+        Route::get('billing/bills/print', [BillController::class, 'month'])->name('bills.print-month');
     });
 
     Route::middleware('role:admin')->group(function (): void {

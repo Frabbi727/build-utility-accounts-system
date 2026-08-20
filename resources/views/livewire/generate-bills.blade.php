@@ -21,10 +21,18 @@
             @error('month') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
         </div>
 
-        <button wire:click="askGenerate" wire:loading.attr="disabled"
-                class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50">
-            {{ __('billing.generate') }}
-        </button>
+        <div class="flex items-center gap-3">
+            <button wire:click="askGenerate" wire:loading.attr="disabled"
+                    class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50">
+                {{ __('billing.generate') }}
+            </button>
+
+            @if ($month !== '')
+                <x-ui.button variant="secondary" :href="route('bills.print-month', ['month' => $month])">
+                    {{ __('billing.print_all_bills') }}
+                </x-ui.button>
+            @endif
+        </div>
     </div>
 
     @if ($this->isConfirming('generate'))
