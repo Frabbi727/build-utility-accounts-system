@@ -10,6 +10,8 @@
         </x-slot:actions>
     </x-ui.page-header>
 
+    @include('livewire.partials.crud-feedback')
+
     @if ($building === null)
         <x-ui.empty-state :title="__('masters.no_building')" :description="__('masters.no_building_help')">
             <x-slot:actions>

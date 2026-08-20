@@ -107,8 +107,6 @@ class AccountList extends Component
             'is_active' => $reserved ? true : $this->isActive,
         ])->save();
 
-        session()->flash('status', __('masters.saved'));
-
         return $account;
     }
 
@@ -133,7 +131,7 @@ class AccountList extends Component
     protected function deleteRecord(Model $record): bool
     {
         if ($record->journalLines()->exists()) {
-            session()->flash('error', __('accounting.delete_has_postings'));
+            $this->notifyError(__('accounting.delete_has_postings'));
 
             return false;
         }

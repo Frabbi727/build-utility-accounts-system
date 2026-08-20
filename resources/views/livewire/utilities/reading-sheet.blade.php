@@ -3,11 +3,13 @@
         <x-slot:actions>
             @if ($pendingCount > 0)
                 @can('create', App\Models\MeterReading::class)
-                    <x-ui.button wire:click="confirmAll">{{ __('utilities.confirm_all') }}</x-ui.button>
+                    <x-ui.button wire:click="askConfirm('confirmAll')">{{ __('utilities.confirm_all') }}</x-ui.button>
                 @endcan
             @endif
         </x-slot:actions>
     </x-ui.page-header>
+
+    <x-ui.notice :message="$notice" :type="$noticeType" />
 
     <div class="grid max-w-xl gap-4 sm:grid-cols-2">
         <x-form.field :label="__('billing.month')" name="month">
@@ -95,7 +97,7 @@
                                 <div class="flex justify-end gap-3">
                                     @if ($reading->isConfirmed())
                                         @can('update', $reading)
-                                            <button type="button" wire:click="revert({{ $reading->id }})"
+                                            <button type="button" wire:click="askConfirm('revert', {{ $reading->id }})"
                                                     class="text-sm font-medium text-slate-600 hover:text-slate-900">{{ __('utilities.revert_reading') }}</button>
                                         @endcan
                                     @else
@@ -121,5 +123,30 @@
                 </div>
             @endcan
         </form>
+    @endif
+
+    @if ($this->isConfirming('confirmAll'))
+        <x-ui.confirm-dialog
+            :title="__('utilities.confirm_all_title')"
+            :message="__('utilities.confirm_all_warning')"
+            :confirm-label="__('utilities.confirm_all')"
+            variant="primary"
+        >
+            <div class="space-y-1">
+                <div>{{ __('billing.month') }}:
+                    <span class="font-medium">{{ \Illuminate\Support\Carbon::createFromFormat('Y-m', $month)->translatedFormat('F Y') }}</span>
+                </div>
+                <div>{{ __('utilities.readings_to_confirm') }}:
+                    <span class="font-medium tabular-nums">{{ $this->unconfirmedCount() }}</span>
+                </div>
+            </div>
+        </x-ui.confirm-dialog>
+    @endif
+
+    @if ($this->isConfirming('revert'))
+        <x-ui.confirm-dialog
+            :title="__('utilities.revert_title')"
+            :message="__('utilities.revert_warning')"
+        />
     @endif
 </div>

@@ -41,6 +41,12 @@ return [
     'edit_lines_hint' => 'Adjust any amount before approving. The total must still match.',
 
     'approved_notice' => 'Approved. Nothing is posted to the ledger until the bill is generated.',
+    'reverted_notice' => 'Reverted to draft. The split can be edited again.',
+    'flats_affected' => 'Units affected',
+    'approve_title' => 'Approve this shared cost?',
+    'approve_warning' => 'The split below is frozen and will ride the next bill run for each unit. Later changes to the units will not move it.',
+    'revert_title' => 'Send this back to draft?',
+    'revert_warning' => 'The frozen split is released and can be recalculated. Anything already billed from it stays on the bill.',
     'billed' => 'Billed',
     'bill_line' => ':title (:month)',
 

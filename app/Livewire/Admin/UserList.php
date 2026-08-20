@@ -92,8 +92,6 @@ class UserList extends Component
         // One role per login keeps the access rules answerable at a glance.
         $user->syncRoles([$this->role]);
 
-        session()->flash('status', __('masters.saved'));
-
         return $user;
     }
 

@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Accounting;
 
-use App\Exceptions\InvalidJournalEntryException;
+use App\Livewire\Concerns\PostsToLedger;
+use App\Livewire\Concerns\WithConfirmation;
+use App\Livewire\Concerns\WithNotices;
 use App\Models\Account;
 use App\Models\Flat;
 use App\Services\Accounting\PostOpeningBalances;
@@ -17,6 +19,10 @@ use Livewire\Component;
  */
 class OpeningBalances extends Component
 {
+    use PostsToLedger;
+    use WithConfirmation;
+    use WithNotices;
+
     public string $asOf = '';
 
     public string $cash = '0';
@@ -53,40 +59,84 @@ class OpeningBalances extends Component
             : $building->activeFlats()->orderBy('number')->get();
     }
 
-    public function post(PostOpeningBalances $poster): void
+    /**
+     * @return list<string>
+     */
+    protected function confirmableActions(): array
+    {
+        return ['post'];
+    }
+
+    public function askPost(): void
     {
         $this->authorize('create', Account::class);
 
-        $this->validate([
+        $this->validate($this->rules());
+        $this->clearNotice();
+
+        $this->askConfirm('post');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function rules(): array
+    {
+        return [
             'asOf' => ['required', 'date'],
             'cash' => ['required', 'numeric', 'min:0'],
             'bank' => ['required', 'numeric', 'min:0'],
             'payables' => ['required', 'numeric', 'min:0'],
             'deposits' => ['required', 'numeric', 'min:0'],
             'flatDues.*' => ['nullable', 'numeric', 'min:0'],
-        ]);
+        ];
+    }
+
+    public function post(): void
+    {
+        $this->authorize('create', Account::class);
+
+        $this->validate($this->rules());
+
+        $poster = app(PostOpeningBalances::class);
+        $totals = $this->totals();
+
+        // Both of the service's InvalidJournalEntryException cases, checked here so the
+        // operator gets the reason rather than the ledger's generic complaint.
+        if ($poster->alreadyPosted()) {
+            $this->addError('cash', __('accounting.already_posted'));
+
+            return;
+        }
+
+        if (bccomp($totals['debits'], '0', 2) === 0 && bccomp($totals['credits'], '0', 2) === 0) {
+            $this->addError('cash', __('accounting.nothing_to_post'));
+
+            return;
+        }
 
         $dues = collect($this->flatDues)
             ->map(fn (?string $amount): string => trim((string) $amount) === '' ? '0' : $amount)
             ->filter(fn (string $amount): bool => bccomp($amount, '0', 2) > 0)
             ->all();
 
-        try {
-            $entry = $poster->handle(
+        $entry = $this->postGuarded(
+            fn () => $poster->handle(
                 Carbon::parse($this->asOf),
                 $this->cash,
                 $this->bank,
                 $dues,
                 $this->payables,
                 $this->deposits,
-            );
-        } catch (InvalidJournalEntryException) {
-            $this->addError('cash', __('accounting.nothing_to_post'));
+            ),
+            'asOf',
+        );
 
+        if ($entry === null) {
             return;
         }
 
-        session()->flash('status', __('accounting.opening_posted', ['ref' => $entry->ref_no]));
+        $this->notify(__('accounting.opening_posted', ['ref' => $entry->ref_no]));
     }
 
     /**

@@ -4,6 +4,9 @@ namespace App\Livewire;
 
 use App\Enums\DistributionStatus;
 use App\Enums\ReadingStatus;
+use App\Livewire\Concerns\PostsToLedger;
+use App\Livewire\Concerns\WithConfirmation;
+use App\Livewire\Concerns\WithNotices;
 use App\Models\Building;
 use App\Models\CostDistribution;
 use App\Models\Meter;
@@ -20,11 +23,15 @@ use Livewire\Component;
  * (flat_id, billing_month) and generation skips flats already billed, so anything left
  * unconfirmed or unapproved will not join this month's bill — it rides the next one.
  *
- * That is recoverable but confusing, so the screen says what is about to be left behind
- * before the operator commits.
+ * That is recoverable but confusing, so the confirmation dialog states exactly what is
+ * about to be left behind before the operator commits.
  */
 class GenerateBills extends Component
 {
+    use PostsToLedger;
+    use WithConfirmation;
+    use WithNotices;
+
     public ?int $buildingId = null;
 
     public string $month = '';
@@ -35,21 +42,63 @@ class GenerateBills extends Component
         $this->month = now()->format('Y-m');
     }
 
-    public function generate(GenerateMonthlyBills $generator): void
+    /**
+     * @return list<string>
+     */
+    protected function confirmableActions(): array
+    {
+        return ['generate'];
+    }
+
+    /**
+     * Validate before asking: a dialog summarising an invalid month helps nobody.
+     */
+    public function askGenerate(): void
     {
         $this->authorize('create', ServiceChargeBill::class);
 
-        $this->validate([
-            'buildingId' => ['required', 'integer', 'exists:buildings,id'],
-            'month' => ['required', 'date_format:Y-m'],
-        ]);
+        $this->validate($this->rules());
+        $this->clearNotice();
+
+        $this->askConfirm('generate');
+    }
+
+    /**
+     * Resolved from the container rather than method-injected: the confirmation dialog
+     * calls this through runConfirmed(), which is a plain PHP call with no injection.
+     */
+    public function generate(): void
+    {
+        $this->authorize('create', ServiceChargeBill::class);
+
+        $this->validate($this->rules());
 
         $building = Building::findOrFail($this->buildingId);
-        $bills = $generator->handle($building, Carbon::createFromFormat('Y-m', $this->month)->startOfMonth());
+        $month = Carbon::createFromFormat('Y-m', $this->month)->startOfMonth();
 
-        session()->flash('status', $bills->isEmpty()
+        $bills = $this->postGuarded(
+            fn () => app(GenerateMonthlyBills::class)->handle($building, $month),
+            'month',
+        );
+
+        if ($bills === null) {
+            return;
+        }
+
+        $this->notify($bills->isEmpty()
             ? __('billing.nothing_to_generate')
             : __('billing.bills_generated', ['count' => $bills->count()]));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function rules(): array
+    {
+        return [
+            'buildingId' => ['required', 'integer', 'exists:buildings,id'],
+            'month' => ['required', 'date_format:Y-m'],
+        ];
     }
 
     /**
@@ -77,6 +126,30 @@ class GenerateBills extends Component
                 ->where('status', DistributionStatus::Draft)
                 ->count(),
         ];
+    }
+
+    /**
+     * How many flats this run would actually bill — those active and not already billed.
+     */
+    public function flatsToBill(): int
+    {
+        if ($this->buildingId === null || ! $this->isValidMonth()) {
+            return 0;
+        }
+
+        $building = Building::find($this->buildingId);
+
+        if ($building === null) {
+            return 0;
+        }
+
+        $month = Carbon::createFromFormat('Y-m', $this->month)->startOfMonth();
+
+        $alreadyBilled = ServiceChargeBill::whereIn('flat_id', $building->flats()->select('id'))
+            ->whereDate('billing_month', $month)
+            ->pluck('flat_id');
+
+        return $building->activeFlats()->whereNotIn('flats.id', $alreadyBilled)->count();
     }
 
     private function isValidMonth(): bool

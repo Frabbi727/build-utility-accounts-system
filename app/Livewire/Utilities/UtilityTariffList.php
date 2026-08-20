@@ -160,8 +160,6 @@ class UtilityTariffList extends Component
 
             $this->closePreviousTariff($tariff);
 
-            session()->flash('status', __('masters.saved'));
-
             return $tariff;
         });
     }

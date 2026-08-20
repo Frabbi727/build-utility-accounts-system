@@ -4,6 +4,8 @@ namespace App\Livewire\Utilities;
 
 use App\Enums\ReadingStatus;
 use App\Exceptions\ReadingNotConfirmableException;
+use App\Livewire\Concerns\WithConfirmation;
+use App\Livewire\Concerns\WithNotices;
 use App\Models\Meter;
 use App\Models\MeterReading;
 use App\Models\Utility;
@@ -30,6 +32,9 @@ use Livewire\Component;
  */
 class ReadingSheet extends Component
 {
+    use WithConfirmation;
+    use WithNotices;
+
     public string $month = '';
 
     public ?int $utilityId = null;
@@ -188,7 +193,7 @@ class ReadingSheet extends Component
         });
 
         if ($saved > 0) {
-            session()->flash('status', __('utilities.readings_saved'));
+            $this->notify(__('utilities.readings_saved'));
         }
 
         $this->loadRows();
@@ -207,7 +212,24 @@ class ReadingSheet extends Component
             return;
         }
 
-        session()->flash('status', __('utilities.readings_confirmed', ['count' => 1]));
+        $this->notify(__('utilities.readings_confirmed', ['count' => 1]));
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function confirmableActions(): array
+    {
+        return ['confirmAll', 'revert'];
+    }
+
+    /**
+     * How many readings confirmAll would settle — the number the dialog puts in front of
+     * the operator before they confirm a whole month in one click.
+     */
+    public function unconfirmedCount(): int
+    {
+        return $this->readingsForMonth()->reject(fn (MeterReading $r): bool => $r->isConfirmed())->count();
     }
 
     public function confirmAll(): void
@@ -236,7 +258,7 @@ class ReadingSheet extends Component
         }
 
         if ($confirmed > 0) {
-            session()->flash('status', __('utilities.readings_confirmed', ['count' => $confirmed]));
+            $this->notify(__('utilities.readings_confirmed', ['count' => $confirmed]));
         }
     }
 

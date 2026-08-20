@@ -7,6 +7,8 @@
         </x-slot:actions>
     </x-ui.page-header>
 
+    @include('livewire.partials.crud-feedback')
+
     <div class="flex justify-end">
         <input type="search" wire:model.live.debounce.300ms="search"
                placeholder="{{ __('masters.search') }}" class="w-full sm:w-64">
@@ -43,7 +45,7 @@
                                     class="text-sm font-medium text-slate-600 hover:text-slate-900">{{ __('masters.edit') }}</button>
                         @endcan
                         @can('delete', $user)
-                            <button type="button" wire:click="delete({{ $user->id }})"
+                            <button type="button" wire:click="confirmDelete({{ $user->id }})"
                                     class="text-sm font-medium text-red-600 hover:text-red-800">{{ __('masters.delete') }}</button>
                         @else
                             <span class="text-xs text-slate-400">{{ __('admin.cannot_delete_self') }}</span>

@@ -1,5 +1,7 @@
-<div>
+<div class="space-y-6">
     <x-ui.page-header :title="__('accounting.periods')" :description="__('accounting.periods_help')" />
+
+    <x-ui.notice :message="$notice" :type="$noticeType" />
 
     @if ($periods->isEmpty())
         <x-ui.empty-state :title="__('accounting.no_periods')" :description="__('accounting.no_periods_help')" />
@@ -28,10 +30,10 @@
                     <td class="px-4 py-2 text-right">
                         @can('update', $period)
                             @if ($period->isLocked())
-                                <button type="button" wire:click="unlock({{ $period->id }})"
-                                        class="text-sm font-medium text-slate-600 hover:text-slate-900">{{ __('accounting.unlock') }}</button>
+                                <button type="button" wire:click="askConfirm('unlock', {{ $period->id }})"
+                                        class="text-sm font-medium text-red-600 hover:text-red-800">{{ __('accounting.unlock') }}</button>
                             @else
-                                <button type="button" wire:click="lock({{ $period->id }})"
+                                <button type="button" wire:click="askConfirm('lock', {{ $period->id }})"
                                         class="text-sm font-medium text-slate-600 hover:text-slate-900">{{ __('accounting.lock') }}</button>
                             @endif
                         @endcan
@@ -39,5 +41,16 @@
                 </tr>
             @endforeach
         </x-ui.table>
+    @endif
+
+    @php($pending = $this->pendingPeriod())
+
+    @if ($pending !== null)
+        <x-ui.confirm-dialog :title="$pending['title']" :message="$pending['message']">
+            <div class="space-y-1">
+                <div>{{ __('accounting.period') }}: <span class="font-medium">{{ $pending['period'] }}</span></div>
+                <div>{{ __('accounting.entries') }}: <span class="font-medium tabular-nums">{{ $pending['entries'] }}</span></div>
+            </div>
+        </x-ui.confirm-dialog>
     @endif
 </div>

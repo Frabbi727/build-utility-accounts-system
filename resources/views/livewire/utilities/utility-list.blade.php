@@ -7,6 +7,8 @@
         </x-slot:actions>
     </x-ui.page-header>
 
+    @include('livewire.partials.crud-feedback')
+
     @if ($utilities->isEmpty())
         <x-ui.empty-state :title="__('utilities.no_utilities')" :description="__('utilities.no_utilities_description')">
             <x-slot:actions>
@@ -50,7 +52,7 @@
                                         class="text-sm font-medium text-slate-600 hover:text-slate-900">{{ __('masters.edit') }}</button>
                             @endcan
                             @can('delete', $utility)
-                                <button type="button" wire:click="delete({{ $utility->id }})"
+                                <button type="button" wire:click="confirmDelete({{ $utility->id }})"
                                         class="text-sm font-medium text-red-600 hover:text-red-800">{{ __('masters.delete') }}</button>
                             @endcan
                         </div>

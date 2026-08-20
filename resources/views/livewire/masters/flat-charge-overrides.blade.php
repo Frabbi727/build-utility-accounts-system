@@ -6,6 +6,8 @@
         </x-slot:actions>
     </x-ui.page-header>
 
+    <x-ui.notice :message="$notice" :type="$noticeType" />
+
     @if ($heads->isEmpty())
         <x-ui.empty-state :title="__('masters.no_charge_heads')" :description="__('masters.no_charge_heads_help')">
             <x-slot:actions>

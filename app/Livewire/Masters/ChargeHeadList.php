@@ -125,8 +125,6 @@ class ChargeHeadList extends Component
         // An empty set is meaningful, not a no-op: it restores "applies to every unit".
         $head->unitTypes()->sync($this->unitTypeIds);
 
-        session()->flash('status', __('masters.saved'));
-
         return $head;
     }
 

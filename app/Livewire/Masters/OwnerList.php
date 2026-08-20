@@ -89,8 +89,6 @@ class OwnerList extends Component
             'user_id' => $this->userId,
         ])->save();
 
-        session()->flash('status', __('masters.saved'));
-
         return $owner;
     }
 

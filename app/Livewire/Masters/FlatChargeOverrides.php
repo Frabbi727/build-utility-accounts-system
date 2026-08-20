@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Masters;
 
+use App\Livewire\Concerns\WithNotices;
 use App\Models\ChargeHead;
 use App\Models\Flat;
 use App\Models\FlatChargeOverride;
@@ -22,6 +23,8 @@ use Livewire\Component;
  */
 class FlatChargeOverrides extends Component
 {
+    use WithNotices;
+
     public Flat $flat;
 
     /**
@@ -101,7 +104,7 @@ class FlatChargeOverrides extends Component
             }
         });
 
-        session()->flash('status', __('masters.saved'));
+        $this->notify(__('masters.saved'));
     }
 
     public function render(ChargeCalculator $charges): View

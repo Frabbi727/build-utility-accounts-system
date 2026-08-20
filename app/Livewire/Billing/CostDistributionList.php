@@ -6,6 +6,7 @@ use App\Enums\AccountType;
 use App\Enums\DistributionBasis;
 use App\Enums\DistributionStatus;
 use App\Exceptions\InvalidDistributionException;
+use App\Livewire\Concerns\WithConfirmation;
 use App\Livewire\Concerns\WithCrudModal;
 use App\Models\Account;
 use App\Models\CostDistribution;
@@ -34,7 +35,16 @@ use Livewire\Component;
  */
 class CostDistributionList extends Component
 {
+    use WithConfirmation;
     use WithCrudModal;
+
+    /**
+     * @return list<string>
+     */
+    protected function confirmableActions(): array
+    {
+        return ['approve', 'revert'];
+    }
 
     public string $title = '';
 
@@ -138,8 +148,6 @@ class CostDistributionList extends Component
                 // The basis or the amount may have moved, so the draft split is stale.
                 $distribution->lines()->delete();
 
-                session()->flash('status', __('masters.saved'));
-
                 return $distribution;
             }
 
@@ -155,8 +163,6 @@ class CostDistributionList extends Component
 
                 $first ??= $distribution;
             }
-
-            session()->flash('status', __('masters.saved'));
 
             return $first;
         });
@@ -251,8 +257,6 @@ class CostDistributionList extends Component
                 }
             }
         });
-
-        session()->flash('status', __('masters.saved'));
         $this->loadLineAmounts($distribution->refresh());
     }
 
@@ -269,7 +273,7 @@ class CostDistributionList extends Component
             return;
         }
 
-        session()->flash('status', __('distributions.approved_notice'));
+        $this->notify(__('distributions.approved_notice'));
         $this->viewingId = $id;
     }
 
@@ -282,7 +286,37 @@ class CostDistributionList extends Component
             app(ApproveDistribution::class)->revert($distribution);
         } catch (InvalidDistributionException $e) {
             $this->addError('lines', $e->getMessage());
+
+            return;
         }
+
+        $this->notify(__('distributions.reverted_notice'));
+    }
+
+    /**
+     * The distribution awaiting an approve or revert, for the confirmation dialog.
+     *
+     * @return array{title: string, message: string, distribution: CostDistribution}|null
+     */
+    public function pendingDistribution(): ?array
+    {
+        if ($this->pendingConfirm === null || $this->pendingConfirm['id'] === null) {
+            return null;
+        }
+
+        $distribution = CostDistribution::withCount('lines')->find($this->pendingConfirm['id']);
+
+        if ($distribution === null) {
+            return null;
+        }
+
+        $isRevert = $this->pendingConfirm['action'] === 'revert';
+
+        return [
+            'title' => $isRevert ? __('distributions.revert_title') : __('distributions.approve_title'),
+            'message' => $isRevert ? __('distributions.revert_warning') : __('distributions.approve_warning'),
+            'distribution' => $distribution,
+        ];
     }
 
     private function loadLineAmounts(CostDistribution $distribution): void

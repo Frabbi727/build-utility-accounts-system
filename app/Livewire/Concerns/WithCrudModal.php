@@ -17,13 +17,21 @@ use Illuminate\Database\QueryException;
  *
  * Authorization stays with the component because each master has its own policy,
  * but the trait guarantees it is called — no action here mutates without asking.
+ *
+ * Deletes are two-step: the list calls confirmDelete(), the dialog calls delete().
+ * A screen describes its own record by overriding deleteConfirmation().
  */
 trait WithCrudModal
 {
+    use WithNotices;
+
     /** The record being edited, or null when the open form is a create form. */
     public ?int $editingId = null;
 
     public bool $showForm = false;
+
+    /** The record a delete has been asked for but not yet confirmed. */
+    public ?int $deletingId = null;
 
     /**
      * @return array<string, mixed>
@@ -45,6 +53,7 @@ trait WithCrudModal
     {
         $this->authorizeAction('create');
 
+        $this->clearNotice();
         $this->resetValidation();
         $this->editingId = null;
         $this->fillForm(null);
@@ -57,6 +66,7 @@ trait WithCrudModal
 
         $this->authorizeAction('update', $record);
 
+        $this->clearNotice();
         $this->resetValidation();
         $this->editingId = $record->getKey();
         $this->fillForm($record);
@@ -80,6 +90,73 @@ trait WithCrudModal
         $this->persist();
 
         $this->closeForm();
+        $this->notify(__('masters.saved'));
+    }
+
+    /**
+     * Step one of a delete: ask. Nothing is touched until delete() runs.
+     */
+    public function confirmDelete(int $id): void
+    {
+        $record = $this->findRecord($id);
+
+        $this->authorizeAction('delete', $record);
+
+        $this->clearNotice();
+        $this->deletingId = $record->getKey();
+    }
+
+    public function cancelDelete(): void
+    {
+        $this->deletingId = null;
+    }
+
+    /**
+     * What the confirmation dialog says about this record.
+     *
+     * Screens override this to describe what is really at stake — how many flats an owner
+     * holds, how many bills a vendor has — because "are you sure?" alone tells the operator
+     * nothing they did not already know.
+     *
+     * @return array{title: string, message: string, details: string|null}
+     */
+    protected function deleteConfirmation(Model $record): array
+    {
+        return [
+            'title' => __('confirmations.delete_title'),
+            'message' => __('confirmations.delete_message'),
+            'details' => $this->describeRecord($record),
+        ];
+    }
+
+    /**
+     * The dialog's contents for the record awaiting confirmation, or null when none is.
+     *
+     * @return array{title: string, message: string, details: string|null}|null
+     */
+    public function pendingDelete(): ?array
+    {
+        if ($this->deletingId === null) {
+            return null;
+        }
+
+        return $this->deleteConfirmation($this->findRecord($this->deletingId));
+    }
+
+    /**
+     * A short label for a record, used by the default confirmation.
+     */
+    protected function describeRecord(Model $record): ?string
+    {
+        foreach (['name', 'number', 'code', 'title', 'description'] as $attribute) {
+            $value = $record->getAttribute($attribute);
+
+            if (is_string($value) && $value !== '') {
+                return $value;
+            }
+        }
+
+        return null;
     }
 
     public function delete(int $id): void
@@ -88,17 +165,19 @@ trait WithCrudModal
 
         $this->authorizeAction('delete', $record);
 
+        $this->deletingId = null;
+
         try {
             $deleted = $this->deleteRecord($record);
         } catch (QueryException) {
             // A restricted foreign key: the record is in use, so it stays.
-            session()->flash('error', __('masters.delete_blocked'));
+            $this->notifyError(__('masters.delete_blocked'));
 
             return;
         }
 
         if ($deleted) {
-            session()->flash('status', __('masters.deleted'));
+            $this->notify(__('masters.deleted'));
         }
     }
 

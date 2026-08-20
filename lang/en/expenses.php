@@ -12,6 +12,10 @@ return [
     'spent_on' => 'Spent on',
     'save_expense' => 'Save expense',
     'expense_recorded' => 'Expense recorded — voucher :voucher.',
+    'expense_confirm_title' => 'Record this expense?',
+    'expense_confirm_message' => 'The expense is posted to the ledger and the money leaves the account below. Reversing it afterwards needs a void.',
+    'balance_after' => 'Balance after this',
+    'overdrawn_warning' => 'This takes the account below zero. Check the payment method and the amount before continuing.',
     'voucher' => 'Voucher',
     'no_expenses' => 'No expenses recorded yet.',
 

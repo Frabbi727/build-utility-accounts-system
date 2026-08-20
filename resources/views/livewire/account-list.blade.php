@@ -7,6 +7,8 @@
         </x-slot:actions>
     </x-ui.page-header>
 
+    @include('livewire.partials.crud-feedback')
+
     <x-ui.table>
         <x-slot:head>
             <th class="px-4 py-2">{{ __('accounting.code') }}</th>
@@ -54,7 +56,7 @@
                                         class="text-sm font-medium text-slate-600 hover:text-slate-900">{{ __('masters.edit') }}</button>
                             @endcan
                             @can('delete', $child)
-                                <button type="button" wire:click="delete({{ $child->id }})"
+                                <button type="button" wire:click="confirmDelete({{ $child->id }})"
                                         class="text-sm font-medium text-red-600 hover:text-red-800">{{ __('masters.delete') }}</button>
                             @endcan
                         </div>

@@ -4,6 +4,8 @@ namespace App\Livewire;
 
 use App\Enums\AccountType;
 use App\Enums\PaymentMethod;
+use App\Livewire\Concerns\PostsToLedger;
+use App\Livewire\Concerns\WithNotices;
 use App\Models\Account;
 use App\Models\Vendor;
 use App\Models\VendorBill;
@@ -16,6 +18,8 @@ use Livewire\WithPagination;
 
 class VendorBillList extends Component
 {
+    use PostsToLedger;
+    use WithNotices;
     use WithPagination;
 
     public ?int $vendorId = null;
@@ -71,7 +75,7 @@ class VendorBillList extends Component
             ]],
         );
 
-        session()->flash('status', __('expenses.vendor_bill_recorded', ['bill' => $bill->bill_no]));
+        $this->notify(__('expenses.vendor_bill_recorded', ['bill' => $bill->bill_no]));
 
         $this->reset(['amount', 'description']);
         $this->resetPage();
@@ -93,7 +97,7 @@ class VendorBillList extends Component
         $this->reset(['payingBillId', 'payAmount']);
     }
 
-    public function pay(PayVendorBill $payer): void
+    public function pay(): void
     {
         $this->authorize('create', VendorBill::class);
 
@@ -106,14 +110,23 @@ class VendorBillList extends Component
 
         $bill = VendorBill::findOrFail($this->payingBillId);
 
-        $payment = $payer->handle(
-            $bill,
-            $this->payAmount,
-            PaymentMethod::from($this->payMethod),
-            Carbon::parse($this->payDate),
+        // Overpaying a bill throws InvalidJournalEntryException from the service; that
+        // used to reach the browser as a 500 rather than as a message on the field.
+        $payment = $this->postGuarded(
+            fn () => app(PayVendorBill::class)->handle(
+                $bill,
+                $this->payAmount,
+                PaymentMethod::from($this->payMethod),
+                Carbon::parse($this->payDate),
+            ),
+            'payAmount',
         );
 
-        session()->flash('status', __('expenses.vendor_bill_settled', ['voucher' => $payment->voucher_no]));
+        if ($payment === null) {
+            return;
+        }
+
+        $this->notify(__('expenses.vendor_bill_settled', ['voucher' => $payment->voucher_no]));
 
         $this->reset(['payingBillId', 'payAmount']);
     }

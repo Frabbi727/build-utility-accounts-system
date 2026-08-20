@@ -10,7 +10,9 @@
         </div>
     @endif
 
-    <form wire:submit="save" class="space-y-4 rounded-lg border border-slate-200 bg-white p-6">
+    <x-ui.notice :message="$notice" :type="$noticeType" class="mb-6" />
+
+    <form wire:submit="askSave" class="space-y-4 rounded-lg border border-slate-200 bg-white p-6">
         <div>
             <label class="block text-sm font-medium text-slate-700">{{ __('billing.flat') }}</label>
             <select wire:model="flatId" class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-sm">
@@ -56,4 +58,48 @@
             {{ __('billing.save_payment') }}
         </button>
     </form>
+
+    @php($preview = $this->isConfirming('save') ? $this->allocationPreview() : null)
+
+    @if ($preview !== null)
+        <x-ui.confirm-dialog
+            :title="__('billing.payment_confirm_title')"
+            :message="__('billing.payment_confirm_message')"
+            :confirm-label="__('billing.save_payment')"
+            variant="primary"
+        >
+            <div class="space-y-2">
+                <div>
+                    {{ __('billing.flat') }}:
+                    <span class="font-medium">{{ $preview['flat']->building->name }} — {{ $preview['flat']->number }}</span>
+                </div>
+                <div>
+                    {{ __('billing.amount') }}:
+                    <span class="font-medium tabular-nums"><x-money :amount="$amount" /></span>
+                    ({{ __('billing.methods.'.$method) }})
+                </div>
+
+                @if ($preview['lines'] !== [])
+                    <div class="pt-2 font-medium">{{ __('billing.will_settle') }}</div>
+                    <ul class="space-y-1">
+                        @foreach ($preview['lines'] as $line)
+                            <li class="flex justify-between gap-4">
+                                <span>{{ $line['bill']->bill_no }}
+                                    ({{ $line['bill']->billing_month->translatedFormat('F Y') }})</span>
+                                <span class="tabular-nums"><x-money :amount="$line['amount']" /></span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <p class="pt-2">{{ __('billing.settles_nothing') }}</p>
+                @endif
+
+                @if (bccomp($preview['advance'], '0', 2) > 0)
+                    <p class="pt-2 text-amber-700">
+                        {{ __('billing.goes_to_advance', ['amount' => $preview['advance']]) }}
+                    </p>
+                @endif
+            </div>
+        </x-ui.confirm-dialog>
+    @endif
 </div>

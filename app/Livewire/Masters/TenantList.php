@@ -92,8 +92,6 @@ class TenantList extends Component
             'lease_ended_on' => $this->leaseEndedOn,
         ])->save();
 
-        session()->flash('status', __('masters.saved'));
-
         return $tenant;
     }
 

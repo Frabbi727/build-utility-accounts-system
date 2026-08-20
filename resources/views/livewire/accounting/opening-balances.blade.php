@@ -1,6 +1,8 @@
 <div class="space-y-6">
     <x-ui.page-header :title="__('accounting.opening_balances')" :description="__('accounting.opening_help')" />
 
+    <x-ui.notice :message="$notice" :type="$noticeType" />
+
     @if ($alreadyPosted)
         <x-ui.empty-state :title="__('accounting.already_posted')"
                           :description="__('accounting.already_posted_help', ['ref' => __('accounting.opening_balances')])">
@@ -9,7 +11,7 @@
             </x-slot:actions>
         </x-ui.empty-state>
     @else
-        <form wire:submit="post" class="space-y-6">
+        <form wire:submit="askPost" class="space-y-6">
             <x-ui.card>
                 <div class="grid gap-4 sm:grid-cols-3">
                     <x-form.field :label="__('accounting.as_of')" name="asOf" required>
@@ -72,5 +74,29 @@
                 </x-ui.button>
             </div>
         </form>
+    @endif
+
+    @if ($this->isConfirming('post'))
+        <x-ui.confirm-dialog
+            :title="__('accounting.opening_confirm_title')"
+            :message="__('accounting.opening_confirm_message')"
+            :confirm-label="__('accounting.post_opening_balances')"
+            variant="primary"
+        >
+            <div class="space-y-1">
+                <div class="flex justify-between gap-4">
+                    <span>{{ __('accounting.total_debits') }}</span>
+                    <span class="font-medium tabular-nums"><x-money :amount="$totals['debits']" /></span>
+                </div>
+                <div class="flex justify-between gap-4">
+                    <span>{{ __('accounting.total_credits') }}</span>
+                    <span class="font-medium tabular-nums"><x-money :amount="$totals['credits']" /></span>
+                </div>
+                <div class="flex justify-between gap-4 border-t border-slate-200 pt-1">
+                    <span>{{ __('accounting.general_fund_balancing') }}</span>
+                    <span class="font-medium tabular-nums"><x-money :amount="$totals['fund']" /></span>
+                </div>
+            </div>
+        </x-ui.confirm-dialog>
     @endif
 </div>

@@ -79,8 +79,6 @@ class UnitTypeList extends Component
             'sort_order' => $this->sortOrder,
         ])->save();
 
-        session()->flash('status', __('masters.saved'));
-
         return $type;
     }
 
@@ -90,7 +88,7 @@ class UnitTypeList extends Component
     protected function deleteRecord(Model $record): bool
     {
         if ($record->flats()->exists() || $record->chargeHeads()->exists()) {
-            session()->flash('error', __('masters.unit_type_in_use'));
+            $this->notifyError(__('masters.unit_type_in_use'));
 
             return false;
         }

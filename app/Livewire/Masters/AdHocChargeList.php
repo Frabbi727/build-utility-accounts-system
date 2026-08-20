@@ -89,8 +89,6 @@ class AdHocChargeList extends Component
             'effective_month' => Carbon::createFromFormat('Y-m', $this->effectiveMonth)->startOfMonth(),
         ])->save();
 
-        session()->flash('status', __('masters.saved'));
-
         return $charge;
     }
 

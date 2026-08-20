@@ -95,8 +95,6 @@ class StaffList extends Component
             'is_active' => $this->isActive,
         ])->save();
 
-        session()->flash('status', __('masters.saved'));
-
         return $staff;
     }
 

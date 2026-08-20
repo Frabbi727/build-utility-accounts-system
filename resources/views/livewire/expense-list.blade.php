@@ -2,8 +2,10 @@
     <h1 class="mb-1 text-lg font-semibold text-slate-900">{{ __('expenses.expenses') }}</h1>
     <p class="mb-6 text-sm text-slate-500">{{ __('expenses.expense_help') }}</p>
 
+    <x-ui.notice :message="$notice" :type="$noticeType" class="mb-6" />
+
     @can('manage', App\Models\Flat::class)
-        <form wire:submit="save" class="mb-8 grid gap-4 rounded-lg border border-slate-200 bg-white p-6 sm:grid-cols-2">
+        <form wire:submit="askSave" class="mb-8 grid gap-4 rounded-lg border border-slate-200 bg-white p-6 sm:grid-cols-2">
             <div>
                 <label class="block text-sm font-medium text-slate-700">{{ __('expenses.category') }}</label>
                 <select wire:model="accountId" class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-sm">
@@ -87,4 +89,39 @@
     </div>
 
     <div class="mt-4">{{ $expenses->links() }}</div>
+
+    @php($preview = $this->isConfirming('save') ? $this->expensePreview() : null)
+
+    @if ($preview !== null)
+        <x-ui.confirm-dialog
+            :title="__('expenses.expense_confirm_title')"
+            :message="__('expenses.expense_confirm_message')"
+            :confirm-label="__('expenses.save_expense')"
+            variant="primary"
+        >
+            <div class="space-y-1">
+                <div>
+                    {{ __('expenses.category') }}:
+                    <span class="font-medium">{{ $preview['account']->displayName() }}</span>
+                </div>
+                <div>
+                    {{ __('billing.amount') }}:
+                    <span class="font-medium tabular-nums"><x-money :amount="$amount" /></span>
+                    ({{ __('billing.methods.'.$method) }})
+                </div>
+                <div>
+                    {{ __('expenses.spent_on') }}:
+                    <span class="font-medium">{{ \Illuminate\Support\Carbon::parse($spentOn)->translatedFormat('d M Y') }}</span>
+                </div>
+                <div>
+                    {{ __('expenses.balance_after') }}:
+                    <span class="font-medium tabular-nums"><x-money :amount="$preview['balanceAfter']" /></span>
+                </div>
+
+                @if ($preview['overdrawn'])
+                    <p class="pt-2 text-red-700">{{ __('expenses.overdrawn_warning') }}</p>
+                @endif
+            </div>
+        </x-ui.confirm-dialog>
+    @endif
 </div>

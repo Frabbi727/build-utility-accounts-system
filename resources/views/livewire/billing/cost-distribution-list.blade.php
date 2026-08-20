@@ -7,6 +7,8 @@
         </x-slot:actions>
     </x-ui.page-header>
 
+    @include('livewire.partials.crud-feedback')
+
     @if ($distributions->isEmpty())
         <x-ui.empty-state :title="__('distributions.no_distributions')" :description="__('distributions.help')">
             <x-slot:actions>
@@ -55,11 +57,11 @@
                                         class="text-sm font-medium text-slate-600 hover:text-slate-900">{{ __('masters.edit') }}</button>
                             @endcan
                             @can('revert', $distribution)
-                                <button type="button" wire:click="revert({{ $distribution->id }})"
+                                <button type="button" wire:click="askConfirm('revert', {{ $distribution->id }})"
                                         class="text-sm font-medium text-amber-600 hover:text-amber-800">{{ __('distributions.revert') }}</button>
                             @endcan
                             @can('delete', $distribution)
-                                <button type="button" wire:click="delete({{ $distribution->id }})"
+                                <button type="button" wire:click="confirmDelete({{ $distribution->id }})"
                                         class="text-sm font-medium text-red-600 hover:text-red-800">{{ __('masters.delete') }}</button>
                             @endcan
                         </div>
@@ -122,7 +124,7 @@
                                 <x-ui.button type="submit" variant="secondary">{{ __('masters.save') }}</x-ui.button>
                             @endcan
                             @can('approve', $viewing)
-                                <x-ui.button wire:click="approve({{ $viewing->id }})">{{ __('distributions.approve') }}</x-ui.button>
+                                <x-ui.button wire:click="askConfirm('approve', {{ $viewing->id }})">{{ __('distributions.approve') }}</x-ui.button>
                             @endcan
                         </div>
                     @endif
@@ -203,5 +205,27 @@
                 </div>
             </form>
         </x-ui.modal>
+    @endif
+
+    @php($pendingDistribution = $this->pendingDistribution())
+
+    @if ($pendingDistribution !== null)
+        <x-ui.confirm-dialog
+            :title="$pendingDistribution['title']"
+            :message="$pendingDistribution['message']"
+            :variant="$this->isConfirming('revert') ? 'danger' : 'primary'"
+        >
+            <div class="space-y-1">
+                <div>{{ __('distributions.title') }}:
+                    <span class="font-medium">{{ $pendingDistribution['distribution']->title }}</span>
+                </div>
+                <div>{{ __('billing.amount') }}:
+                    <span class="font-medium tabular-nums"><x-money :amount="$pendingDistribution['distribution']->total_amount" /></span>
+                </div>
+                <div>{{ __('distributions.flats_affected') }}:
+                    <span class="font-medium tabular-nums">{{ $pendingDistribution['distribution']->lines_count }}</span>
+                </div>
+            </div>
+        </x-ui.confirm-dialog>
     @endif
 </div>

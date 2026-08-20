@@ -3,11 +3,9 @@
 namespace App\Services\Billing;
 
 use App\Enums\AccountCode;
-use App\Enums\BillStatus;
 use App\Enums\PaymentMethod;
 use App\Models\Flat;
 use App\Models\Payment;
-use App\Models\ServiceChargeBill;
 use App\Services\JournalService;
 use App\Support\JournalLineData;
 use Illuminate\Support\Carbon;
@@ -26,7 +24,10 @@ use Illuminate\Support\Facades\DB;
  */
 class RecordPayment
 {
-    public function __construct(private readonly JournalService $journal) {}
+    public function __construct(
+        private readonly JournalService $journal,
+        private readonly AllocationPlanner $planner,
+    ) {}
 
     public function handle(
         Flat $flat,
@@ -91,44 +92,24 @@ class RecordPayment
 
     /**
      * Applies the payment to unpaid bills oldest-first, and returns the total allocated.
+     *
+     * The ordering itself lives in AllocationPlanner so the confirmation dialog can show
+     * the operator the same answer this method is about to act on.
      */
     private function allocateToOldestDues(Payment $payment, Flat $flat, string $amount): string
     {
-        $remaining = $amount;
-        $allocated = '0.00';
+        $plan = $this->planner->plan($flat, $amount, lock: true);
 
-        $bills = ServiceChargeBill::where('flat_id', $flat->id)
-            ->whereIn('status', [BillStatus::Unpaid, BillStatus::PartiallyPaid])
-            ->orderBy('billing_month')
-            ->orderBy('id')
-            ->lockForUpdate()
-            ->get();
-
-        foreach ($bills as $bill) {
-            if (bccomp($remaining, '0', 2) <= 0) {
-                break;
-            }
-
-            $outstanding = $bill->outstandingAmount();
-
-            if (bccomp($outstanding, '0', 2) <= 0) {
-                continue;
-            }
-
-            $apply = bccomp($remaining, $outstanding, 2) < 0 ? $remaining : $outstanding;
-
+        foreach ($plan['lines'] as $line) {
             $payment->allocations()->create([
-                'service_charge_bill_id' => $bill->id,
-                'amount' => $apply,
+                'service_charge_bill_id' => $line['bill']->id,
+                'amount' => $line['amount'],
             ]);
 
-            $bill->refreshStatus();
-
-            $remaining = bcsub($remaining, $apply, 2);
-            $allocated = bcadd($allocated, $apply, 2);
+            $line['bill']->refreshStatus();
         }
 
-        return $allocated;
+        return $plan['allocated'];
     }
 
     private function nextReceiptNo(Carbon $date): string

@@ -73,8 +73,6 @@ class FloorList extends Component
             'level' => $this->level,
         ])->save();
 
-        session()->flash('status', __('masters.saved'));
-
         return $floor;
     }
 

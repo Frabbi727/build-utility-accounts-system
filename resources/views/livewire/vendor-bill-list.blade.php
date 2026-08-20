@@ -2,6 +2,8 @@
     <h1 class="mb-1 text-lg font-semibold text-slate-900">{{ __('expenses.vendor_bills') }}</h1>
     <p class="mb-6 text-sm text-slate-500">{{ __('expenses.vendor_bill_help') }}</p>
 
+    <x-ui.notice :message="$notice" :type="$noticeType" class="mb-6" />
+
     @can('manage', App\Models\Flat::class)
         <form wire:submit="save" class="mb-8 grid gap-4 rounded-lg border border-slate-200 bg-white p-6 sm:grid-cols-2">
             <div>

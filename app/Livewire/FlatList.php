@@ -124,8 +124,6 @@ class FlatList extends Component
             'is_active' => $this->isActive,
         ])->save();
 
-        session()->flash('status', __('masters.saved'));
-
         return $flat;
     }
 
@@ -185,7 +183,7 @@ class FlatList extends Component
             $this->createMissingFloors,
         );
 
-        session()->flash('status', $created === 0
+        $this->notify($created === 0
             ? __('masters.no_flats_generated')
             : __('masters.flats_generated', ['count' => $created]));
 

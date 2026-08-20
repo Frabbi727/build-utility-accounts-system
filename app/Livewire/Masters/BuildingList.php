@@ -89,8 +89,6 @@ class BuildingList extends Component
             app(CurrentBuilding::class)->set($building->id);
         }
 
-        session()->flash('status', __('masters.saved'));
-
         return $building;
     }
 
