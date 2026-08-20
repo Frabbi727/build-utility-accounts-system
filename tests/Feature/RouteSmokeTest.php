@@ -49,6 +49,9 @@ class RouteSmokeTest extends TestCase
         return $user;
     }
 
+    // bills.print and payments.receipt need a bound model, so their auth is covered
+    // by BillPrintTest and ReceiptTest rather than by this name-only matrix.
+
     /**
      * @return list<string>
      */

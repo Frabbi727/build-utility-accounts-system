@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\BillController;
 use App\Http\Controllers\ReceiptController;
 use App\Livewire\Accounting\OpeningBalances;
 use App\Livewire\Accounting\PeriodList;
@@ -80,6 +81,9 @@ Route::middleware('auth')->group(function (): void {
 
     // Likewise the receipt: PaymentPolicy lets an owner print their own and no one else's.
     Route::get('payments/{payment}/receipt', ReceiptController::class)->name('payments.receipt');
+
+    // And the bill itself: ServiceChargeBillPolicy lets an owner print their own.
+    Route::get('bills/{bill}/print', [BillController::class, 'show'])->name('bills.print');
 
     Route::middleware('role:admin|accountant|committee')->group(function (): void {
         Route::get('flats', FlatList::class)->name('flats.index');
