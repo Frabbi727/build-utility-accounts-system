@@ -30,6 +30,7 @@ class Navigation
             'label' => 'nav.billing', 'access' => self::MONEY, 'items' => [
                 ['label' => 'nav.generate_bills', 'route' => 'billing.generate', 'access' => self::MONEY],
                 ['label' => 'nav.record_payment', 'route' => 'payments.create', 'access' => self::MONEY],
+                ['label' => 'nav.payments', 'route' => 'payments.index', 'access' => self::STAFF],
                 ['label' => 'nav.shared_costs', 'route' => 'shared-costs.index', 'access' => self::MONEY],
             ],
         ],

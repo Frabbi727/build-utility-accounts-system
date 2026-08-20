@@ -52,6 +52,17 @@ class Payment extends Model
         return $this->hasMany(PaymentAllocation::class);
     }
 
+    /**
+     * The operator who took the money. Nullable: the column is nullOnDelete, and a
+     * payment outlives the user account that recorded it.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function receivedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'received_by');
+    }
+
     /** @return MorphMany<JournalEntry, $this> */
     public function journalEntries(): MorphMany
     {

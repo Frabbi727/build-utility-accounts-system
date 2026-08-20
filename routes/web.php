@@ -23,6 +23,7 @@ use App\Livewire\Masters\StaffList;
 use App\Livewire\Masters\TenantList;
 use App\Livewire\Masters\UnitTypeList;
 use App\Livewire\Masters\VendorList;
+use App\Livewire\PaymentList;
 use App\Livewire\RecordPaymentForm;
 use App\Livewire\Reports\BalanceSheet;
 use App\Livewire\Reports\CashBook;
@@ -115,6 +116,7 @@ Route::middleware('auth')->group(function (): void {
         Route::get('reports/balance-sheet', BalanceSheet::class)->name('reports.balance-sheet');
         Route::get('reports/trial-balance', TrialBalance::class)->name('reports.trial-balance');
         Route::get('billing/bills/print', [BillController::class, 'month'])->name('bills.print-month');
+        Route::get('payments', PaymentList::class)->name('payments.index');
     });
 
     Route::middleware('role:admin')->group(function (): void {
