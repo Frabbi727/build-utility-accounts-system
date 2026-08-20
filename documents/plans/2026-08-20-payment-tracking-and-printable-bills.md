@@ -1255,6 +1255,7 @@ git commit -m "print every bill for a month in one pass"
 **Files:**
 - Create: `app/Livewire/PaymentList.php`
 - Create: `resources/views/livewire/payment-list.blade.php`
+- Modify: `app/Models/Payment.php` (add the `receivedBy` relation)
 - Modify: `routes/web.php`
 - Modify: `app/Support/Navigation.php:38-44`
 - Modify: `lang/en/nav.php`, `lang/bn/nav.php`
@@ -1409,7 +1410,26 @@ class PaymentListTest extends TestCase
 Run: `php artisan test --compact tests/Feature/Billing/PaymentListTest.php`
 Expected: FAIL — `Class "App\Livewire\PaymentList" not found`.
 
-- [ ] **Step 3: Write the component**
+- [ ] **Step 3: Add the `receivedBy` relation**
+
+`Payment` stores `received_by` but exposes no relation, so the screen cannot name the
+operator who took the money. In `app/Models/Payment.php`, add `use App\Models\User;` if it
+is not already imported, and this relation beside the others:
+
+```php
+    /**
+     * The operator who took the money. Nullable: the column is nullOnDelete, and a
+     * payment outlives the user account that recorded it.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function receivedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'received_by');
+    }
+```
+
+- [ ] **Step 4: Write the component**
 
 Create `app/Livewire/PaymentList.php`:
 
@@ -1499,7 +1519,7 @@ class PaymentList extends Component
         $flats = $this->flatsInBuilding();
 
         $payments = Payment::query()
-            ->with(['flat.owner', 'allocations.bill'])
+            ->with(['flat.owner', 'allocations.bill', 'receivedBy'])
             ->whereIn('flat_id', $flats->pluck('id'))
             ->when($this->flatId !== null, fn ($query) => $query->where('flat_id', $this->flatId))
             ->when($this->method !== '', fn ($query) => $query->where('method', $this->method))
@@ -1526,7 +1546,7 @@ class PaymentList extends Component
 }
 ```
 
-- [ ] **Step 4: Write the view**
+- [ ] **Step 5: Write the view**
 
 Create `resources/views/livewire/payment-list.blade.php`:
 
@@ -1578,6 +1598,7 @@ Create `resources/views/livewire/payment-list.blade.php`:
             <th class="px-4 py-3">{{ __('billing.owner') }}</th>
             <th class="px-4 py-3">{{ __('reports.method') }}</th>
             <th class="px-4 py-3">{{ __('billing.reference') }}</th>
+            <th class="px-4 py-3">{{ __('billing.received_by') }}</th>
             <th class="px-4 py-3">{{ __('billing.allocated_to') }}</th>
             <th class="px-4 py-3 text-right">{{ __('billing.amount') }}</th>
         </x-slot:head>
@@ -1597,6 +1618,7 @@ Create `resources/views/livewire/payment-list.blade.php`:
                 <td class="px-4 py-2 text-slate-600">{{ $payment->flat->owner?->name ?? '—' }}</td>
                 <td class="px-4 py-2 text-slate-600">{{ __('billing.methods.'.$payment->method->value) }}</td>
                 <td class="px-4 py-2 text-slate-500">{{ $payment->reference ?? '—' }}</td>
+                <td class="px-4 py-2 text-slate-600">{{ $payment->receivedBy?->name ?? '—' }}</td>
                 <td class="px-4 py-2 text-xs text-slate-500">
                     @if ($payment->allocations->isEmpty())
                         {{ __('billing.held_as_advance') }}
@@ -1612,7 +1634,7 @@ Create `resources/views/livewire/payment-list.blade.php`:
                 <td class="px-4 py-2 text-right font-medium"><x-money :amount="$payment->amount" /></td>
             </tr>
         @empty
-            <tr><td colspan="8" class="px-4 py-6 text-center text-slate-400">{{ __('billing.no_payments') }}</td></tr>
+            <tr><td colspan="9" class="px-4 py-6 text-center text-slate-400">{{ __('billing.no_payments') }}</td></tr>
         @endforelse
     </x-ui.table>
 
@@ -1620,7 +1642,7 @@ Create `resources/views/livewire/payment-list.blade.php`:
 </div>
 ```
 
-- [ ] **Step 5: Register the route**
+- [ ] **Step 6: Register the route**
 
 In `routes/web.php`, add `use App\Livewire\PaymentList;` to the imports, then inside the `Route::middleware('role:admin|accountant|committee')` group:
 
@@ -1628,7 +1650,7 @@ In `routes/web.php`, add `use App\Livewire\PaymentList;` to the imports, then in
         Route::get('payments', PaymentList::class)->name('payments.index');
 ```
 
-- [ ] **Step 6: Add the menu entry**
+- [ ] **Step 7: Add the menu entry**
 
 In `app/Support/Navigation.php`, inside the `nav.billing` group's `items` array, after the `nav.record_payment` entry:
 
@@ -1638,19 +1660,19 @@ In `app/Support/Navigation.php`, inside the `nav.billing` group's `items` array,
 
 Then add `'payments' => 'Payments',` to `lang/en/nav.php` and `'payments' => 'পেমেন্টসমূহ',` to `lang/bn/nav.php`.
 
-- [ ] **Step 7: Run the tests to verify they pass**
+- [ ] **Step 8: Run the tests to verify they pass**
 
 Run: `php artisan test --compact tests/Feature/Billing/PaymentListTest.php`
 Expected: PASS, 6 tests.
 
-- [ ] **Step 8: Add the route to the smoke test matrix**
+- [ ] **Step 9: Add the route to the smoke test matrix**
 
 In `tests/Feature/RouteSmokeTest.php`, add `'payments.index'` to the staff route list beside `'reports.collections'`.
 
 Run: `php artisan test --compact tests/Feature/RouteSmokeTest.php`
 Expected: PASS.
 
-- [ ] **Step 9: Verify locale parity**
+- [ ] **Step 10: Verify locale parity**
 
 ```bash
 php -r '$en=require "lang/en/nav.php"; $bn=require "lang/bn/nav.php"; $d=array_merge(array_diff_key($en,$bn),array_diff_key($bn,$en)); echo $d===[] ? "parity ok\n" : "MISMATCH: ".implode(",",array_keys($d))."\n";'
@@ -1658,11 +1680,11 @@ php -r '$en=require "lang/en/nav.php"; $bn=require "lang/bn/nav.php"; $d=array_m
 
 Expected: `parity ok`.
 
-- [ ] **Step 10: Format and commit**
+- [ ] **Step 11: Format and commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
-git add app/Livewire/PaymentList.php resources/views/livewire/payment-list.blade.php routes/web.php app/Support/Navigation.php lang/en/nav.php lang/bn/nav.php tests/Feature/Billing/PaymentListTest.php tests/Feature/RouteSmokeTest.php
+git add app/Livewire/PaymentList.php app/Models/Payment.php resources/views/livewire/payment-list.blade.php routes/web.php app/Support/Navigation.php lang/en/nav.php lang/bn/nav.php tests/Feature/Billing/PaymentListTest.php tests/Feature/RouteSmokeTest.php
 git commit -m "add a payments screen showing who paid what and against which bill"
 ```
 
@@ -1973,6 +1995,17 @@ class CollectDueTest extends TestCase
             ->assertSet('amount', '');
     }
 
+    public function test_the_query_string_prefills_over_a_real_request(): void
+    {
+        // Livewire resolves mount arguments from route parameters, never from the query
+        // string, so passing ['flat' => id] to Livewire::test would pass even when every
+        // real Collect link is broken. This asserts the browser path.
+        $this->actingAs($this->accountant())
+            ->get(route('payments.create', ['flat' => $this->flat->id]))
+            ->assertSuccessful()
+            ->assertSee('3,000.00');
+    }
+
     public function test_the_dues_report_links_to_collect(): void
     {
         $this->actingAs($this->accountant())
@@ -2009,6 +2042,11 @@ Replace `mount()` with:
     public function mount(?int $flat = null): void
     {
         $this->receivedOn = now()->toDateString();
+
+        // `?flat=` is a query parameter, not a route segment, and Livewire resolves
+        // mount arguments from route parameters alone — so the query string has to be
+        // read here or every Collect link silently does nothing.
+        $flat ??= request()->integer('flat') ?: null;
 
         if ($flat === null) {
             return;
