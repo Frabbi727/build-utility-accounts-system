@@ -27,7 +27,7 @@ class Navigation
     private const MENU = [
         ['label' => 'nav.dashboard', 'route' => 'dashboard', 'access' => self::ANY],
         [
-            'label' => 'nav.billing', 'access' => self::MONEY, 'items' => [
+            'label' => 'nav.billing', 'access' => self::STAFF, 'items' => [
                 ['label' => 'nav.generate_bills', 'route' => 'billing.generate', 'access' => self::MONEY],
                 ['label' => 'nav.record_payment', 'route' => 'payments.create', 'access' => self::MONEY],
                 ['label' => 'nav.payments', 'route' => 'payments.index', 'access' => self::STAFF],

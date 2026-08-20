@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Billing\GenerateMonthlyBills;
 use App\Services\Billing\RecordPayment;
 use App\Support\CurrentBuilding;
+use App\Support\Navigation;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -128,5 +129,45 @@ class PaymentListTest extends TestCase
         Owner::factory()->create(['user_id' => $user->id]);
 
         $this->actingAs($user)->get(route('payments.index'))->assertForbidden();
+    }
+
+    public function test_a_committee_member_sees_payments_in_the_billing_menu(): void
+    {
+        $user = User::factory()->create();
+        $user->syncRoles([Role::Committee->value]);
+
+        $menu = app(Navigation::class)->for($user);
+        $billing = collect($menu)->firstWhere('label', __('nav.billing'));
+
+        $this->assertNotNull($billing, 'The Billing group should be visible to a committee member.');
+        $this->assertTrue(
+            collect($billing['items'])->contains('url', route('payments.index')),
+            'The Billing group should contain Payments for a committee member.',
+        );
+    }
+
+    public function test_an_accountant_still_sees_the_money_only_items_alongside_payments(): void
+    {
+        $user = $this->accountant();
+
+        $menu = app(Navigation::class)->for($user);
+        $billing = collect($menu)->firstWhere('label', __('nav.billing'));
+
+        $this->assertNotNull($billing);
+        $urls = collect($billing['items'])->pluck('url');
+
+        $this->assertTrue($urls->contains(route('payments.index')));
+        $this->assertTrue($urls->contains(route('payments.create')));
+    }
+
+    public function test_an_owner_gets_no_billing_group_at_all(): void
+    {
+        $user = User::factory()->create();
+        $user->syncRoles([Role::Owner->value]);
+        Owner::factory()->create(['user_id' => $user->id]);
+
+        $menu = app(Navigation::class)->for($user);
+
+        $this->assertNull(collect($menu)->firstWhere('label', __('nav.billing')));
     }
 }
