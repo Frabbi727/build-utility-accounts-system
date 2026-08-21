@@ -13,3 +13,5 @@ to catch what a path match alone misses.
 | [admin-screens.md](admin-screens.md) | `app/Livewire/**`, `app/Policies/**`, `resources/views/**` |
 | [metered-utilities.md](metered-utilities.md) | `app/Services/Billing/**`, `app/Models/{Utility,Meter,MeterReading,UtilityTariff,UtilityTariffSlab,UnitType,CostDistribution,CostDistributionLine}.php`, `app/Livewire/Utilities/**`, `app/Livewire/Billing/**` |
 | [localization.md](localization.md) | `lang/**`, `resources/views/**`, `app/Livewire/**` |
+| [payment-tracking.md](payment-tracking.md) | `app/Services/Billing/BillSummary.php`, `app/Support/BillSummaryData.php`, `app/Http/Controllers/BillController.php`, `app/Livewire/PaymentList.php` |
+
