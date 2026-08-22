@@ -11,6 +11,7 @@ use App\Models\Payment;
 use App\Models\ServiceChargeBill;
 use App\Services\Billing\AllocationPlanner;
 use App\Services\Billing\RecordPayment;
+use App\Services\JournalService;
 use App\Support\CurrentBuilding;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
@@ -160,11 +161,82 @@ class RecordPaymentForm extends Component
         ];
     }
 
+    /**
+     * Get the ledger balances, unpaid bills, and live allocation for the selected flat.
+     *
+     * @return array{
+     *     flat: Flat,
+     *     outstanding: string,
+     *     advance: string,
+     *     netDue: string,
+     *     unpaidBills: \Illuminate\Support\Collection<int, array{bill: ServiceChargeBill, outstanding: string, allocated: string}>,
+     *     allocation: array{lines: list<array{bill: ServiceChargeBill, amount: string}>, allocated: string, advance: string}|null
+     * }|null
+     */
+    public function getBillingDetails(): ?array
+    {
+        $flat = $this->currentFlat();
+
+        if ($flat === null) {
+            return null;
+        }
+
+        $journal = app(JournalService::class);
+        $receivable = $journal->account(\App\Enums\AccountCode::ServiceChargeReceivable);
+        $advanceAccount = $journal->account(\App\Enums\AccountCode::AdvanceFromOwners);
+
+        $outstanding = $journal->balanceFor($receivable, $flat->id);
+        $advance = $journal->balanceFor($advanceAccount, $flat->id);
+
+        // Calculate live allocation if amount is entered and is valid numeric
+        $allocation = null;
+        if (is_numeric($this->amount) && bccomp($this->amount, '0', 2) > 0) {
+            $allocation = app(AllocationPlanner::class)->plan($flat, $this->amount);
+        }
+
+        $unpaidBills = ServiceChargeBill::where('flat_id', $flat->id)
+            ->whereIn('status', [
+                \App\Enums\BillStatus::Unpaid,
+                \App\Enums\BillStatus::PartiallyPaid,
+            ])
+            ->orderBy('billing_month')
+            ->orderBy('id')
+            ->get();
+
+        $unpaidBillsData = $unpaidBills->map(function (ServiceChargeBill $bill) use ($allocation): array {
+            $allocatedToBill = '0.00';
+            if ($allocation !== null) {
+                foreach ($allocation['lines'] as $line) {
+                    if ($line['bill']->id === $bill->id) {
+                        $allocatedToBill = $line['amount'];
+                        break;
+                    }
+                }
+            }
+
+            return [
+                'bill' => $bill,
+                'outstanding' => $bill->outstandingAmount(),
+                'allocated' => $allocatedToBill,
+            ];
+        });
+
+        return [
+            'flat' => $flat,
+            'outstanding' => $outstanding,
+            'advance' => $advance,
+            'netDue' => bcsub($outstanding, $advance, 2),
+            'unpaidBills' => $unpaidBillsData,
+            'allocation' => $allocation,
+        ];
+    }
+
     public function render(): View
     {
         return view('livewire.record-payment-form', [
             'flats' => $this->flatsInBuilding(),
             'methods' => PaymentMethod::cases(),
+            'billingDetails' => $this->getBillingDetails(),
         ])->layout('components.layouts.app');
     }
 }
