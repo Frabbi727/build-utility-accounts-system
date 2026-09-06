@@ -2,6 +2,8 @@
 
 namespace App\Livewire;
 
+use App\Enums\AccountCode;
+use App\Enums\BillStatus;
 use App\Enums\PaymentMethod;
 use App\Livewire\Concerns\PostsToLedger;
 use App\Livewire\Concerns\WithConfirmation;
@@ -182,8 +184,8 @@ class RecordPaymentForm extends Component
         }
 
         $journal = app(JournalService::class);
-        $receivable = $journal->account(\App\Enums\AccountCode::ServiceChargeReceivable);
-        $advanceAccount = $journal->account(\App\Enums\AccountCode::AdvanceFromOwners);
+        $receivable = $journal->account(AccountCode::ServiceChargeReceivable);
+        $advanceAccount = $journal->account(AccountCode::AdvanceFromOwners);
 
         $outstanding = $journal->balanceFor($receivable, $flat->id);
         $advance = $journal->balanceFor($advanceAccount, $flat->id);
@@ -196,8 +198,8 @@ class RecordPaymentForm extends Component
 
         $unpaidBills = ServiceChargeBill::where('flat_id', $flat->id)
             ->whereIn('status', [
-                \App\Enums\BillStatus::Unpaid,
-                \App\Enums\BillStatus::PartiallyPaid,
+                BillStatus::Unpaid,
+                BillStatus::PartiallyPaid,
             ])
             ->orderBy('billing_month')
             ->orderBy('id')

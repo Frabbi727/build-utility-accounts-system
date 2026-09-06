@@ -58,10 +58,9 @@
                     @error('reference') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                 </div>
 
-                <button type="submit" wire:loading.attr="disabled"
-                        class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50 w-full sm:w-auto">
+                <x-ui.button type="submit" wire:loading.attr="disabled" loading-target="askSave" class="w-full sm:w-auto">
                     {{ __('billing.save_payment') }}
-                </button>
+                </x-ui.button>
             </form>
         </div>
 
