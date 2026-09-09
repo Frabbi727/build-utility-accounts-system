@@ -190,4 +190,21 @@ return [
     'applies_to' => 'Applies to',
     'applies_to_help' => 'Leave every box unticked to bill this head to all units. An equal-share head divides across only the units it applies to.',
     'all' => 'All',
+
+    // Notices
+    'notices' => 'Notice Board',
+    'notices_help' => 'Publish announcements, emergency alerts, and maintenance circulars for residents.',
+    'new_notice' => 'New notice',
+    'edit_notice' => 'Edit notice',
+    'no_notices' => 'No notices published',
+    'no_notices_help' => 'Post a circular or announcement to inform building residents.',
+    'notice_title' => 'Title',
+    'search_notices' => 'Search notices…',
+    'pinned' => 'Pinned',
+    'pin' => 'Pin',
+    'unpin' => 'Unpin',
+    'scheduled' => 'Scheduled',
+    'expired' => 'Expired',
+    'published_at' => 'Published at',
+    'expires_at' => 'Expires at',
 ];

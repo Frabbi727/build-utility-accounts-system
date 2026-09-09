@@ -82,6 +82,12 @@ class Building extends Model
         return $this->hasMany(Staff::class);
     }
 
+    /** @return HasMany<Notice, $this> */
+    public function notices(): HasMany
+    {
+        return $this->hasMany(Notice::class)->latest('published_at');
+    }
+
     /**
      * The display name in the active locale.
      */

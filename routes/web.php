@@ -18,6 +18,7 @@ use App\Livewire\Masters\BuildingList;
 use App\Livewire\Masters\ChargeHeadList;
 use App\Livewire\Masters\FlatChargeOverrides;
 use App\Livewire\Masters\FloorList;
+use App\Livewire\Masters\NoticeList;
 use App\Livewire\Masters\OwnerList;
 use App\Livewire\Masters\StaffList;
 use App\Livewire\Masters\TenantList;
@@ -103,6 +104,7 @@ Route::middleware('auth')->group(function (): void {
         Route::get('tenants', TenantList::class)->name('tenants.index');
         Route::get('vendors', VendorList::class)->name('vendors.index');
         Route::get('staff', StaffList::class)->name('staff.index');
+        Route::get('notices', NoticeList::class)->name('notices.index');
         Route::get('expenses', ExpenseList::class)->name('expenses.index');
         Route::get('vendor-bills', VendorBillList::class)->name('vendor-bills.index');
         Route::get('accounts', AccountList::class)->name('accounts.index');
