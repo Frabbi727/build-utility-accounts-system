@@ -44,9 +44,18 @@ class RecordPaymentForm extends Component
 
     public string $reference = '';
 
-    public function mount(): void
+    public function mount(?int $flat_id = null, ?int $flatId = null): void
     {
         $this->receivedOn = now()->toDateString();
+
+        $targetFlatId = $flat_id ?? $flatId;
+        if ($targetFlatId !== null) {
+            $buildingId = app(CurrentBuilding::class)->id();
+            $flat = Flat::where('building_id', $buildingId)->find($targetFlatId);
+            if ($flat !== null) {
+                $this->flatId = $flat->id;
+            }
+        }
     }
 
     /**

@@ -105,4 +105,5 @@ return [
         'bkash' => 'bKash',
         'nagad' => 'Nagad',
     ],
+    'collect' => 'Collect Payment',
 ];
