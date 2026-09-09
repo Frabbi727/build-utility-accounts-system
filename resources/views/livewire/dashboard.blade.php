@@ -110,10 +110,15 @@
                     <p class="mt-2 text-3xl font-bold tabular-nums {{ bccomp($totalDue, '0.00', 2) > 0 ? 'text-red-600' : 'text-emerald-600' }}">
                         {{ number_format((float) $totalDue, 2) }}
                     </p>
-                    <div class="mt-3">
+                    <div class="mt-3 flex items-center justify-between">
                         <a href="{{ route('flats.statement', $selectedFlat) }}" class="text-xs font-medium text-indigo-600 hover:text-indigo-800 hover:underline">
                             {{ __('dashboard.view_statement') }} &rarr;
                         </a>
+                        <button type="button"
+                                wire:click="openPaymentModal('{{ $totalDue }}')"
+                                class="inline-flex items-center rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow-xs hover:bg-emerald-500">
+                            {{ __('billing.submit_payment') }}
+                        </button>
                     </div>
                 </div>
 
@@ -223,6 +228,61 @@
                                                        class="text-xs font-medium text-indigo-600 hover:text-indigo-800 hover:underline">
                                                         {{ __('dashboard.print_receipt') }}
                                                     </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- My Payment Submissions / Notices --}}
+                    <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                        <div class="mb-4 flex items-center justify-between">
+                            <h2 class="text-base font-semibold text-slate-900">{{ __('billing.payment_submissions') }}</h2>
+                            <button type="button"
+                                    wire:click="openPaymentModal"
+                                    class="inline-flex items-center rounded-md bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">
+                                + {{ __('billing.submit_payment') }}
+                            </button>
+                        </div>
+
+                        @if ($mySubmissions->isEmpty())
+                            <p class="py-4 text-center text-sm text-slate-500">{{ __('billing.no_submissions') }}</p>
+                        @else
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-sm">
+                                    <thead>
+                                        <tr class="border-b border-slate-200 text-xs text-slate-500">
+                                            <th class="pb-2">{{ __('billing.reference') }}</th>
+                                            <th class="pb-2">{{ __('dashboard.payment_date') }}</th>
+                                            <th class="pb-2">{{ __('dashboard.method') }}</th>
+                                            <th class="pb-2 text-right">{{ __('dashboard.amount') }}</th>
+                                            <th class="pb-2 text-right">{{ __('masters.status') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        @foreach ($mySubmissions as $sub)
+                                            <tr>
+                                                <td class="py-2.5 font-mono text-xs font-semibold text-slate-800">{{ $sub->reference_number }}</td>
+                                                <td class="py-2.5 text-slate-600">{{ $sub->payment_date->format('M d, Y') }}</td>
+                                                <td class="py-2.5 text-xs uppercase text-slate-600">{{ $sub->payment_method->value }}</td>
+                                                <td class="py-2.5 text-right font-semibold tabular-nums text-slate-900">{{ number_format((float) $sub->amount, 2) }}</td>
+                                                <td class="py-2.5 text-right">
+                                                    @if ($sub->status === \App\Enums\PaymentSubmissionStatus::Pending)
+                                                        <span class="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+                                                            {{ __('billing.pending') }}
+                                                        </span>
+                                                    @elseif ($sub->status === \App\Enums\PaymentSubmissionStatus::Approved)
+                                                        <span class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                                                            {{ __('billing.approved') }}
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700" title="{{ $sub->rejection_reason }}">
+                                                            {{ __('billing.rejected') }}
+                                                        </span>
+                                                    @endif
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -370,6 +430,51 @@
                 <div class="flex justify-end border-t border-slate-200 bg-slate-50 px-6 py-3">
                     <x-ui.button variant="secondary" wire:click="closeNoticeModal">{{ __('masters.done') }}</x-ui.button>
                 </div>
+            </x-ui.modal>
+        @endif
+
+        {{-- Submit Payment Modal --}}
+        @if ($showPaymentModal)
+            <x-ui.modal :title="__('billing.submit_payment')">
+                <form wire:submit.prevent="submitPayment">
+                    <div class="grid grid-cols-1 gap-4 px-6 py-5 sm:grid-cols-2">
+                        <x-form.field :label="__('dashboard.amount')" name="submissionAmount" required>
+                            <input type="number" step="0.01" wire:model="submissionAmount" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="0.00" required>
+                        </x-form.field>
+
+                        <x-form.field :label="__('dashboard.method')" name="submissionMethod" required>
+                            <select wire:model="submissionMethod" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                @foreach ($methods as $m)
+                                    <option value="{{ $m->value }}">{{ __('billing.methods.'.$m->value) }}</option>
+                                @endforeach
+                            </select>
+                        </x-form.field>
+
+                        <x-form.field :label="__('billing.reference')" name="submissionReference" required>
+                            <input type="text" wire:model="submissionReference" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="e.g. TrxID / Deposit Ref" required>
+                        </x-form.field>
+
+                        <x-form.field :label="__('dashboard.payment_date')" name="submissionDate" required>
+                            <input type="date" wire:model="submissionDate" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                        </x-form.field>
+
+                        <x-form.field :label="__('billing.deposit_slip')" name="submissionSlip" class="sm:col-span-2">
+                            <input type="file" wire:model="submissionSlip" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                            @if ($submissionSlip)
+                                <p class="mt-1 text-xs text-slate-500">{{ $submissionSlip->getClientOriginalName() }}</p>
+                            @endif
+                        </x-form.field>
+
+                        <x-form.field :label="__('billing.payment_notes')" name="submissionNotes" class="sm:col-span-2">
+                            <textarea wire:model="submissionNotes" rows="2" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="{{ __('billing.payment_notes') }}"></textarea>
+                        </x-form.field>
+                    </div>
+
+                    <div class="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-6 py-3">
+                        <x-ui.button variant="secondary" wire:click="cancelPaymentModal">{{ __('masters.cancel') }}</x-ui.button>
+                        <x-ui.button type="submit" wire:loading.attr="disabled">{{ __('billing.submit_payment') }}</x-ui.button>
+                    </div>
+                </form>
             </x-ui.modal>
         @endif
     @endif
