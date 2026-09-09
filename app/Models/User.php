@@ -47,7 +47,7 @@ class User extends Authenticatable
 
     public function isResident(): bool
     {
-        return $this->hasAnyRole([Role::Owner->value, Role::Tenant->value]);
+        return $this->hasAnyRole(Role::residents());
     }
 
     public function isOwner(): bool

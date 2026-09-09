@@ -52,4 +52,23 @@ class TenantUserLinkTest extends TestCase
         $this->assertFalse($user->isTenant());
         $this->assertFalse($user->isStaff());
     }
+
+    public function test_unlinked_entities_have_null_relations_and_false_helpers(): void
+    {
+        $building = Building::factory()->create();
+        $flat = Flat::factory()->create(['building_id' => $building->id]);
+        $tenant = Tenant::factory()->create([
+            'flat_id' => $flat->id,
+            'user_id' => null,
+        ]);
+        $user = User::factory()->create();
+
+        $this->assertNull($tenant->user);
+        $this->assertNull($user->tenant);
+        $this->assertNull($user->owner);
+        $this->assertFalse($user->isResident());
+        $this->assertFalse($user->isOwner());
+        $this->assertFalse($user->isTenant());
+        $this->assertFalse($user->isStaff());
+    }
 }

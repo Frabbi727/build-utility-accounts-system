@@ -29,4 +29,14 @@ enum Role: string
     {
         return [self::Admin->value, self::Accountant->value];
     }
+
+    /**
+     * Roles belonging to the residential side (flat owners and tenants).
+     *
+     * @return list<string>
+     */
+    public static function residents(): array
+    {
+        return [self::Owner->value, self::Tenant->value];
+    }
 }
