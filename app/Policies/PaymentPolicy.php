@@ -25,9 +25,8 @@ class PaymentPolicy
             return true;
         }
 
-        return $user->owner !== null
-            && $payment->flat !== null
-            && $payment->flat->owner_id === $user->owner->id;
+        return ($user->owner !== null && $payment->flat !== null && $payment->flat->owner_id === $user->owner->id)
+            || ($user->tenant !== null && $payment->flat_id === $user->tenant->flat_id);
     }
 
     public function create(User $user): bool

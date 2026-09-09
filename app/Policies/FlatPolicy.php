@@ -16,7 +16,8 @@ class FlatPolicy
             return true;
         }
 
-        return $user->owner !== null && $flat->owner_id === $user->owner->id;
+        return ($user->owner !== null && $flat->owner_id === $user->owner->id)
+            || ($user->tenant !== null && $flat->id === $user->tenant->flat_id);
     }
 
     public function viewAny(User $user): bool

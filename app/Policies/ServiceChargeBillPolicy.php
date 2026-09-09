@@ -26,9 +26,8 @@ class ServiceChargeBillPolicy
             return true;
         }
 
-        return $user->owner !== null
-            && $bill->flat !== null
-            && $bill->flat->owner_id === $user->owner->id;
+        return ($user->owner !== null && $bill->flat !== null && $bill->flat->owner_id === $user->owner->id)
+            || ($user->tenant !== null && $bill->flat_id === $user->tenant->flat_id);
     }
 
     public function create(User $user): bool
