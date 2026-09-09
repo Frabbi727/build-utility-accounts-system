@@ -45,6 +45,11 @@ class PaymentSubmissionPolicy
         return $user->canManageMoney();
     }
 
+    public function update(User $user, PaymentSubmission $submission): bool
+    {
+        return $user->canManageMoney();
+    }
+
     public function delete(User $user, PaymentSubmission $submission): bool
     {
         return $user->canManageMoney();

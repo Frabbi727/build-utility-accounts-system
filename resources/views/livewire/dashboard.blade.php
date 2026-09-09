@@ -22,6 +22,18 @@
             </div>
         @endif
 
+        @if ($pendingSubmissionsCount > 0)
+            <div class="mb-6 flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
+                <div class="flex items-center gap-2">
+                    <span class="text-base font-bold text-amber-600">🔔</span>
+                    <span class="font-medium">{{ __('billing.pending_submissions', ['count' => $pendingSubmissionsCount]) }}</span>
+                </div>
+                <a href="{{ route('billing.submissions') }}" class="font-semibold text-amber-900 underline hover:text-amber-800">
+                    {{ __('billing.review_submission') }} &rarr;
+                </a>
+            </div>
+        @endif
+
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div class="rounded-lg border border-slate-200 bg-white p-4">
                 <p class="text-xs uppercase tracking-wide text-slate-500">{{ __('reports.total_receivable') }}</p>
@@ -43,6 +55,10 @@
                 <p class="text-xs uppercase tracking-wide text-slate-500">{{ __('reports.unpaid_bills') }}</p>
                 <p class="mt-1 text-2xl font-semibold tabular-nums">{{ $unpaidBills }}</p>
             </div>
+            <a href="{{ route('billing.submissions') }}" class="block rounded-lg border border-slate-200 bg-white p-4 transition hover:border-indigo-300 hover:shadow-sm">
+                <p class="text-xs uppercase tracking-wide text-slate-500">{{ __('billing.payment_submissions') }}</p>
+                <p class="mt-1 text-2xl font-semibold tabular-nums {{ $pendingSubmissionsCount > 0 ? 'text-amber-600 font-bold' : 'text-slate-900' }}">{{ $pendingSubmissionsCount }}</p>
+            </a>
         </div>
     @else
         {{-- Resident Portal --}}
