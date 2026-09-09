@@ -100,6 +100,17 @@
                         </td>
                         <td class="px-4 py-2 text-right">
                             <div class="flex flex-wrap justify-end gap-3">
+                                @php
+                                    $hasDue = bccomp($dues[$flat->id], '0', 2) > 0;
+                                    $reminder = $hasDue ? \App\Support\DuesReminder::for($flat, $dues[$flat->id]) : null;
+                                @endphp
+
+                                @if ($reminder && $reminder['whatsapp_url'] !== '')
+                                    <a href="{{ $reminder['whatsapp_url'] }}" target="_blank" rel="noopener noreferrer"
+                                       title="{{ __('reminders.remind_whatsapp') }}"
+                                       class="text-sm font-medium text-emerald-600 hover:text-emerald-800">{{ __('reminders.whatsapp') }}</a>
+                                 @endif
+
                                 @can('create', App\Models\Payment::class)
                                     <a href="{{ route('payments.create', ['flat_id' => $flat->id]) }}"
                                        class="text-sm font-medium text-emerald-600 hover:text-emerald-800">{{ __('billing.collect') }}</a>

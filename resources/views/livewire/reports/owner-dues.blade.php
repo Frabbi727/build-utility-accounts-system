@@ -33,12 +33,27 @@
                         <td class="px-4 py-2 text-right text-red-600"><x-money :amount="$row['days_90_plus']" blank-zero /></td>
                         <td class="px-4 py-2 text-right font-medium"><x-money :amount="$row['outstanding']" /></td>
                         <td class="px-4 py-2 text-right">
-                            @can('create', App\Models\Payment::class)
-                                <a href="{{ route('payments.create', ['flat_id' => $row['flat']->id]) }}"
-                                   class="text-xs font-semibold text-emerald-600 hover:text-emerald-800">
-                                    {{ __('billing.collect') }}
-                                </a>
-                            @endcan
+                            <div class="flex items-center justify-end gap-2">
+                                @php
+                                    $hasDue = bccomp($row['outstanding'], '0.00', 2) > 0;
+                                    $reminder = $hasDue ? \App\Support\DuesReminder::for($row['flat'], $row['outstanding']) : null;
+                                @endphp
+
+                                @if ($reminder && $reminder['whatsapp_url'] !== '')
+                                    <a href="{{ $reminder['whatsapp_url'] }}" target="_blank" rel="noopener noreferrer"
+                                       title="{{ __('reminders.remind_whatsapp') }}"
+                                       class="inline-flex items-center text-xs font-semibold text-emerald-600 hover:text-emerald-800">
+                                        {{ __('reminders.whatsapp') }}
+                                    </a>
+                                @endif
+
+                                @can('create', App\Models\Payment::class)
+                                    <a href="{{ route('payments.create', ['flat_id' => $row['flat']->id]) }}"
+                                       class="text-xs font-semibold text-emerald-600 hover:text-emerald-800">
+                                        {{ __('billing.collect') }}
+                                    </a>
+                                @endcan
+                            </div>
                         </td>
                     </tr>
                 @empty
