@@ -60,6 +60,7 @@ class RouteSmokeTest extends TestCase
         return [
             'dashboard', 'flats.index', 'buildings.index', 'floors.index', 'charge-heads.index',
             'owners.index', 'tenants.index', 'vendors.index', 'staff.index',
+            'notices.index', 'maintenance-requests.index',
             'accounts.index', 'expenses.index', 'vendor-bills.index',
             'ad-hoc-charges.index', 'unit-types.index', 'shared-costs.index',
             'utilities.index', 'meters.index', 'tariffs.index', 'readings.index',
@@ -130,7 +131,7 @@ class RouteSmokeTest extends TestCase
         $this->actingAs($user)->get(route('flats.statement', $ownFlat))->assertOk();
         $this->actingAs($user)->get(route('flats.statement', $otherFlat))->assertForbidden();
 
-        foreach (['flats.index', 'owners.index', 'accounts.index', 'reports.index'] as $name) {
+        foreach (['flats.index', 'owners.index', 'accounts.index', 'reports.index', 'notices.index', 'maintenance-requests.index'] as $name) {
             $this->actingAs($user)->get(route($name))->assertForbidden("Route {$name} should be closed to owners.");
         }
     }
