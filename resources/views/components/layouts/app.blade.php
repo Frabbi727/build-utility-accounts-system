@@ -23,6 +23,15 @@
 
             <div class="flex items-center gap-4 text-sm">
                 @auth
+                    <button type="button"
+                            wire:click="$dispatch('open-spotlight')"
+                            class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-500 hover:border-slate-300 hover:bg-white hover:text-slate-700 transition-colors">
+                        <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+                        </svg>
+                        <span>{{ __('billing.search_flat') }}...</span>
+                        <kbd class="hidden sm:inline rounded bg-white px-1 py-0.5 text-[10px] font-mono border border-slate-200 text-slate-400">⌘K</kbd>
+                    </button>
                     <x-layouts.partials.building-switcher />
                 @endauth
 
@@ -61,6 +70,9 @@
         {{ $slot }}
     </main>
 </div>
+@auth
+    <livewire:spotlight-search />
+@endauth
 @livewireScripts
 </body>
 </html>
