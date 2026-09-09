@@ -6,6 +6,7 @@ use App\Http\Controllers\ReceiptController;
 use App\Livewire\Accounting\OpeningBalances;
 use App\Livewire\Accounting\PeriodList;
 use App\Livewire\AccountList;
+use App\Livewire\Admin\MaintenanceRequestList;
 use App\Livewire\Admin\UserList;
 use App\Livewire\Billing\CostDistributionList;
 use App\Livewire\Dashboard;
@@ -105,6 +106,7 @@ Route::middleware('auth')->group(function (): void {
         Route::get('vendors', VendorList::class)->name('vendors.index');
         Route::get('staff', StaffList::class)->name('staff.index');
         Route::get('notices', NoticeList::class)->name('notices.index');
+        Route::get('maintenance-requests', MaintenanceRequestList::class)->name('maintenance-requests.index');
         Route::get('expenses', ExpenseList::class)->name('expenses.index');
         Route::get('vendor-bills', VendorBillList::class)->name('vendor-bills.index');
         Route::get('accounts', AccountList::class)->name('accounts.index');

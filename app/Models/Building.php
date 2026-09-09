@@ -88,6 +88,12 @@ class Building extends Model
         return $this->hasMany(Notice::class)->latest('published_at');
     }
 
+    /** @return HasMany<MaintenanceRequest, $this> */
+    public function maintenanceRequests(): HasMany
+    {
+        return $this->hasMany(MaintenanceRequest::class)->latest('created_at');
+    }
+
     /**
      * The display name in the active locale.
      */

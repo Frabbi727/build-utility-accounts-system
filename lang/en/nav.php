@@ -29,6 +29,7 @@ return [
     'vendors' => 'Vendors',
     'staff' => 'Staff',
     'notices' => 'Notice Board',
+    'maintenance_requests' => 'Maintenance Requests',
     'ad_hoc_charges' => 'One-off charges',
     'charge_heads' => 'Charge Heads',
     'opening_balances' => 'Opening Balances',

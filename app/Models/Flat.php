@@ -97,4 +97,10 @@ class Flat extends Model
     {
         return $this->hasMany(JournalLine::class);
     }
+
+    /** @return HasMany<MaintenanceRequest, $this> */
+    public function maintenanceRequests(): HasMany
+    {
+        return $this->hasMany(MaintenanceRequest::class);
+    }
 }

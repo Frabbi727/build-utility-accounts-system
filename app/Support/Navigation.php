@@ -48,6 +48,7 @@ class Navigation
                 ['label' => 'nav.vendors', 'route' => 'vendors.index', 'access' => self::STAFF],
                 ['label' => 'nav.staff', 'route' => 'staff.index', 'access' => self::STAFF],
                 ['label' => 'nav.notices', 'route' => 'notices.index', 'access' => self::STAFF],
+                ['label' => 'nav.maintenance_requests', 'route' => 'maintenance-requests.index', 'access' => self::STAFF],
                 ['label' => 'nav.buildings', 'route' => 'buildings.index', 'access' => self::STAFF],
                 ['label' => 'nav.floors', 'route' => 'floors.index', 'access' => self::STAFF],
                 ['label' => 'nav.charge_heads', 'route' => 'charge-heads.index', 'access' => self::STAFF],

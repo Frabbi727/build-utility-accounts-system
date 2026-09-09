@@ -29,6 +29,7 @@ return [
     'vendors' => 'সরবরাহকারী',
     'staff' => 'কর্মচারী',
     'notices' => 'নোটিশ বোর্ড',
+    'maintenance_requests' => 'রক্ষণাবেক্ষণ অনুরোধ',
     'ad_hoc_charges' => 'এককালীন চার্জ',
     'charge_heads' => 'চার্জ খাত',
     'opening_balances' => 'প্রারম্ভিক জের',
