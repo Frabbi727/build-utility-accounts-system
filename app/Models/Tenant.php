@@ -12,13 +12,14 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int $flat_id
+ * @property int|null $user_id
  * @property string $name
  * @property string|null $phone
  * @property string|null $email
  * @property Carbon|null $lease_started_on
  * @property Carbon|null $lease_ended_on
  */
-#[Fillable(['flat_id', 'name', 'phone', 'email', 'lease_started_on', 'lease_ended_on'])]
+#[Fillable(['flat_id', 'user_id', 'name', 'phone', 'email', 'lease_started_on', 'lease_ended_on'])]
 class Tenant extends Model
 {
     /** @use HasFactory<TenantFactory> */
@@ -39,5 +40,11 @@ class Tenant extends Model
     public function flat(): BelongsTo
     {
         return $this->belongsTo(Flat::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

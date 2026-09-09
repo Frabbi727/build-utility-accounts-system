@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\BillController;
 use App\Http\Controllers\ReceiptController;
 use App\Livewire\Accounting\OpeningBalances;
 use App\Livewire\Accounting\PeriodList;
 use App\Livewire\AccountList;
+use App\Livewire\Admin\MaintenanceRequestList;
 use App\Livewire\Admin\UserList;
 use App\Livewire\Billing\CostDistributionList;
 use App\Livewire\Dashboard;
@@ -17,11 +19,13 @@ use App\Livewire\Masters\BuildingList;
 use App\Livewire\Masters\ChargeHeadList;
 use App\Livewire\Masters\FlatChargeOverrides;
 use App\Livewire\Masters\FloorList;
+use App\Livewire\Masters\NoticeList;
 use App\Livewire\Masters\OwnerList;
 use App\Livewire\Masters\StaffList;
 use App\Livewire\Masters\TenantList;
 use App\Livewire\Masters\UnitTypeList;
 use App\Livewire\Masters\VendorList;
+use App\Livewire\PaymentList;
 use App\Livewire\RecordPaymentForm;
 use App\Livewire\Reports\BalanceSheet;
 use App\Livewire\Reports\CashBook;
@@ -81,6 +85,9 @@ Route::middleware('auth')->group(function (): void {
     // Likewise the receipt: PaymentPolicy lets an owner print their own and no one else's.
     Route::get('payments/{payment}/receipt', ReceiptController::class)->name('payments.receipt');
 
+    // And the bill itself: ServiceChargeBillPolicy lets an owner print their own.
+    Route::get('bills/{bill}/print', [BillController::class, 'show'])->name('bills.print');
+
     Route::middleware('role:admin|accountant|committee')->group(function (): void {
         Route::get('flats', FlatList::class)->name('flats.index');
         Route::get('buildings', BuildingList::class)->name('buildings.index');
@@ -98,6 +105,8 @@ Route::middleware('auth')->group(function (): void {
         Route::get('tenants', TenantList::class)->name('tenants.index');
         Route::get('vendors', VendorList::class)->name('vendors.index');
         Route::get('staff', StaffList::class)->name('staff.index');
+        Route::get('notices', NoticeList::class)->name('notices.index');
+        Route::get('maintenance-requests', MaintenanceRequestList::class)->name('maintenance-requests.index');
         Route::get('expenses', ExpenseList::class)->name('expenses.index');
         Route::get('vendor-bills', VendorBillList::class)->name('vendor-bills.index');
         Route::get('accounts', AccountList::class)->name('accounts.index');
@@ -110,6 +119,8 @@ Route::middleware('auth')->group(function (): void {
         Route::get('reports/income-expenditure', IncomeExpenditure::class)->name('reports.income-expenditure');
         Route::get('reports/balance-sheet', BalanceSheet::class)->name('reports.balance-sheet');
         Route::get('reports/trial-balance', TrialBalance::class)->name('reports.trial-balance');
+        Route::get('billing/bills/print', [BillController::class, 'month'])->name('bills.print-month');
+        Route::get('payments', PaymentList::class)->name('payments.index');
     });
 
     Route::middleware('role:admin')->group(function (): void {

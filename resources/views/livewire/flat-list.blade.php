@@ -100,6 +100,10 @@
                         </td>
                         <td class="px-4 py-2 text-right">
                             <div class="flex flex-wrap justify-end gap-3">
+                                @can('create', App\Models\Payment::class)
+                                    <a href="{{ route('payments.create', ['flat_id' => $flat->id]) }}"
+                                       class="text-sm font-medium text-emerald-600 hover:text-emerald-800">{{ __('billing.collect') }}</a>
+                                @endcan
                                 <a href="{{ route('flats.statement', $flat) }}"
                                    class="text-sm text-slate-600 hover:text-slate-900">{{ __('reports.statement') }}</a>
 

@@ -49,6 +49,9 @@ class RouteSmokeTest extends TestCase
         return $user;
     }
 
+    // bills.print and payments.receipt need a bound model, so their auth is covered
+    // by BillPrintTest and ReceiptTest rather than by this name-only matrix.
+
     /**
      * @return list<string>
      */
@@ -60,7 +63,7 @@ class RouteSmokeTest extends TestCase
             'accounts.index', 'expenses.index', 'vendor-bills.index',
             'ad-hoc-charges.index', 'unit-types.index', 'shared-costs.index',
             'utilities.index', 'meters.index', 'tariffs.index', 'readings.index',
-            'reports.index', 'reports.owner-dues', 'reports.collections', 'reports.expenses',
+            'reports.index', 'reports.owner-dues', 'reports.collections', 'payments.index', 'bills.print-month', 'reports.expenses',
             'reports.cash-book', 'reports.income-expenditure', 'reports.balance-sheet',
             'reports.trial-balance',
         ];

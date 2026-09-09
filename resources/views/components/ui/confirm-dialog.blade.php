@@ -34,11 +34,11 @@
         </div>
 
         <div class="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-6 py-3">
-            <x-ui.button variant="secondary" wire:click="{{ $cancelAction }}">
+            <x-ui.button variant="secondary" wire:click="{{ $cancelAction }}" wire:loading.attr="disabled" :spinner="false">
                 {{ __('confirmations.cancel') }}
             </x-ui.button>
 
-            <x-ui.button :variant="$variant" wire:click="{{ $confirmAction }}" wire:loading.attr="disabled">
+            <x-ui.button :variant="$variant" wire:click="{{ $confirmAction }}" wire:loading.attr="disabled" :loading-target="$confirmAction">
                 {{ $confirmLabel ?? __('confirmations.confirm') }}
             </x-ui.button>
         </div>

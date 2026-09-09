@@ -139,4 +139,48 @@ class BillingScreensTest extends TestCase
             ->assertViewHas('totalDebit', '3000.00')
             ->assertViewHas('totalCredit', '3000.00');
     }
+
+    public function test_payment_form_shows_billing_details_and_live_allocation(): void
+    {
+        Livewire::actingAs($this->accountant())
+            ->test(RecordPaymentForm::class)
+            ->assertViewHas('billingDetails', null);
+
+        Livewire::actingAs($this->accountant())
+            ->test(GenerateBills::class)
+            ->set('buildingId', $this->building->id)
+            ->set('month', '2026-08')
+            ->call('generate');
+
+        $bill = ServiceChargeBill::firstOrFail();
+
+        $component = Livewire::actingAs($this->accountant())
+            ->test(RecordPaymentForm::class)
+            ->set('flatId', $this->flat->id);
+
+        $details = $component->viewData('billingDetails');
+        $this->assertNotNull($details);
+        $this->assertEquals($this->flat->id, $details['flat']->id);
+        $this->assertEquals('3000.00', $details['outstanding']);
+        $this->assertEquals('0.00', $details['advance']);
+        $this->assertEquals('3000.00', $details['netDue']);
+        $this->assertCount(1, $details['unpaidBills']);
+        $this->assertEquals($bill->id, $details['unpaidBills']->first()['bill']->id);
+        $this->assertNull($details['allocation']);
+
+        $component->set('amount', '2000.00');
+        $details = $component->viewData('billingDetails');
+        $this->assertNotNull($details['allocation']);
+        $this->assertEquals('2000.00', $details['allocation']['allocated']);
+        $this->assertEquals('0.00', $details['allocation']['advance']);
+        $this->assertCount(1, $details['allocation']['lines']);
+        $this->assertEquals($bill->id, $details['allocation']['lines'][0]['bill']->id);
+        $this->assertEquals('2000.00', $details['allocation']['lines'][0]['amount']);
+
+        $component->set('amount', '3500.00');
+        $details = $component->viewData('billingDetails');
+        $this->assertNotNull($details['allocation']);
+        $this->assertEquals('3000.00', $details['allocation']['allocated']);
+        $this->assertEquals('500.00', $details['allocation']['advance']);
+    }
 }

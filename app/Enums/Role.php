@@ -8,6 +8,7 @@ enum Role: string
     case Accountant = 'accountant';
     case Committee = 'committee';
     case Owner = 'owner';
+    case Tenant = 'tenant';
 
     /**
      * Roles belonging to the management side, as opposed to flat owners.
@@ -27,5 +28,15 @@ enum Role: string
     public static function moneyHandlers(): array
     {
         return [self::Admin->value, self::Accountant->value];
+    }
+
+    /**
+     * Roles belonging to the residential side (flat owners and tenants).
+     *
+     * @return list<string>
+     */
+    public static function residents(): array
+    {
+        return [self::Owner->value, self::Tenant->value];
     }
 }

@@ -27,9 +27,10 @@ class Navigation
     private const MENU = [
         ['label' => 'nav.dashboard', 'route' => 'dashboard', 'access' => self::ANY],
         [
-            'label' => 'nav.billing', 'access' => self::MONEY, 'items' => [
+            'label' => 'nav.billing', 'access' => self::STAFF, 'items' => [
                 ['label' => 'nav.generate_bills', 'route' => 'billing.generate', 'access' => self::MONEY],
                 ['label' => 'nav.record_payment', 'route' => 'payments.create', 'access' => self::MONEY],
+                ['label' => 'nav.payments', 'route' => 'payments.index', 'access' => self::STAFF],
                 ['label' => 'nav.shared_costs', 'route' => 'shared-costs.index', 'access' => self::MONEY],
             ],
         ],
@@ -46,6 +47,8 @@ class Navigation
                 ['label' => 'nav.tenants', 'route' => 'tenants.index', 'access' => self::STAFF],
                 ['label' => 'nav.vendors', 'route' => 'vendors.index', 'access' => self::STAFF],
                 ['label' => 'nav.staff', 'route' => 'staff.index', 'access' => self::STAFF],
+                ['label' => 'nav.notices', 'route' => 'notices.index', 'access' => self::STAFF],
+                ['label' => 'nav.maintenance_requests', 'route' => 'maintenance-requests.index', 'access' => self::STAFF],
                 ['label' => 'nav.buildings', 'route' => 'buildings.index', 'access' => self::STAFF],
                 ['label' => 'nav.floors', 'route' => 'floors.index', 'access' => self::STAFF],
                 ['label' => 'nav.charge_heads', 'route' => 'charge-heads.index', 'access' => self::STAFF],

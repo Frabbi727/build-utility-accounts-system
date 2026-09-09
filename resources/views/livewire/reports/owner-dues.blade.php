@@ -17,6 +17,7 @@
                     <th class="px-4 py-3 text-right">{{ __('reports.bucket_61_90') }}</th>
                     <th class="px-4 py-3 text-right">{{ __('reports.bucket_90_plus') }}</th>
                     <th class="px-4 py-3 text-right">{{ __('reports.outstanding') }}</th>
+                    <th class="px-4 py-3 text-right">{{ __('masters.actions') }}</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -31,9 +32,17 @@
                         <td class="px-4 py-2 text-right text-amber-700"><x-money :amount="$row['days_61_90']" blank-zero /></td>
                         <td class="px-4 py-2 text-right text-red-600"><x-money :amount="$row['days_90_plus']" blank-zero /></td>
                         <td class="px-4 py-2 text-right font-medium"><x-money :amount="$row['outstanding']" /></td>
+                        <td class="px-4 py-2 text-right">
+                            @can('create', App\Models\Payment::class)
+                                <a href="{{ route('payments.create', ['flat_id' => $row['flat']->id]) }}"
+                                   class="text-xs font-semibold text-emerald-600 hover:text-emerald-800">
+                                    {{ __('billing.collect') }}
+                                </a>
+                            @endcan
+                        </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="px-4 py-6 text-center text-slate-400">{{ __('reports.no_dues') }}</td></tr>
+                    <tr><td colspan="8" class="px-4 py-6 text-center text-slate-400">{{ __('reports.no_dues') }}</td></tr>
                 @endforelse
             </tbody>
             <tfoot class="border-t-2 border-slate-300 bg-slate-50 font-semibold">
@@ -44,6 +53,7 @@
                     <td class="px-4 py-3 text-right"><x-money :amount="$totals['days_61_90']" /></td>
                     <td class="px-4 py-3 text-right"><x-money :amount="$totals['days_90_plus']" /></td>
                     <td class="px-4 py-3 text-right"><x-money :amount="$totals['outstanding']" /></td>
+                    <td class="px-4 py-3"></td>
                 </tr>
             </tfoot>
         </table>
