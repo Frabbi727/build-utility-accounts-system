@@ -39,6 +39,27 @@ class User extends Authenticatable
         return $this->hasOne(Owner::class);
     }
 
+    /** @return HasOne<Tenant, $this> */
+    public function tenant(): HasOne
+    {
+        return $this->hasOne(Tenant::class);
+    }
+
+    public function isResident(): bool
+    {
+        return $this->hasAnyRole([Role::Owner->value, Role::Tenant->value]);
+    }
+
+    public function isOwner(): bool
+    {
+        return $this->hasRole(Role::Owner->value);
+    }
+
+    public function isTenant(): bool
+    {
+        return $this->hasRole(Role::Tenant->value);
+    }
+
     /**
      * Flats this user may see. Staff roles see everything; an owner sees only their own.
      */
