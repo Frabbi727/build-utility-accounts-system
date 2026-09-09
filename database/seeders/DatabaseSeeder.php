@@ -12,9 +12,9 @@ class DatabaseSeeder extends Seeder
             ChartOfAccountsSeeder::class,
             RolesAndPermissionsSeeder::class,
             AdminUserSeeder::class,
-            DemoBuildingSeeder::class,
-            ChargeHeadsSeeder::class,
-            VendorsAndStaffSeeder::class,
+            // DemoBuildingSeeder::class,
+            //   ChargeHeadsSeeder::class,
+            // VendorsAndStaffSeeder::class,
         ]);
     }
 }
