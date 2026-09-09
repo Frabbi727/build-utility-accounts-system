@@ -2,11 +2,15 @@
 
 namespace App\Livewire\Masters;
 
+use App\Enums\Role;
 use App\Livewire\Concerns\WithCrudModal;
 use App\Models\Building;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Support\CurrentBuilding;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -31,6 +35,65 @@ class TenantList extends Component
     public ?string $leaseStartedOn = null;
 
     public ?string $leaseEndedOn = null;
+
+    public bool $showUserModal = false;
+
+    public ?int $targetTenantId = null;
+
+    public string $newUserName = '';
+
+    public string $newUserEmail = '';
+
+    public string $newUserPassword = '';
+
+    public ?string $generatedCredentials = null;
+
+    public function openCreateUserModal(int $tenantId): void
+    {
+        $tenant = $this->findRecord($tenantId);
+        $this->authorizeAction('update', $tenant);
+        $this->targetTenantId = $tenant->id;
+        $this->newUserName = $tenant->name;
+        $this->newUserEmail = $tenant->email ?? '';
+        $this->newUserPassword = Str::random(10);
+        $this->generatedCredentials = null;
+        $this->showUserModal = true;
+    }
+
+    public function closeUserModal(): void
+    {
+        $this->showUserModal = false;
+        $this->targetTenantId = null;
+        $this->generatedCredentials = null;
+    }
+
+    public function provisionUser(): void
+    {
+        $tenant = $this->findRecord((int) $this->targetTenantId);
+        $this->authorizeAction('update', $tenant);
+        $this->validate([
+            'newUserName' => ['required', 'string', 'max:255'],
+            'newUserEmail' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'newUserPassword' => ['required', 'string', 'min:8'],
+        ]);
+
+        $tenant = $this->findRecord((int) $this->targetTenantId);
+
+        $user = User::create([
+            'name' => $this->newUserName,
+            'email' => $this->newUserEmail,
+            'password' => Hash::make($this->newUserPassword),
+        ]);
+        $user->assignRole(Role::Tenant->value);
+
+        $tenant->update([
+            'email' => $this->newUserEmail,
+            'user_id' => $user->id,
+        ]);
+
+        $this->generatedCredentials = "Email: {$this->newUserEmail} | Password: {$this->newUserPassword}";
+        $this->notify(__('masters.saved'));
+    }
 
     private function building(): ?Building
     {

@@ -7,6 +7,8 @@ use App\Livewire\Concerns\WithCrudModal;
 use App\Models\Owner;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -31,6 +33,65 @@ class OwnerList extends Component
     public ?string $nationalId = null;
 
     public ?int $userId = null;
+
+    public bool $showUserModal = false;
+
+    public ?int $targetOwnerId = null;
+
+    public string $newUserName = '';
+
+    public string $newUserEmail = '';
+
+    public string $newUserPassword = '';
+
+    public ?string $generatedCredentials = null;
+
+    public function openCreateUserModal(int $ownerId): void
+    {
+        $owner = Owner::findOrFail($ownerId);
+        $this->authorizeAction('update', $owner);
+        $this->targetOwnerId = $owner->id;
+        $this->newUserName = $owner->name;
+        $this->newUserEmail = $owner->email ?? '';
+        $this->newUserPassword = Str::random(10);
+        $this->generatedCredentials = null;
+        $this->showUserModal = true;
+    }
+
+    public function closeUserModal(): void
+    {
+        $this->showUserModal = false;
+        $this->targetOwnerId = null;
+        $this->generatedCredentials = null;
+    }
+
+    public function provisionUser(): void
+    {
+        $owner = Owner::findOrFail((int) $this->targetOwnerId);
+        $this->authorizeAction('update', $owner);
+        $this->validate([
+            'newUserName' => ['required', 'string', 'max:255'],
+            'newUserEmail' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'newUserPassword' => ['required', 'string', 'min:8'],
+        ]);
+
+        $owner = Owner::findOrFail((int) $this->targetOwnerId);
+
+        $user = User::create([
+            'name' => $this->newUserName,
+            'email' => $this->newUserEmail,
+            'password' => Hash::make($this->newUserPassword),
+        ]);
+        $user->assignRole(Role::Owner->value);
+
+        $owner->update([
+            'email' => $this->newUserEmail,
+            'user_id' => $user->id,
+        ]);
+
+        $this->generatedCredentials = "Email: {$this->newUserEmail} | Password: {$this->newUserPassword}";
+        $this->notify(__('masters.saved'));
+    }
 
     public function updatingSearch(): void
     {

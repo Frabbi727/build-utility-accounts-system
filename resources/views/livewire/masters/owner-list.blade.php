@@ -42,7 +42,15 @@
                         @if ($owner->user !== null)
                             <x-ui.badge variant="success">{{ $owner->user->email }}</x-ui.badge>
                         @else
-                            <span class="text-xs text-slate-400">{{ __('masters.no_login') }}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-slate-400">{{ __('masters.no_login') }}</span>
+                                @can('update', $owner)
+                                    <button type="button" wire:click="openCreateUserModal({{ $owner->id }})"
+                                            class="inline-flex items-center rounded bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100">
+                                        {{ __('masters.create_login') }}
+                                    </button>
+                                @endcan
+                            </div>
                         @endif
                     </td>
                     <td class="px-4 py-2 text-right tabular-nums">{{ $owner->flats_count }}</td>
@@ -99,6 +107,46 @@
                     <x-ui.button type="submit" wire:loading.attr="disabled">{{ __('masters.save') }}</x-ui.button>
                 </div>
             </form>
+        </x-ui.modal>
+    @endif
+
+    @if ($showUserModal)
+        <x-ui.modal :title="__('masters.create_login')">
+            @if ($generatedCredentials)
+                <div class="space-y-4 px-6 py-5">
+                    <div class="rounded-md border border-emerald-200 bg-emerald-50 p-4">
+                        <p class="font-medium text-emerald-800">{{ __('masters.user_provisioned') }}</p>
+                        <p class="mt-1 text-sm text-emerald-700">{{ __('masters.copy_credentials') }}</p>
+                        <div class="mt-3 rounded bg-white p-3 font-mono text-sm text-slate-900 border border-emerald-300 select-all">
+                            {{ $generatedCredentials }}
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end border-t border-slate-200 bg-slate-50 px-6 py-3">
+                    <x-ui.button wire:click="closeUserModal">{{ __('masters.done') }}</x-ui.button>
+                </div>
+            @else
+                <form wire:submit="provisionUser">
+                    <div class="grid gap-4 px-6 py-5">
+                        <x-form.field :label="__('masters.name')" name="newUserName" required>
+                            <x-form.input wire:model="newUserName" />
+                        </x-form.field>
+
+                        <x-form.field :label="__('masters.email')" name="newUserEmail" required>
+                            <x-form.input type="email" wire:model="newUserEmail" />
+                        </x-form.field>
+
+                        <x-form.field :label="__('masters.password')" name="newUserPassword" required>
+                            <x-form.input type="text" wire:model="newUserPassword" />
+                        </x-form.field>
+                    </div>
+
+                    <div class="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-6 py-3">
+                        <x-ui.button variant="secondary" wire:click="closeUserModal">{{ __('masters.cancel') }}</x-ui.button>
+                        <x-ui.button type="submit" wire:loading.attr="disabled">{{ __('masters.save') }}</x-ui.button>
+                    </div>
+                </form>
+            @endif
         </x-ui.modal>
     @endif
 </div>
