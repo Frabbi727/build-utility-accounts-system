@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\Resident\BillApiController;
 use App\Http\Controllers\Api\V1\Resident\DashboardController;
+use App\Http\Controllers\Api\V1\Resident\MaintenanceRequestApiController;
 use App\Http\Controllers\Api\V1\Resident\PaymentSubmissionApiController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,9 @@ Route::prefix('v1')->group(function (): void {
             Route::post('payment-submissions', [PaymentSubmissionApiController::class, 'store'])->name('api.v1.resident.submissions.store');
             Route::get('payments', [PaymentSubmissionApiController::class, 'payments'])->name('api.v1.resident.payments.index');
             Route::get('payments/{payment}/receipt', [PaymentSubmissionApiController::class, 'receipt'])->name('api.v1.resident.payments.receipt');
+            Route::get('maintenance-requests', [MaintenanceRequestApiController::class, 'index'])->name('api.v1.resident.maintenance.index');
+            Route::post('maintenance-requests', [MaintenanceRequestApiController::class, 'store'])->name('api.v1.resident.maintenance.store');
+            Route::get('maintenance-requests/{maintenanceRequest}', [MaintenanceRequestApiController::class, 'show'])->name('api.v1.resident.maintenance.show');
         });
     });
 });
