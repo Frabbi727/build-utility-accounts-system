@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\Resident\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -13,5 +14,11 @@ Route::prefix('v1')->group(function (): void {
         Route::post('auth/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
         Route::post('auth/fcm-token', [AuthController::class, 'registerFcmToken'])->name('api.v1.auth.fcm-token');
         Route::post('auth/change-password', [AuthController::class, 'changePassword'])->name('api.v1.auth.change-password');
+
+        // Resident Portal
+        Route::prefix('resident')->group(function (): void {
+            Route::get('flats', [DashboardController::class, 'flats'])->name('api.v1.resident.flats');
+            Route::get('dashboard', [DashboardController::class, 'index'])->name('api.v1.resident.dashboard');
+        });
     });
 });
