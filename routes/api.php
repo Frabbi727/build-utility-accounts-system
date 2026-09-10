@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\Resident\BillApiController;
 use App\Http\Controllers\Api\V1\Resident\DashboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +20,8 @@ Route::prefix('v1')->group(function (): void {
         Route::prefix('resident')->group(function (): void {
             Route::get('flats', [DashboardController::class, 'flats'])->name('api.v1.resident.flats');
             Route::get('dashboard', [DashboardController::class, 'index'])->name('api.v1.resident.dashboard');
+            Route::get('bills', [BillApiController::class, 'index'])->name('api.v1.resident.bills.index');
+            Route::get('bills/{bill}', [BillApiController::class, 'show'])->name('api.v1.resident.bills.show');
         });
     });
 });
