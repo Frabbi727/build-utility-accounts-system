@@ -50,8 +50,8 @@ class DuesReminder
         $targetLocale = $locale ?? app()->getLocale();
 
         $owner = $flat->owner;
-        $cleanPhone = static::sanitizePhone($phone ?? $owner?->phone);
-        $ownerName = $owner?->name ?? '';
+        $cleanPhone = static::sanitizePhone($phone ?? ($owner !== null ? $owner->phone : null));
+        $ownerName = $owner !== null ? $owner->name : '';
 
         $building = $flat->building;
         $buildingName = '';
