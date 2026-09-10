@@ -1,0 +1,51 @@
+name: resident_mobile_app
+description: "Cross-platform resident mobile application for utility bills, payments, notices, and maintenance ticketing."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State Management
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.5
+
+  # Networking & Serialization
+  dio: ^5.7.0
+  pretty_dio_logger: ^1.4.0
+
+  # Secure Storage & Cache
+  flutter_secure_storage: ^9.2.2
+  shared_preferences: ^2.3.2
+
+  # Firebase Push Notifications
+  firebase_core: ^3.6.0
+  firebase_messaging: ^15.1.3
+  flutter_local_notifications: ^17.2.3
+
+  # UI, Icons, Helpers
+  intl: ^0.19.0
+  cached_network_image: ^3.4.1
+  image_picker: ^1.1.2
+  file_picker: ^8.1.3
+  url_launcher: ^6.3.1
+  flutter_dotenv: ^5.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  bloc_test: ^9.1.7
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - .env
