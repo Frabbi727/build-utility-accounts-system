@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\Resident\BillApiController;
 use App\Http\Controllers\Api\V1\Resident\DashboardController;
 use App\Http\Controllers\Api\V1\Resident\MaintenanceRequestApiController;
+use App\Http\Controllers\Api\V1\Resident\NoticeApiController;
 use App\Http\Controllers\Api\V1\Resident\PaymentSubmissionApiController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +32,8 @@ Route::prefix('v1')->group(function (): void {
             Route::get('maintenance-requests', [MaintenanceRequestApiController::class, 'index'])->name('api.v1.resident.maintenance.index');
             Route::post('maintenance-requests', [MaintenanceRequestApiController::class, 'store'])->name('api.v1.resident.maintenance.store');
             Route::get('maintenance-requests/{maintenanceRequest}', [MaintenanceRequestApiController::class, 'show'])->name('api.v1.resident.maintenance.show');
+            Route::get('notices', [NoticeApiController::class, 'index'])->name('api.v1.resident.notices.index');
+            Route::get('notices/{notice}', [NoticeApiController::class, 'show'])->name('api.v1.resident.notices.show');
         });
     });
 });
