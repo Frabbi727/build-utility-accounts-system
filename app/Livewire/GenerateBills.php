@@ -4,11 +4,13 @@ namespace App\Livewire;
 
 use App\Enums\DistributionStatus;
 use App\Enums\ReadingStatus;
+use App\Jobs\SendResidentPushNotificationJob;
 use App\Livewire\Concerns\PostsToLedger;
 use App\Livewire\Concerns\WithConfirmation;
 use App\Livewire\Concerns\WithNotices;
 use App\Models\Building;
 use App\Models\CostDistribution;
+use App\Models\Flat;
 use App\Models\Meter;
 use App\Models\MeterReading;
 use App\Models\ServiceChargeBill;
@@ -83,6 +85,32 @@ class GenerateBills extends Component
 
         if ($bills === null) {
             return;
+        }
+
+        if ($bills->isNotEmpty()) {
+            $flatIds = $bills->pluck('flat_id')->unique();
+            $flats = Flat::whereIn('id', $flatIds)->with(['owner', 'tenants'])->get();
+            $userIds = [];
+            foreach ($flats as $flat) {
+                if ($flat->owner?->user_id) {
+                    $userIds[] = $flat->owner->user_id;
+                }
+                foreach ($flat->tenants as $tenant) {
+                    if ($tenant->user_id) {
+                        $userIds[] = $tenant->user_id;
+                    }
+                }
+            }
+            $userIds = array_values(array_unique($userIds));
+
+            if (! empty($userIds)) {
+                SendResidentPushNotificationJob::dispatch(
+                    $userIds,
+                    'New Monthly Bill Issued',
+                    "Your service charge bill for {$month->format('F Y')} has been issued.",
+                    ['type' => 'new_bill', 'month' => $month->format('Y-m')]
+                );
+            }
         }
 
         $this->notify($bills->isEmpty()

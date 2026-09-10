@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Enums\MaintenanceCategory;
 use App\Enums\MaintenancePriority;
 use App\Enums\MaintenanceStatus;
+use App\Jobs\SendResidentPushNotificationJob;
 use App\Livewire\Concerns\WithCrudModal;
 use App\Models\Building;
 use App\Models\MaintenanceRequest;
@@ -140,6 +141,15 @@ class MaintenanceRequestList extends Component
             'resolution_notes' => $this->resolutionNotes,
             'resolved_at' => $resolvedAt,
         ])->save();
+
+        if ($record->user_id) {
+            SendResidentPushNotificationJob::dispatch(
+                [$record->user_id],
+                'Maintenance Ticket Updated: '.$record->title,
+                "Status: {$record->status->label()}".($record->resolution_notes ? " - {$record->resolution_notes}" : ''),
+                ['type' => 'ticket_updated', 'ticket_id' => $record->id]
+            );
+        }
 
         return $record;
     }

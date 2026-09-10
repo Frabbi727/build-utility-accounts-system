@@ -3,6 +3,7 @@
 namespace App\Livewire\Billing;
 
 use App\Enums\PaymentSubmissionStatus;
+use App\Jobs\SendResidentPushNotificationJob;
 use App\Livewire\Concerns\WithNotices;
 use App\Models\PaymentSubmission;
 use App\Services\Billing\RecordPayment;
@@ -75,6 +76,13 @@ class PaymentSubmissionList extends Component
                 'reviewed_at' => now(),
             ]);
 
+            SendResidentPushNotificationJob::dispatch(
+                [$submission->user_id],
+                'Payment Approved',
+                "Your payment of BDT {$submission->amount} has been approved. Receipt: {$payment->receipt_no}",
+                ['type' => 'payment_approved', 'payment_id' => $payment->id]
+            );
+
             return $payment;
         });
 
@@ -125,6 +133,13 @@ class PaymentSubmissionList extends Component
             'reviewed_by' => Auth::id(),
             'reviewed_at' => now(),
         ]);
+
+        SendResidentPushNotificationJob::dispatch(
+            [$submission->user_id],
+            'Payment Rejected',
+            "Your payment submission of BDT {$submission->amount} was rejected: {$this->rejectionReason}",
+            ['type' => 'payment_rejected', 'submission_id' => $submission->id]
+        );
 
         $this->closeRejectModal();
         $this->notify(__('billing.rejected'));

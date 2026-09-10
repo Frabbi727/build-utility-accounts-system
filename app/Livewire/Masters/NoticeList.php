@@ -3,12 +3,14 @@
 namespace App\Livewire\Masters;
 
 use App\Enums\NoticeType;
+use App\Jobs\SendResidentPushNotificationJob;
 use App\Livewire\Concerns\WithCrudModal;
 use App\Models\Building;
 use App\Models\Notice;
 use App\Support\CurrentBuilding;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -82,7 +84,8 @@ class NoticeList extends Component
 
     protected function persist(): Notice
     {
-        $notice = $this->editingId === null ? new Notice : $this->findRecord($this->editingId);
+        $isNew = $this->editingId === null;
+        $notice = $isNew ? new Notice : $this->findRecord($this->editingId);
 
         $notice->fill([
             'building_id' => app(CurrentBuilding::class)->getOrFail()->id,
@@ -94,6 +97,34 @@ class NoticeList extends Component
             'published_at' => $this->publishedAt ?: now(),
             'expires_at' => $this->expiresAt ?: null,
         ])->save();
+
+        if ($isNew) {
+            $building = app(CurrentBuilding::class)->get();
+            if ($building !== null) {
+                $flats = $building->flats()->with(['owner', 'tenants'])->get();
+                $userIds = [];
+                foreach ($flats as $flat) {
+                    if ($flat->owner?->user_id) {
+                        $userIds[] = $flat->owner->user_id;
+                    }
+                    foreach ($flat->tenants as $tenant) {
+                        if ($tenant->user_id) {
+                            $userIds[] = $tenant->user_id;
+                        }
+                    }
+                }
+                $userIds = array_values(array_unique($userIds));
+
+                if (! empty($userIds)) {
+                    SendResidentPushNotificationJob::dispatch(
+                        $userIds,
+                        'New Notice: '.$notice->title,
+                        Str::limit($notice->content, 100),
+                        ['type' => 'notice', 'notice_id' => $notice->id]
+                    );
+                }
+            }
+        }
 
         return $notice;
     }
