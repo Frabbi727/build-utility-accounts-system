@@ -6,33 +6,56 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? config('app.name') }}</title>
     <script>
-        if (localStorage.getItem('sidebar_collapsed') === 'true') {
+        function getSidebarCollapsed() {
+            try {
+                return localStorage.getItem('sidebar_collapsed') === 'true';
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function setSidebarCollapsed(value) {
+            try {
+                localStorage.setItem('sidebar_collapsed', value);
+            } catch (e) {}
+        }
+
+        if (getSidebarCollapsed()) {
             document.documentElement.classList.add('sidebar-collapsed');
         }
 
-        document.addEventListener('alpine:init', () => {
-            Alpine.store('sidebar', {
-                collapsed: localStorage.getItem('sidebar_collapsed') === 'true',
-                mobileOpen: false,
-                toggleCollapse() {
-                    this.collapsed = !this.collapsed;
-                    localStorage.setItem('sidebar_collapsed', this.collapsed);
-                    document.documentElement.classList.toggle('sidebar-collapsed', this.collapsed);
-                },
-                openMobile() {
-                    this.mobileOpen = true;
-                },
-                closeMobile() {
-                    this.mobileOpen = false;
-                }
-            });
-        });
+        function registerSidebarStore() {
+            if (window.Alpine && !Alpine.store('sidebar')) {
+                Alpine.store('sidebar', {
+                    collapsed: getSidebarCollapsed(),
+                    mobileOpen: false,
+                    toggleCollapse() {
+                        this.collapsed = !this.collapsed;
+                        setSidebarCollapsed(this.collapsed);
+                        document.documentElement.classList.toggle('sidebar-collapsed', this.collapsed);
+                    },
+                    openMobile() {
+                        this.mobileOpen = true;
+                    },
+                    closeMobile() {
+                        this.mobileOpen = false;
+                    }
+                });
+            }
+        }
+
+        if (window.Alpine) {
+            registerSidebarStore();
+        } else {
+            document.addEventListener('alpine:init', registerSidebarStore);
+        }
 
         document.addEventListener('livewire:navigated', () => {
-            const isCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';
+            const isCollapsed = getSidebarCollapsed();
             document.documentElement.classList.toggle('sidebar-collapsed', isCollapsed);
             if (window.Alpine && Alpine.store('sidebar')) {
                 Alpine.store('sidebar').collapsed = isCollapsed;
+                Alpine.store('sidebar').closeMobile();
             }
         });
     </script>
@@ -46,7 +69,13 @@
 </head>
 <body class="h-full bg-slate-50 text-slate-800 antialiased">
 <div class="min-h-screen bg-slate-50 text-slate-800 antialiased flex"
-     x-data
+     x-data="{
+         get collapsed() { return $store.sidebar.collapsed },
+         get mobileOpen() { return $store.sidebar.mobileOpen },
+         toggleCollapse() { $store.sidebar.toggleCollapse() },
+         openMobile() { $store.sidebar.openMobile() },
+         closeMobile() { $store.sidebar.closeMobile() }
+     }"
      @keydown.window.escape="$store.sidebar.closeMobile()"
 >
     @auth
