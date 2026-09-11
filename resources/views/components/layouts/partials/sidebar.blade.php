@@ -231,7 +231,8 @@
                     @php
                         $mobileCategorySlug = \Illuminate\Support\Str::slug($entry['label']);
                     @endphp
-                    <div x-data="{ open: {{ $entry['active'] ? 'true' : 'false' }} }">
+                    <div x-data="{ open: {{ $entry['active'] ? 'true' : 'false' }} }"
+                         x-on:livewire:navigated.window="$nextTick(() => { if ($el.querySelector('[data-current]')) open = true })">
                         <button type="button"
                                 @click="open = !open"
                                 :aria-expanded="open"
