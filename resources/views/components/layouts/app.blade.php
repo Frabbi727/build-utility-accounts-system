@@ -10,6 +10,11 @@
             document.documentElement.classList.add('sidebar-collapsed');
         }
     </script>
+    <style>
+        html.sidebar-collapsed aside[data-sidebar] { width: 4.5rem !important; }
+        html.sidebar-collapsed [data-sidebar-expanded] { display: none !important; }
+        html:not(.sidebar-collapsed) [data-sidebar-collapsed] { display: none !important; }
+    </style>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="h-full bg-slate-50 text-slate-800 antialiased">
