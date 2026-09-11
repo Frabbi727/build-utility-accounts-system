@@ -9,7 +9,7 @@
        class="hidden lg:flex lg:flex-col shrink-0 transition-all duration-300 ease-in-out border-r border-slate-200 bg-white min-h-screen sticky top-0 h-screen select-none"
        :class="$store.sidebar.collapsed ? 'w-[4.5rem]' : 'w-64'">
     {{-- Brand Header --}}
-    <div class="h-16 flex items-center border-b border-slate-200 shrink-0 px-4"
+    <div class="h-16 flex items-center border-b border-slate-200 shrink-0"
          :class="$store.sidebar.collapsed ? 'justify-center px-0' : 'px-4'">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-3 min-w-0" wire:navigate aria-label="{{ config('app.name') }}">
             <x-ui.icon name="building" class="w-6 h-6 text-slate-900 shrink-0" />
@@ -64,7 +64,7 @@
                     $categorySlug = \Illuminate\Support\Str::slug($entry['label']);
                 @endphp
                 <div x-data="{ open: {{ $entry['active'] ? 'true' : 'false' }}, flyoutOpen: false }"
-                     x-on:livewire:navigated.window="$nextTick(() => { if ($el.querySelector('[data-current]')) open = true })"
+                     x-on:livewire:navigated.window="$nextTick(() => { if ($el.querySelector('[data-current]')) open = true; flyoutOpen = false })"
                      class="relative">
                     {{-- Expanded Mode --}}
                     <div data-sidebar-expanded x-show="!$store.sidebar.collapsed">
@@ -135,6 +135,7 @@
                                     <a href="{{ $item['url'] }}"
                                        wire:navigate
                                        wire:current="!bg-slate-100 !text-slate-900 !font-semibold"
+                                       @click="flyoutOpen = false"
                                        @class([
                                            'block px-2.5 py-1.5 text-sm rounded-md transition-colors',
                                            'bg-slate-100 text-slate-900 font-semibold' => $item['active'],
@@ -157,8 +158,8 @@
                 @click="$store.sidebar.toggleCollapse()"
                 :aria-expanded="!$store.sidebar.collapsed"
                 :aria-label="$store.sidebar.collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
-                class="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors cursor-pointer"
-                :class="$store.sidebar.collapsed ? 'justify-center px-0' : ''">
+                class="flex items-center gap-3 w-full py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors cursor-pointer"
+                :class="$store.sidebar.collapsed ? 'justify-center px-0' : 'px-3'">
             <div data-sidebar-expanded x-show="!$store.sidebar.collapsed" class="flex items-center gap-3">
                 <x-ui.icon name="chevron-left" class="w-5 h-5 shrink-0" />
                 <span>Collapse</span>
