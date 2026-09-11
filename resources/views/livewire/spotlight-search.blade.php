@@ -2,34 +2,29 @@
         isOpen: @entangle('isOpen'),
         selectedIndex: 0,
         init() {
-            window.addEventListener('keydown', (e) => {
-                if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-                    e.preventDefault();
-                    this.isOpen = !this.isOpen;
-                    if (this.isOpen) {
-                        this.selectedIndex = 0;
-                        $nextTick(() => $refs.searchInput?.focus());
-                    }
-                }
-                if (e.key === 'Escape' && this.isOpen) {
-                    this.isOpen = false;
-                }
-            });
             this.$watch('isOpen', value => {
                 if (value) {
                     this.selectedIndex = 0;
                     $nextTick(() => $refs.searchInput?.focus());
                 }
             });
+            this.$watch('$wire.query', () => {
+                this.selectedIndex = 0;
+            });
         },
-        navigateNext(total) {
-            if (total === 0) return;
-            this.selectedIndex = (this.selectedIndex + 1) % total;
+        getItems() {
+            return $refs.resultsList ? Array.from($refs.resultsList.querySelectorAll('[data-result-index]')) : [];
+        },
+        navigateNext() {
+            const items = this.getItems();
+            if (items.length === 0) return;
+            this.selectedIndex = (this.selectedIndex + 1) % items.length;
             this.scrollToSelected();
         },
-        navigatePrev(total) {
-            if (total === 0) return;
-            this.selectedIndex = (this.selectedIndex - 1 + total) % total;
+        navigatePrev() {
+            const items = this.getItems();
+            if (items.length === 0) return;
+            this.selectedIndex = (this.selectedIndex - 1 + items.length) % items.length;
             this.scrollToSelected();
         },
         scrollToSelected() {
@@ -49,6 +44,9 @@
         }
     }"
     x-on:open-spotlight.window="isOpen = true; selectedIndex = 0; $nextTick(() => $refs.searchInput?.focus())"
+    @keydown.window.cmd.k.prevent="isOpen = !isOpen; if (isOpen) { selectedIndex = 0; $nextTick(() => $refs.searchInput?.focus()) }"
+    @keydown.window.ctrl.k.prevent="isOpen = !isOpen; if (isOpen) { selectedIndex = 0; $nextTick(() => $refs.searchInput?.focus()) }"
+    @keydown.window.escape="isOpen = false"
     x-show="isOpen"
     x-cloak
     class="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6 md:p-20"
@@ -83,9 +81,14 @@
             <input type="text"
                    x-ref="searchInput"
                    wire:model.live.debounce.200ms="query"
-                   @keydown.down.prevent="navigateNext({{ $flats->count() + count($shortcuts) }})"
-                   @keydown.up.prevent="navigatePrev({{ $flats->count() + count($shortcuts) }})"
+                   @input="selectedIndex = 0"
+                   @keydown.down.prevent="navigateNext()"
+                   @keydown.up.prevent="navigatePrev()"
                    @keydown.enter.prevent="selectCurrent()"
+                   role="combobox"
+                   :aria-expanded="isOpen"
+                   aria-autocomplete="list"
+                   aria-controls="spotlight-results"
                    placeholder="{{ __('billing.search_flat') }} ({{ __('masters.flat_number') }}, {{ __('billing.owner') }}, {{ __('masters.phone') }})..."
                    class="h-12 w-full border-0 bg-transparent pl-3 pr-10 text-sm text-slate-900 placeholder-slate-400 focus:ring-0 focus:outline-hidden">
 
@@ -116,7 +119,7 @@
         @endif
 
         <!-- Search Content Area -->
-        <div x-ref="resultsList" class="max-h-96 overflow-y-auto p-2">
+        <div id="spotlight-results" x-ref="resultsList" role="listbox" class="max-h-96 overflow-y-auto p-2">
             @if ($flats->isNotEmpty())
                 <div class="mb-2 px-3 pt-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
                     {{ __('nav.flats') }}
@@ -130,6 +133,8 @@
                             $resultIndex = $loop->index;
                         @endphp
                         <div data-result-index="{{ $resultIndex }}"
+                             role="option"
+                             :aria-selected="selectedIndex === {{ $resultIndex }}"
                              :class="selectedIndex === {{ $resultIndex }} ? 'bg-slate-100' : 'hover:bg-slate-50'"
                              @mouseenter="selectedIndex = {{ $resultIndex }}"
                              class="flex items-center justify-between rounded-lg p-2.5 transition-colors">
@@ -168,7 +173,7 @@
                                     <x-money :amount="$due" />
                                 </span>
 
-                                @if ($reminder && $reminder['whatsapp_url'] !== '')
+                                @if (auth()->user()?->canManageMoney() && $reminder && $reminder['whatsapp_url'] !== '')
                                     <a href="{{ $reminder['whatsapp_url'] }}"
                                        target="_blank"
                                        rel="noopener noreferrer"
@@ -211,6 +216,8 @@
                         <a href="{{ $shortcut['route'] }}"
                            wire:navigate
                            data-result-index="{{ $shortcutIndex }}"
+                           role="option"
+                           :aria-selected="selectedIndex === {{ $shortcutIndex }}"
                            :class="selectedIndex === {{ $shortcutIndex }} ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'"
                            @mouseenter="selectedIndex = {{ $shortcutIndex }}"
                            @click="isOpen = false"

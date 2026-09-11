@@ -59,16 +59,17 @@ class SpotlightSearch extends Component
 
         $items = app(Navigation::class)->allFlatItems($user);
 
-        return array_values(array_map(fn (array $item): array => [
+        return array_map(fn (array $item): array => [
             'title' => $item['label'],
             'route' => $item['url'],
             'category' => $item['category'],
             'icon' => $item['icon'] ?? 'folder',
-        ], $items));
+        ], $items);
     }
 
     public function render(LedgerReports $reports): View
     {
+        $user = auth()->user();
         $building = app(CurrentBuilding::class)->get();
         $trimmed = trim($this->query);
 
@@ -77,8 +78,9 @@ class SpotlightSearch extends Component
         $dues = [];
         $reminders = [];
 
-        if ($trimmed !== '') {
+        if ($user !== null && $building !== null && $trimmed !== '') {
             $flatQuery = Flat::query()
+                ->where('building_id', $building->id)
                 ->where(function ($q) use ($trimmed): void {
                     $q->where('number', 'ilike', "%{$trimmed}%")
                         ->orWhereHas('owner', function ($oq) use ($trimmed): void {
@@ -94,28 +96,38 @@ class SpotlightSearch extends Component
                 ->orderBy('number')
                 ->limit(8);
 
-            if ($building !== null) {
-                $flatQuery->where('building_id', $building->id);
+            if (! $user->isStaff()) {
+                $flatQuery->where(function ($q) use ($user): void {
+                    if ($user->owner !== null) {
+                        $q->where('owner_id', $user->owner->id);
+                    } elseif ($user->tenant !== null) {
+                        $q->where('id', $user->tenant->flat_id);
+                    } else {
+                        $q->whereRaw('1 = 0');
+                    }
+                });
             }
 
             $flats = $flatQuery->get();
 
-            try {
-                $outstanding = $building !== null ? $reports->outstandingByFlat() : [];
+            if ($flats->isNotEmpty()) {
+                try {
+                    $outstanding = $reports->outstandingByFlat();
 
-                foreach ($flats as $flat) {
-                    $due = $outstanding[$flat->id] ?? '0.00';
-                    $dues[$flat->id] = $due;
-                    if (bccomp($due, '0.00', 2) > 0) {
-                        $reminders[$flat->id] = DuesReminder::for($flat, $due);
+                    foreach ($flats as $flat) {
+                        $due = $outstanding[$flat->id] ?? '0.00';
+                        $dues[$flat->id] = $due;
+                        if (bccomp($due, '0.00', 2) > 0) {
+                            $reminders[$flat->id] = DuesReminder::for($flat, $due);
+                        }
                     }
-                }
-                $this->errorMessage = null;
-            } catch (\Throwable $e) {
-                report($e);
-                $this->errorMessage = 'Could not calculate current dues. Showing flat details without ledger balances.';
-                foreach ($flats as $flat) {
-                    $dues[$flat->id] = '0.00';
+                    $this->errorMessage = null;
+                } catch (\Throwable $e) {
+                    report($e);
+                    $this->errorMessage = 'Could not calculate current dues. Showing flat details without ledger balances.';
+                    foreach ($flats as $flat) {
+                        $dues[$flat->id] = '0.00';
+                    }
                 }
             }
         } else {

@@ -161,4 +161,23 @@ class SpotlightSearchTest extends TestCase
             ->dispatch('open-spotlight')
             ->assertSet('isOpen', true);
     }
+
+    public function test_spotlight_restricts_resident_to_their_own_flat(): void
+    {
+        $residentUser = User::factory()->create();
+        $residentUser->assignRole(Role::Owner->value);
+
+        $myOwner = Owner::factory()->for($residentUser)->create(['name' => 'Resident Owner']);
+        $myFlat = Flat::factory()->for($this->building)->for($myOwner)->create(['number' => '3A']);
+
+        $neighborOwner = Owner::factory()->create(['name' => 'Secret Neighbor', 'phone' => '01999999999']);
+        $neighborFlat = Flat::factory()->for($this->building)->for($neighborOwner)->create(['number' => '3B']);
+
+        Livewire::actingAs($residentUser)
+            ->test(SpotlightSearch::class)
+            ->set('query', '3')
+            ->assertSee('3A')
+            ->assertDontSee('3B')
+            ->assertDontSee('Secret Neighbor');
+    }
 }
