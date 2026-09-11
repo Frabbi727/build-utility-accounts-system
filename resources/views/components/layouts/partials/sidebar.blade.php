@@ -6,14 +6,14 @@
 @persist('main-sidebar')
 {{-- Desktop Sidebar --}}
 <aside data-sidebar
-       class="hidden lg:flex lg:flex-col shrink-0 transition-all duration-300 ease-in-out border-r border-slate-200 bg-white min-h-screen sticky top-0 h-screen select-none w-64"
-       :class="collapsed ? 'w-18' : 'w-64'">
+       class="hidden lg:flex lg:flex-col shrink-0 transition-all duration-300 ease-in-out border-r border-slate-200 bg-white min-h-screen sticky top-0 h-screen select-none"
+       :class="$store.sidebar.collapsed ? 'w-[4.5rem]' : 'w-64'">
     {{-- Brand Header --}}
     <div class="h-16 flex items-center border-b border-slate-200 shrink-0 px-4"
-         :class="collapsed ? 'justify-center px-0' : 'px-4'">
+         :class="$store.sidebar.collapsed ? 'justify-center px-0' : 'px-4'">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-3 min-w-0" wire:navigate aria-label="{{ config('app.name') }}">
             <x-ui.icon name="building" class="w-6 h-6 text-slate-900 shrink-0" />
-            <div data-sidebar-expanded x-show="!collapsed" class="min-w-0 flex-1 truncate">
+            <div data-sidebar-expanded x-show="!$store.sidebar.collapsed" class="min-w-0 flex-1 truncate">
                 <span class="font-bold text-slate-900 text-sm truncate block leading-tight">{{ config('app.name') }}</span>
                 @if ($currentBuilding)
                     <span class="inline-block text-[11px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium truncate max-w-full" title="{{ $currentBuilding->displayName() }}">{{ $currentBuilding->displayName() }}</span>
@@ -24,11 +24,11 @@
 
     {{-- Navigation Links / Categories --}}
     <nav class="flex-1 px-3 py-4 space-y-1"
-         :class="collapsed ? 'overflow-visible' : 'overflow-y-auto'">
+         :class="$store.sidebar.collapsed ? 'overflow-visible' : 'overflow-y-auto'">
         @foreach ($menu as $entry)
             @if ($entry['url'] !== null)
                 {{-- Standalone Item --}}
-                <div data-sidebar-expanded x-show="!collapsed">
+                <div data-sidebar-expanded x-show="!$store.sidebar.collapsed">
                     <a href="{{ $entry['url'] }}"
                        wire:navigate
                        wire:current="!bg-slate-900 !text-white font-medium"
@@ -41,7 +41,7 @@
                         <span class="truncate">{{ $entry['label'] }}</span>
                     </a>
                 </div>
-                <div data-sidebar-collapsed x-show="collapsed" class="relative group flex justify-center">
+                <div data-sidebar-collapsed x-show="$store.sidebar.collapsed" class="relative group flex justify-center">
                     <a href="{{ $entry['url'] }}"
                        wire:navigate
                        wire:current="!bg-slate-900 !text-white font-medium"
@@ -67,7 +67,7 @@
                      x-on:livewire:navigated.window="$nextTick(() => { if ($el.querySelector('[data-current]')) open = true })"
                      class="relative">
                     {{-- Expanded Mode --}}
-                    <div data-sidebar-expanded x-show="!collapsed">
+                    <div data-sidebar-expanded x-show="!$store.sidebar.collapsed">
                         <button type="button"
                                 @click="open = !open"
                                 :aria-expanded="open"
@@ -103,15 +103,15 @@
 
                     {{-- Collapsed Mode --}}
                     <div data-sidebar-collapsed
-                         x-show="collapsed"
+                         x-show="$store.sidebar.collapsed"
                          class="relative flex justify-center"
-                         @mouseenter="if (collapsed) flyoutOpen = true"
-                         @mouseleave="if (collapsed) flyoutOpen = false"
+                         @mouseenter="if ($store.sidebar.collapsed) flyoutOpen = true"
+                         @mouseleave="if ($store.sidebar.collapsed) flyoutOpen = false"
                          @click.outside="flyoutOpen = false"
                          @keydown.escape.stop="flyoutOpen = false">
                         <button type="button"
                                 @click="flyoutOpen = !flyoutOpen"
-                                @focus="if (collapsed) flyoutOpen = true"
+                                @focus="if ($store.sidebar.collapsed) flyoutOpen = true"
                                 :aria-expanded="flyoutOpen"
                                 aria-haspopup="true"
                                 aria-label="{{ $entry['label'] }}"
@@ -154,16 +154,16 @@
     {{-- Sidebar Bottom --}}
     <div class="p-3 border-t border-slate-200 shrink-0">
         <button type="button"
-                @click="toggleCollapse()"
-                :aria-expanded="!collapsed"
-                :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+                @click="$store.sidebar.toggleCollapse()"
+                :aria-expanded="!$store.sidebar.collapsed"
+                :aria-label="$store.sidebar.collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
                 class="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900 rounded-md transition-colors cursor-pointer"
-                :class="collapsed ? 'justify-center px-0' : ''">
-            <div data-sidebar-expanded x-show="!collapsed" class="flex items-center gap-3">
+                :class="$store.sidebar.collapsed ? 'justify-center px-0' : ''">
+            <div data-sidebar-expanded x-show="!$store.sidebar.collapsed" class="flex items-center gap-3">
                 <x-ui.icon name="chevron-left" class="w-5 h-5 shrink-0" />
                 <span>Collapse</span>
             </div>
-            <div data-sidebar-collapsed x-show="collapsed">
+            <div data-sidebar-collapsed x-show="$store.sidebar.collapsed">
                 <x-ui.icon name="chevron-right" class="w-5 h-5 shrink-0" />
             </div>
         </button>
@@ -173,14 +173,14 @@
 {{-- Mobile Drawer --}}
 <div class="lg:hidden">
     {{-- Drawer Backdrop --}}
-    <div x-show="mobileOpen"
+    <div x-show="$store.sidebar.mobileOpen"
          x-cloak
          x-transition.opacity
-         @click="mobileOpen = false"
+         @click="$store.sidebar.closeMobile()"
          class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs"></div>
 
     {{-- Drawer Slide-out Panel --}}
-    <div x-show="mobileOpen"
+    <div x-show="$store.sidebar.mobileOpen"
          x-cloak
          role="dialog"
          aria-modal="true"
@@ -204,7 +204,7 @@
                 </div>
             </div>
             <button type="button"
-                    @click="mobileOpen = false"
+                    @click="$store.sidebar.closeMobile()"
                     class="p-2 text-slate-500 hover:text-slate-900 rounded-md hover:bg-slate-100 cursor-pointer"
                     aria-label="Close mobile menu">
                 <x-ui.icon name="x" class="w-5 h-5" />
@@ -218,7 +218,7 @@
                     <a href="{{ $entry['url'] }}"
                        wire:navigate
                        wire:current="!bg-slate-900 !text-white font-medium"
-                       @click="mobileOpen = false"
+                       @click="$store.sidebar.closeMobile()"
                        @class([
                            'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors',
                            'bg-slate-900 text-white font-medium' => $entry['active'],
@@ -255,7 +255,7 @@
                                 <a href="{{ $item['url'] }}"
                                    wire:navigate
                                    wire:current="!bg-slate-100 !text-slate-900 !font-semibold"
-                                   @click="mobileOpen = false"
+                                   @click="$store.sidebar.closeMobile()"
                                    @class([
                                        'block px-2.5 py-1.5 text-sm rounded-md transition-colors',
                                        'bg-slate-100 text-slate-900 font-semibold' => $item['active'],
