@@ -9,26 +9,45 @@
         if (localStorage.getItem('sidebar_collapsed') === 'true') {
             document.documentElement.classList.add('sidebar-collapsed');
         }
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.store('sidebar', {
+                collapsed: localStorage.getItem('sidebar_collapsed') === 'true',
+                mobileOpen: false,
+                toggleCollapse() {
+                    this.collapsed = !this.collapsed;
+                    localStorage.setItem('sidebar_collapsed', this.collapsed);
+                    document.documentElement.classList.toggle('sidebar-collapsed', this.collapsed);
+                },
+                openMobile() {
+                    this.mobileOpen = true;
+                },
+                closeMobile() {
+                    this.mobileOpen = false;
+                }
+            });
+        });
+
+        document.addEventListener('livewire:navigated', () => {
+            const isCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';
+            document.documentElement.classList.toggle('sidebar-collapsed', isCollapsed);
+            if (window.Alpine && Alpine.store('sidebar')) {
+                Alpine.store('sidebar').collapsed = isCollapsed;
+            }
+        });
     </script>
     <style>
-        html.sidebar-collapsed aside[data-sidebar] { width: 4.5rem !important; }
-        html.sidebar-collapsed [data-sidebar-expanded] { display: none !important; }
-        html:not(.sidebar-collapsed) [data-sidebar-collapsed] { display: none !important; }
+        html.sidebar-collapsed aside[data-sidebar] { width: 4.5rem; }
+        html:not(.sidebar-collapsed) aside[data-sidebar] { width: 16rem; }
+        html.sidebar-collapsed [data-sidebar-expanded] { display: none; }
+        html:not(.sidebar-collapsed) [data-sidebar-collapsed] { display: none; }
     </style>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="h-full bg-slate-50 text-slate-800 antialiased">
 <div class="min-h-screen bg-slate-50 text-slate-800 antialiased flex"
-     x-data="{
-         collapsed: document.documentElement.classList.contains('sidebar-collapsed'),
-         mobileOpen: false,
-         toggleCollapse() {
-             this.collapsed = !this.collapsed;
-             localStorage.setItem('sidebar_collapsed', this.collapsed);
-             document.documentElement.classList.toggle('sidebar-collapsed', this.collapsed);
-         }
-     }"
-     @keydown.window.escape="mobileOpen = false"
+     x-data
+     @keydown.window.escape="$store.sidebar.closeMobile()"
 >
     @auth
         <x-layouts.partials.sidebar />
@@ -39,13 +58,13 @@
             <div class="flex items-center gap-3">
                 @auth
                     <button type="button"
-                            @click="mobileOpen = true"
+                            @click="$store.sidebar.openMobile()"
                             class="lg:hidden p-2 text-slate-500 hover:text-slate-900 rounded-md hover:bg-slate-100 cursor-pointer"
                             aria-label="Open mobile menu">
                         <x-ui.icon name="menu" class="w-5 h-5" />
                     </button>
                     <button type="button"
-                            @click="toggleCollapse()"
+                            @click="$store.sidebar.toggleCollapse()"
                             class="hidden lg:flex p-2 text-slate-500 hover:text-slate-900 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
                             aria-label="Toggle sidebar collapse">
                         <x-ui.icon name="menu" class="w-5 h-5" />
