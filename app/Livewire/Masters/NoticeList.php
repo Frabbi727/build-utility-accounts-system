@@ -147,10 +147,13 @@ class NoticeList extends Component
             ? new LengthAwarePaginator([], 0, 15)
             : $building->notices()
                 ->with('creator')
-                ->when($this->search !== '', fn ($q) => $q->where(function ($sub) {
-                    $sub->where('title', 'like', "%{$this->search}%")
-                        ->orWhere('content', 'like', "%{$this->search}%");
-                }))
+                ->when($this->search !== '', function ($q) {
+                    $term = '%'.trim($this->search).'%';
+                    $q->where(function ($sub) use ($term) {
+                        $sub->where('title', 'ilike', $term)
+                            ->orWhere('content', 'ilike', $term);
+                    });
+                })
                 ->latest('is_pinned')
                 ->latest('published_at')
                 ->paginate(15);

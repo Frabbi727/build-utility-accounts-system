@@ -88,7 +88,14 @@ class VendorList extends Component
         return view('livewire.masters.vendor-list', [
             'vendors' => Vendor::query()
                 ->withCount('bills')
-                ->when($this->search !== '', fn ($q) => $q->where('name', 'ilike', "%{$this->search}%"))
+                ->when($this->search !== '', function ($q) {
+                    $term = '%'.trim($this->search).'%';
+                    $q->where(function ($sub) use ($term) {
+                        $sub->where('name', 'ilike', $term)
+                            ->orWhere('phone', 'ilike', $term)
+                            ->orWhere('email', 'ilike', $term);
+                    });
+                })
                 ->orderBy('name')
                 ->paginate(20),
         ])->layout('components.layouts.app');

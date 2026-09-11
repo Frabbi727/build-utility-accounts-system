@@ -218,7 +218,13 @@ class FlatList extends Component
             ->when($building !== null, fn ($q) => $q->where('building_id', $building->id))
             ->when($building === null, fn ($q) => $q->whereRaw('1 = 0'))
             ->with(['building', 'owner', 'floor', 'chargeOverrides'])
-            ->when($this->search !== '', fn ($q) => $q->where('number', 'ilike', "%{$this->search}%"))
+            ->when($this->search !== '', function ($q) {
+                $term = '%'.trim($this->search).'%';
+                $q->where(function ($sub) use ($term) {
+                    $sub->where('number', 'ilike', $term)
+                        ->orWhereHas('owner', fn ($o) => $o->where('name', 'ilike', $term)->orWhere('phone', 'ilike', $term));
+                });
+            })
             ->orderBy('number')
             ->paginate(20);
 

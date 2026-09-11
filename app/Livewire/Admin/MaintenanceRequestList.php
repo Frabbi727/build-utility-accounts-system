@@ -165,11 +165,14 @@ class MaintenanceRequestList extends Component
                 ->with(['flat', 'user', 'assignedStaff', 'assignedVendor'])
                 ->when($this->statusFilter !== '', fn ($q) => $q->where('status', $this->statusFilter))
                 ->when($this->priorityFilter !== '', fn ($q) => $q->where('priority', $this->priorityFilter))
-                ->when($this->search !== '', fn ($q) => $q->where(function ($sub) {
-                    $sub->where('title', 'like', "%{$this->search}%")
-                        ->orWhere('description', 'like', "%{$this->search}%")
-                        ->orWhereHas('flat', fn ($f) => $f->where('number', 'like', "%{$this->search}%"));
-                }))
+                ->when($this->search !== '', function ($q) {
+                    $term = '%'.trim($this->search).'%';
+                    $q->where(function ($sub) use ($term) {
+                        $sub->where('title', 'ilike', $term)
+                            ->orWhere('description', 'ilike', $term)
+                            ->orWhereHas('flat', fn ($f) => $f->where('number', 'ilike', $term));
+                    });
+                })
                 ->latest('created_at')
                 ->paginate(15);
 
