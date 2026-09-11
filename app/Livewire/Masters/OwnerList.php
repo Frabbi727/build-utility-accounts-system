@@ -161,8 +161,8 @@ class OwnerList extends Component
             'owners' => Owner::query()
                 ->with('user')
                 ->withCount('flats')
-                ->when($this->search !== '', function ($q) {
-                    $term = '%'.trim($this->search).'%';
+                ->when(filled($this->search), function ($q) {
+                    $term = '%'.addcslashes(trim($this->search), '%_').'%';
                     $q->where(function ($sub) use ($term) {
                         $sub->where('name', 'ilike', $term)
                             ->orWhere('phone', 'ilike', $term)

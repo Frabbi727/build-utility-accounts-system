@@ -218,8 +218,8 @@ class FlatList extends Component
             ->when($building !== null, fn ($q) => $q->where('building_id', $building->id))
             ->when($building === null, fn ($q) => $q->whereRaw('1 = 0'))
             ->with(['building', 'owner', 'floor', 'chargeOverrides'])
-            ->when($this->search !== '', function ($q) {
-                $term = '%'.trim($this->search).'%';
+            ->when(filled($this->search), function ($q) {
+                $term = '%'.addcslashes(trim($this->search), '%_').'%';
                 $q->where(function ($sub) use ($term) {
                     $sub->where('number', 'ilike', $term)
                         ->orWhereHas('owner', fn ($o) => $o->where('name', 'ilike', $term)->orWhere('phone', 'ilike', $term));

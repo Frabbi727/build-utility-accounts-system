@@ -70,11 +70,24 @@ class MasterListSearchTest extends TestCase
             'description' => 'Main fuse breaker tripped',
         ]);
 
+        $otherBuilding = Building::factory()->create();
+        $otherFlat = Flat::factory()->create([
+            'building_id' => $otherBuilding->id,
+            'number' => '4A',
+        ]);
+        MaintenanceRequest::factory()->create([
+            'building_id' => $otherBuilding->id,
+            'flat_id' => $otherFlat->id,
+            'title' => 'Other Building Leakage In Kitchen',
+            'description' => 'Pipe leaking elsewhere',
+        ]);
+
         // Search by lowercase title fragment
         Livewire::actingAs($this->admin)
             ->test(MaintenanceRequestList::class)
             ->set('search', 'leakage')
             ->assertSee('Water Leakage in Kitchen')
+            ->assertDontSee('Other Building Leakage In Kitchen')
             ->assertDontSee('Electrical Short Circuit');
 
         // Search by uppercase description fragment
@@ -89,7 +102,16 @@ class MasterListSearchTest extends TestCase
             ->test(MaintenanceRequestList::class)
             ->set('search', '4a')
             ->assertSee('Water Leakage in Kitchen')
+            ->assertDontSee('Other Building Leakage In Kitchen')
             ->assertDontSee('Electrical Short Circuit');
+
+        // Whitespace only search shows building results without error
+        Livewire::actingAs($this->admin)
+            ->test(MaintenanceRequestList::class)
+            ->set('search', '   ')
+            ->assertSee('Water Leakage in Kitchen')
+            ->assertSee('Electrical Short Circuit')
+            ->assertDontSee('Other Building Leakage In Kitchen');
     }
 
     public function test_notice_search_is_case_insensitive_and_matches_title_and_content(): void

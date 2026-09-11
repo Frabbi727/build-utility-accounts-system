@@ -165,8 +165,8 @@ class MaintenanceRequestList extends Component
                 ->with(['flat', 'user', 'assignedStaff', 'assignedVendor'])
                 ->when($this->statusFilter !== '', fn ($q) => $q->where('status', $this->statusFilter))
                 ->when($this->priorityFilter !== '', fn ($q) => $q->where('priority', $this->priorityFilter))
-                ->when($this->search !== '', function ($q) {
-                    $term = '%'.trim($this->search).'%';
+                ->when(filled($this->search), function ($q) {
+                    $term = '%'.addcslashes(trim($this->search), '%_').'%';
                     $q->where(function ($sub) use ($term) {
                         $sub->where('title', 'ilike', $term)
                             ->orWhere('description', 'ilike', $term)
