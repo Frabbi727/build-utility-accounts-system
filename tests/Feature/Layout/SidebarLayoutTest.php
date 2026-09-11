@@ -130,4 +130,17 @@ class SidebarLayoutTest extends TestCase
         $response->assertSee('aria-label="Toggle sidebar collapse"', false);
         $response->assertSee('aria-label="Open mobile menu"', false);
     }
+
+    public function test_sidebar_alpine_store_and_navigation_sync_are_rendered(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->get(route('dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('Alpine.store(\'sidebar\'', false);
+        $response->assertSee('livewire:navigated', false);
+        $response->assertSee('w-[4.5rem]', false);
+        $response->assertSee('$store.sidebar.collapsed', false);
+        $response->assertSee('$store.sidebar.mobileOpen', false);
+    }
 }
