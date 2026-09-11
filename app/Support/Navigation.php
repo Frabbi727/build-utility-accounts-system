@@ -22,12 +22,12 @@ class Navigation
     private const ADMIN = 'admin';
 
     /**
-     * @var list<array{label: string, route?: string, access: string, items?: list<array{label: string, route: string, access: string}>}>
+     * @var list<array{label: string, route?: string, access: string, icon?: string, items?: list<array{label: string, route: string, access: string, icon?: string}>}>
      */
     private const MENU = [
-        ['label' => 'nav.dashboard', 'route' => 'dashboard', 'access' => self::ANY],
+        ['label' => 'nav.dashboard', 'route' => 'dashboard', 'access' => self::ANY, 'icon' => 'dashboard'],
         [
-            'label' => 'nav.billing', 'access' => self::STAFF, 'items' => [
+            'label' => 'nav.billing', 'access' => self::STAFF, 'icon' => 'billing', 'items' => [
                 ['label' => 'nav.generate_bills', 'route' => 'billing.generate', 'access' => self::MONEY],
                 ['label' => 'nav.record_payment', 'route' => 'payments.create', 'access' => self::MONEY],
                 ['label' => 'nav.payment_submissions', 'route' => 'billing.submissions', 'access' => self::MONEY],
@@ -36,13 +36,13 @@ class Navigation
             ],
         ],
         [
-            'label' => 'nav.expenses', 'access' => self::STAFF, 'items' => [
+            'label' => 'nav.expenses', 'access' => self::STAFF, 'icon' => 'expenses', 'items' => [
                 ['label' => 'nav.expenses', 'route' => 'expenses.index', 'access' => self::STAFF],
                 ['label' => 'nav.vendor_bills', 'route' => 'vendor-bills.index', 'access' => self::STAFF],
             ],
         ],
         [
-            'label' => 'nav.masters', 'access' => self::STAFF, 'items' => [
+            'label' => 'nav.masters', 'access' => self::STAFF, 'icon' => 'masters', 'items' => [
                 ['label' => 'nav.flats', 'route' => 'flats.index', 'access' => self::STAFF],
                 ['label' => 'nav.owners', 'route' => 'owners.index', 'access' => self::STAFF],
                 ['label' => 'nav.tenants', 'route' => 'tenants.index', 'access' => self::STAFF],
@@ -58,16 +58,16 @@ class Navigation
             ],
         ],
         [
-            'label' => 'nav.utilities', 'access' => self::STAFF, 'items' => [
+            'label' => 'nav.utilities', 'access' => self::STAFF, 'icon' => 'utilities', 'items' => [
                 ['label' => 'nav.readings', 'route' => 'readings.index', 'access' => self::STAFF],
                 ['label' => 'nav.utilities_list', 'route' => 'utilities.index', 'access' => self::STAFF],
                 ['label' => 'nav.meters', 'route' => 'meters.index', 'access' => self::STAFF],
                 ['label' => 'nav.tariffs', 'route' => 'tariffs.index', 'access' => self::STAFF],
             ],
         ],
-        ['label' => 'nav.reports', 'route' => 'reports.index', 'access' => self::STAFF],
+        ['label' => 'nav.reports', 'route' => 'reports.index', 'access' => self::STAFF, 'icon' => 'reports'],
         [
-            'label' => 'nav.settings', 'access' => self::STAFF, 'items' => [
+            'label' => 'nav.settings', 'access' => self::STAFF, 'icon' => 'settings', 'items' => [
                 ['label' => 'nav.accounts', 'route' => 'accounts.index', 'access' => self::STAFF],
                 ['label' => 'nav.opening_balances', 'route' => 'accounting.opening-balances', 'access' => self::ADMIN],
                 ['label' => 'nav.periods', 'route' => 'accounting.periods', 'access' => self::ADMIN],
@@ -79,7 +79,7 @@ class Navigation
     /**
      * The menu this user may see, with unavailable routes and empty groups removed.
      *
-     * @return list<array{label: string, url: string|null, active: bool, items: list<array{label: string, url: string, active: bool}>}>
+     * @return list<array{label: string, url: string|null, active: bool, icon: string, items: list<array{label: string, url: string, active: bool, icon: string|null}>}>
      */
     public function for(?User $user): array
     {
@@ -105,6 +105,7 @@ class Navigation
                     'label' => __($item['label']),
                     'url' => route($item['route']),
                     'active' => request()->routeIs($item['route']),
+                    'icon' => $item['icon'] ?? null,
                 ];
             }
 
@@ -124,11 +125,62 @@ class Navigation
                 'active' => $isGroup
                     ? collect($items)->contains('active', true)
                     : request()->routeIs($entry['route']),
+                'icon' => $entry['icon'] ?? 'folder',
                 'items' => $items,
             ];
         }
 
         return $menu;
+    }
+
+    /**
+     * Flat array of all accessible leaf menu items for search indexing.
+     *
+     * @return list<array{label: string, url: string, category: string, icon?: string}>
+     */
+    public function allFlatItems(?User $user): array
+    {
+        if ($user === null) {
+            return [];
+        }
+
+        $flat = [];
+
+        foreach (self::MENU as $entry) {
+            if (! $this->allows($user, $entry['access'])) {
+                continue;
+            }
+
+            if (isset($entry['items'])) {
+                $category = __($entry['label']);
+
+                foreach ($entry['items'] as $item) {
+                    if (! $this->allows($user, $item['access']) || ! Route::has($item['route'])) {
+                        continue;
+                    }
+
+                    $flat[] = [
+                        'label' => __($item['label']),
+                        'url' => route($item['route']),
+                        'category' => $category,
+                        'icon' => $item['icon'] ?? $entry['icon'] ?? 'folder',
+                    ];
+                }
+            } else {
+                if (! Route::has($entry['route'])) {
+                    continue;
+                }
+
+                $flat[] = [
+                    'label' => __($entry['label']),
+                    'url' => route($entry['route']),
+                    'category' => $entry['label'] === 'nav.dashboard' ? 'General' : __($entry['label']),
+                    'icon' => $entry['icon'] ?? 'folder',
+                ];
+            }
+        }
+
+        return $flat;
     }
 
     private function allows(User $user, string $access): bool
