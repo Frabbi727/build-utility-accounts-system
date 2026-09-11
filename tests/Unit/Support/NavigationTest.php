@@ -92,6 +92,7 @@ class NavigationTest extends TestCase
         // Dashboard is standalone
         $dashboardItem = collect($flat)->firstWhere('url', route('dashboard'));
         $this->assertNotNull($dashboardItem);
+        $this->assertSame(__('nav.dashboard'), $dashboardItem['category']);
         $this->assertSame('dashboard', $dashboardItem['icon']);
 
         // Billing item has Billing as category

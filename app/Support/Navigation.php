@@ -77,6 +77,14 @@ class Navigation
     ];
 
     /**
+     * @return list<array{label: string, route?: string, access: string, icon?: string, items?: list<array{label: string, route: string, access: string, icon?: string}>}>
+     */
+    private function menu(): array
+    {
+        return self::MENU;
+    }
+
+    /**
      * The menu this user may see, with unavailable routes and empty groups removed.
      *
      * @return list<array{label: string, url: string|null, active: bool, icon: string, items: list<array{label: string, url: string, active: bool, icon: string|null}>}>
@@ -89,7 +97,7 @@ class Navigation
 
         $menu = [];
 
-        foreach (self::MENU as $entry) {
+        foreach ($this->menu() as $entry) {
             if (! $this->allows($user, $entry['access'])) {
                 continue;
             }
@@ -146,7 +154,7 @@ class Navigation
 
         $flat = [];
 
-        foreach (self::MENU as $entry) {
+        foreach ($this->menu() as $entry) {
             if (! $this->allows($user, $entry['access'])) {
                 continue;
             }
@@ -174,7 +182,7 @@ class Navigation
                 $flat[] = [
                     'label' => __($entry['label']),
                     'url' => route($entry['route']),
-                    'category' => $entry['label'] === 'nav.dashboard' ? 'General' : __($entry['label']),
+                    'category' => __($entry['label']),
                     'icon' => $entry['icon'] ?? 'folder',
                 ];
             }

@@ -17,6 +17,7 @@ class IconComponentTest extends TestCase
         $view->assertSee('stroke-width="2"', false);
         $view->assertSee('stroke-linecap="round"', false);
         $view->assertSee('stroke-linejoin="round"', false);
+        $view->assertSee('aria-hidden="true"', false);
         $view->assertSee('w-5 h-5', false);
     }
 
@@ -25,6 +26,22 @@ class IconComponentTest extends TestCase
         $view = $this->blade('<x-ui.icon name="dashboard" class="w-6 h-6 text-slate-500" />');
 
         $view->assertSee('class="w-6 h-6 text-slate-500"', false);
+        $view->assertSee('aria-hidden="true"', false);
+    }
+
+    public function test_icon_renders_fallback_when_name_is_omitted_or_unknown(): void
+    {
+        $folderPath = 'M20 20a2 2 0 0 0 2-2V8';
+
+        // Omitted name
+        $viewOmitted = $this->blade('<x-ui.icon />');
+        $viewOmitted->assertSee('<svg', false);
+        $viewOmitted->assertSee($folderPath, false);
+
+        // Unknown name
+        $viewUnknown = $this->blade('<x-ui.icon name="unknown" />');
+        $viewUnknown->assertSee('<svg', false);
+        $viewUnknown->assertSee($folderPath, false);
     }
 
     public function test_all_supported_icons_and_aliases_render_correctly(): void
