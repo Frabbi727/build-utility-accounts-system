@@ -71,7 +71,9 @@
 <div class="min-h-screen bg-slate-50 text-slate-800 antialiased flex"
      x-data="{
          get collapsed() { return $store.sidebar.collapsed },
+         set collapsed(value) { $store.sidebar.collapsed = value },
          get mobileOpen() { return $store.sidebar.mobileOpen },
+         set mobileOpen(value) { $store.sidebar.mobileOpen = value },
          toggleCollapse() { $store.sidebar.toggleCollapse() },
          openMobile() { $store.sidebar.openMobile() },
          closeMobile() { $store.sidebar.closeMobile() }
