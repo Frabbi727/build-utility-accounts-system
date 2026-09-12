@@ -36,5 +36,6 @@ return [
     'opening_balances' => 'Opening Balances',
     'periods' => 'Accounting Periods',
     'users' => 'Users & Roles',
+    'audit_logs' => 'Audit Logs',
     'setup' => 'Setup',
 ];

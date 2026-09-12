@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\VendorBillStatus;
+use App\Models\Concerns\Auditable;
 use Database\Factories\VendorBillFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,6 +31,8 @@ use Illuminate\Support\Carbon;
 ])]
 class VendorBill extends Model
 {
+    use Auditable;
+
     /** @use HasFactory<VendorBillFactory> */
     use HasFactory;
 

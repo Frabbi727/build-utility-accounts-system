@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\MaintenanceCategory;
 use App\Enums\MaintenancePriority;
 use App\Enums\MaintenanceStatus;
+use App\Models\Concerns\Auditable;
 use Database\Factories\MaintenanceRequestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -45,6 +46,8 @@ use Illuminate\Support\Carbon;
 ])]
 class MaintenanceRequest extends Model
 {
+    use Auditable;
+
     /** @use HasFactory<MaintenanceRequestFactory> */
     use HasFactory;
 

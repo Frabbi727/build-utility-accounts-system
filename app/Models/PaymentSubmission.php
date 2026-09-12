@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentSubmissionStatus;
+use App\Models\Concerns\Auditable;
 use Database\Factories\PaymentSubmissionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -48,6 +49,8 @@ use Illuminate\Support\Carbon;
 ])]
 class PaymentSubmission extends Model
 {
+    use Auditable;
+
     /** @use HasFactory<PaymentSubmissionFactory> */
     use HasFactory;
 

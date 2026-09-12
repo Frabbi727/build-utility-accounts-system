@@ -31,7 +31,8 @@ dependencies:
   flutter_local_notifications: ^17.2.3
 
   # UI, Icons, Helpers
-  intl: ^0.19.0
+  intl: ^0.20.2
+  uuid: ^4.5.1
   cached_network_image: ^3.4.1
   image_picker: ^1.1.2
   file_picker: ^8.1.3

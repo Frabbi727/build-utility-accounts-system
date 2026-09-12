@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AuditContextMiddleware;
 use App\Http\Middleware\RedirectToSetup;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
@@ -16,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(AuditContextMiddleware::class);
+
         $middleware->web(append: [
             SetLocale::class,
         ]);

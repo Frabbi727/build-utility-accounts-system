@@ -7,6 +7,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Flat;
 use App\Models\User;
 use App\Models\UserDeviceToken;
+use App\Services\Audit\AuditService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,11 +36,24 @@ class AuthController extends Controller
             ->first();
 
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
+            app(AuditService::class)->logAuth(
+                action: 'FAILED_LOGIN',
+                user: $user,
+                description: "Failed mobile login attempt for {$login}",
+                details: ['login' => $login],
+            );
+
             return ApiResponse::error(__('auth.failed'), 401);
         }
 
         $token = $user->createToken('resident-mobile-app')->plainTextToken;
         $flats = $this->getResidentFlats($user);
+
+        app(AuditService::class)->logAuth(
+            action: 'LOGIN',
+            user: $user,
+            description: "Resident {$user->email} logged in via mobile app",
+        );
 
         $phone = $user->owner !== null ? $user->owner->phone : $user->tenant?->phone;
 
@@ -81,6 +95,12 @@ class AuthController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
+        app(AuditService::class)->logAuth(
+            action: 'LOGOUT',
+            user: $user,
+            description: "Resident {$user->email} logged out via mobile app",
+        );
+
         $user->currentAccessToken()->delete();
 
         return ApiResponse::success(null, 'Logged out successfully');
@@ -123,6 +143,12 @@ class AuthController extends Controller
         $user->update([
             'password' => Hash::make($validated['new_password']),
         ]);
+
+        app(AuditService::class)->logAuth(
+            action: 'PASSWORD_CHANGE',
+            user: $user,
+            description: "Resident {$user->email} updated password via mobile app",
+        );
 
         return ApiResponse::success(null, 'Password updated successfully');
     }

@@ -88,7 +88,7 @@
                 </div>
             </div>
             <div class="mt-4 flex gap-3">
-                <button wire:click="pay" wire:loading.attr="disabled"
+                <button wire:click="askPay" wire:loading.attr="disabled"
                         class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50">
                     {{ __('expenses.confirm_payment') }}
                 </button>
@@ -148,4 +148,48 @@
     </div>
 
     <div class="mt-4">{{ $bills->links() }}</div>
+
+    {{-- Pay Confirmation Modal --}}
+    @if ($showPayConfirmModal && $payingBillId)
+        @php
+            $confirmingBill = \App\Models\VendorBill::with('vendor')->find($payingBillId);
+        @endphp
+        @if ($confirmingBill)
+            <x-ui.modal :title="__('expenses.confirm_payment')">
+                <div class="space-y-4 px-6 py-5 text-sm">
+                    <p class="text-slate-600">
+                        {{ __('Are you sure you want to record this vendor bill payment? This will post debits to Accounts Payable and credits to the selected payment account in the ledger.') }}
+                    </p>
+
+                    <div class="rounded-lg bg-slate-50 p-4 border border-slate-200 grid grid-cols-2 gap-3">
+                        <div>
+                            <span class="block text-xs font-medium text-slate-500 uppercase">{{ __('expenses.vendor') }}</span>
+                            <span class="font-semibold text-slate-900">{{ $confirmingBill->vendor->name }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs font-medium text-slate-500 uppercase">{{ __('expenses.bill_no') }}</span>
+                            <span class="font-mono font-medium text-slate-800">{{ $confirmingBill->bill_no }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs font-medium text-slate-500 uppercase">{{ __('billing.amount') }}</span>
+                            <span class="font-bold text-emerald-600 text-base tabular-nums">BDT {{ number_format((float) $payAmount, 2) }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs font-medium text-slate-500 uppercase">{{ __('expenses.paid_on') }}</span>
+                            <span class="text-slate-800">{{ $payDate }}</span>
+                        </div>
+                        <div class="col-span-2">
+                            <span class="block text-xs font-medium text-slate-500 uppercase">{{ __('dashboard.method') }}</span>
+                            <span class="uppercase font-medium text-slate-800">{{ $payMethod }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-6 py-3">
+                    <x-ui.button variant="secondary" wire:click="closePayConfirmModal">{{ __('expenses.cancel') }}</x-ui.button>
+                    <x-ui.button variant="primary" wire:click="pay" wire:loading.attr="disabled">✓ {{ __('expenses.confirm_payment') }}</x-ui.button>
+                </div>
+            </x-ui.modal>
+        @endif
+    @endif
 </div>

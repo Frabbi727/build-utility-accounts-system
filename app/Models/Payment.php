@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PaymentMethod;
+use App\Models\Concerns\Auditable;
 use Database\Factories\PaymentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -25,6 +26,8 @@ use Illuminate\Support\Carbon;
 #[Fillable(['flat_id', 'receipt_no', 'amount', 'method', 'received_on', 'reference', 'received_by'])]
 class Payment extends Model
 {
+    use Auditable;
+
     /** @use HasFactory<PaymentFactory> */
     use HasFactory;
 

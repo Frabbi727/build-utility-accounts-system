@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\Audit\AuditContext;
+use App\Services\Audit\AuditService;
 use App\Services\Billing\ApplyAdvances;
 use App\Services\Billing\GenerateMonthlyBills;
 use App\Services\Billing\LineSources\AdHocChargeLines;
@@ -21,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // One instance per request so the resolved building is cached across screens.
         $this->app->scoped(CurrentBuilding::class);
+        $this->app->scoped(AuditContext::class);
+        $this->app->singleton(AuditService::class);
 
         // The order is the order lines appear on a printed bill, so it is declared
         // explicitly here rather than left to container tag resolution, whose ordering

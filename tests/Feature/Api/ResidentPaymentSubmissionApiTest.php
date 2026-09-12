@@ -133,4 +133,28 @@ class ResidentPaymentSubmissionApiTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    public function test_resident_cannot_submit_duplicate_reference_number(): void
+    {
+        $building = Building::factory()->create();
+        $user = User::factory()->create();
+        $user->assignRole(Role::Owner->value);
+        $owner = Owner::factory()->create(['user_id' => $user->id]);
+        $flat = Flat::factory()->create(['building_id' => $building->id, 'owner_id' => $owner->id]);
+
+        $payload = [
+            'flat_id' => $flat->id,
+            'amount' => '3500.00',
+            'payment_method' => PaymentMethod::Bkash->value,
+            'reference_number' => 'DUPTRX12345',
+            'payment_date' => now()->toDateString(),
+        ];
+
+        $first = $this->actingAs($user, 'sanctum')->postJson('/api/v1/resident/payment-submissions', $payload);
+        $first->assertStatus(201);
+
+        $second = $this->actingAs($user, 'sanctum')->postJson('/api/v1/resident/payment-submissions', $payload);
+        $second->assertStatus(422)
+            ->assertJsonValidationErrors(['reference_number']);
+    }
 }

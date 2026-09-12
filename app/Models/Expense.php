@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PaymentMethod;
+use App\Models\Concerns\Auditable;
 use Database\Factories\ExpenseFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -33,6 +34,8 @@ use Illuminate\Support\Carbon;
 ])]
 class Expense extends Model
 {
+    use Auditable;
+
     /** @use HasFactory<ExpenseFactory> */
     use HasFactory;
 

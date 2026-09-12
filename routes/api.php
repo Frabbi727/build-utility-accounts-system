@@ -25,6 +25,7 @@ Route::prefix('v1')->group(function (): void {
             Route::get('dashboard', [DashboardController::class, 'index'])->name('api.v1.resident.dashboard');
             Route::get('bills', [BillApiController::class, 'index'])->name('api.v1.resident.bills.index');
             Route::get('bills/{bill}', [BillApiController::class, 'show'])->name('api.v1.resident.bills.show');
+            Route::get('bills/{bill}/pdf', [BillApiController::class, 'pdf'])->name('api.v1.resident.bills.pdf');
             Route::get('payment-submissions', [PaymentSubmissionApiController::class, 'submissions'])->name('api.v1.resident.submissions.index');
             Route::post('payment-submissions', [PaymentSubmissionApiController::class, 'store'])->name('api.v1.resident.submissions.store');
             Route::get('payments', [PaymentSubmissionApiController::class, 'payments'])->name('api.v1.resident.payments.index');

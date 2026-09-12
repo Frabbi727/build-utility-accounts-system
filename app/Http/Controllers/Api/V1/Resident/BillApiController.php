@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Resident;
 
+use App\Enums\BillStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\BillItem;
@@ -53,14 +54,18 @@ class BillApiController extends Controller
             ->latest('billing_month')
             ->paginate($perPage);
 
-        /** @var LengthAwarePaginator<array-key, mixed> $transformed */
         $transformed = $paginator->through(fn (ServiceChargeBill $bill): array => [
             'id' => $bill->id,
             'bill_no' => $bill->bill_no,
             'billing_month' => $bill->billing_month->format('Y-m'),
+            'billing_month_formatted' => $bill->billing_month->format('F Y'),
             'total_amount' => $bill->total_amount,
+            'paid_amount' => $bill->allocatedAmount(),
+            'due_amount' => $bill->outstandingAmount(),
             'due_date' => $bill->due_date->toDateString(),
             'status' => $bill->status->value,
+            'is_overdue' => $bill->status !== BillStatus::Paid && $bill->due_date->isPast(),
+            'download_pdf_url' => route('bills.print', $bill),
             'created_at' => $bill->created_at->toIso8601String(),
         ]);
 
@@ -86,6 +91,7 @@ class BillApiController extends Controller
         $itemsData = $items->map(fn (BillItem $item): array => [
             'id' => $item->id,
             'description' => $item->description,
+            'charge_head_name' => $item->description,
             'amount' => $item->amount,
             'quantity' => $item->quantity,
             'unit_rate' => $item->unit_rate,
@@ -96,14 +102,37 @@ class BillApiController extends Controller
             'id' => $bill->id,
             'bill_no' => $bill->bill_no,
             'billing_month' => $bill->billing_month->format('Y-m'),
+            'billing_month_formatted' => $bill->billing_month->format('F Y'),
             'total_amount' => $bill->total_amount,
             'month_charges' => $summary->monthCharges,
+            'paid_amount' => $summary->paidOnThisBill,
+            'due_amount' => $summary->thisBillOutstanding,
+            'total_due' => $summary->totalDue,
+            'advance_held' => $summary->advanceHeld,
             'arrears' => $summary->broughtForward,
             'due_date' => $bill->due_date->toDateString(),
             'status' => $bill->status->value,
+            'is_overdue' => $bill->status !== BillStatus::Paid && $bill->due_date->isPast(),
+            'download_pdf_url' => route('bills.print', $bill),
             'items' => $itemsData,
             'created_at' => $bill->created_at->toIso8601String(),
         ], 'Bill details retrieved successfully');
+    }
+
+    public function pdf(Request $request, ServiceChargeBill $bill): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $flats = $this->getResidentFlats($user);
+
+        if (! $flats->contains('id', $bill->flat_id)) {
+            return ApiResponse::error('You are not authorized to access this bill.', 403);
+        }
+
+        return ApiResponse::success([
+            'bill_no' => $bill->bill_no,
+            'url' => route('bills.print', $bill),
+        ], 'PDF link generated');
     }
 
     /**

@@ -36,5 +36,6 @@ return [
     'opening_balances' => 'প্রারম্ভিক জের',
     'periods' => 'হিসাবকাল',
     'users' => 'ব্যবহারকারী ও ভূমিকা',
+    'audit_logs' => 'অডিট লগ',
     'setup' => 'সেটআপ',
 ];

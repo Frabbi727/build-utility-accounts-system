@@ -6,6 +6,7 @@ use App\Http\Controllers\ReceiptController;
 use App\Livewire\Accounting\OpeningBalances;
 use App\Livewire\Accounting\PeriodList;
 use App\Livewire\AccountList;
+use App\Livewire\Admin\AuditLogList;
 use App\Livewire\Admin\MaintenanceRequestList;
 use App\Livewire\Admin\UserList;
 use App\Livewire\Billing\CostDistributionList;
@@ -128,6 +129,7 @@ Route::middleware('auth')->group(function (): void {
         Route::get('accounting/opening-balances', OpeningBalances::class)->name('accounting.opening-balances');
         Route::get('accounting/periods', PeriodList::class)->name('accounting.periods');
         Route::get('users', UserList::class)->name('users.index');
+        Route::get('audit-logs', AuditLogList::class)->name('admin.audit-logs');
     });
 
     Route::middleware('role:admin|accountant')->group(function (): void {

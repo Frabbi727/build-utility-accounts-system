@@ -92,9 +92,31 @@ class VendorBillList extends Component
         $this->payDate = now()->toDateString();
     }
 
+    public bool $showPayConfirmModal = false;
+
     public function cancelPayment(): void
     {
+        $this->showPayConfirmModal = false;
         $this->reset(['payingBillId', 'payAmount']);
+    }
+
+    public function askPay(): void
+    {
+        $this->authorize('create', VendorBill::class);
+
+        $this->validate([
+            'payingBillId' => ['required', 'integer', 'exists:vendor_bills,id'],
+            'payAmount' => ['required', 'numeric', 'gt:0'],
+            'payMethod' => ['required', 'string', 'in:cash,bank,bkash,nagad'],
+            'payDate' => ['required', 'date'],
+        ]);
+
+        $this->showPayConfirmModal = true;
+    }
+
+    public function closePayConfirmModal(): void
+    {
+        $this->showPayConfirmModal = false;
     }
 
     public function pay(): void
@@ -121,6 +143,8 @@ class VendorBillList extends Component
             ),
             'payAmount',
         );
+
+        $this->showPayConfirmModal = false;
 
         if ($payment === null) {
             return;

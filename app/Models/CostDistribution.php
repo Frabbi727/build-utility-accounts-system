@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\DistributionBasis;
 use App\Enums\DistributionStatus;
+use App\Models\Concerns\Auditable;
 use Database\Factories\CostDistributionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -37,6 +38,8 @@ use Illuminate\Support\Carbon;
 ])]
 class CostDistribution extends Model
 {
+    use Auditable;
+
     /** @use HasFactory<CostDistributionFactory> */
     use HasFactory;
 

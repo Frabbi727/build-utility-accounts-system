@@ -33,6 +33,10 @@ class PaymentSubmissionList extends Component
 
     public ?int $viewingId = null;
 
+    public bool $showApproveModal = false;
+
+    public ?int $approvingId = null;
+
     public function updatingStatusFilter(): void
     {
         $this->resetPage();
@@ -43,13 +47,12 @@ class PaymentSubmissionList extends Component
         $this->resetPage();
     }
 
-    public function approve(int $submissionId): void
+    public function openApproveModal(int $submissionId): void
     {
         $building = app(CurrentBuilding::class)->get();
 
         $submission = PaymentSubmission::query()
             ->when($building !== null, fn ($q) => $q->where('building_id', $building->id))
-            ->with(['flat'])
             ->findOrFail($submissionId);
 
         $this->authorize('manage', $submission);
@@ -60,33 +63,70 @@ class PaymentSubmissionList extends Component
             return;
         }
 
-        $payment = DB::transaction(function () use ($submission) {
-            $payment = app(RecordPayment::class)->handle(
-                $submission->flat,
-                $submission->amount,
-                $submission->payment_method,
-                $submission->payment_date,
-                $submission->reference_number,
-            );
+        $this->approvingId = $submission->id;
+        $this->showApproveModal = true;
+    }
 
-            $submission->update([
-                'status' => PaymentSubmissionStatus::Approved,
-                'payment_id' => $payment->id,
-                'reviewed_by' => Auth::id(),
-                'reviewed_at' => now(),
-            ]);
+    public function closeApproveModal(): void
+    {
+        $this->showApproveModal = false;
+        $this->approvingId = null;
+    }
 
-            SendResidentPushNotificationJob::dispatch(
-                [$submission->user_id],
-                'Payment Approved',
-                "Your payment of BDT {$submission->amount} has been approved. Receipt: {$payment->receipt_no}",
-                ['type' => 'payment_approved', 'payment_id' => $payment->id]
-            );
+    public function approve(?int $submissionId = null): void
+    {
+        $id = $submissionId ?? $this->approvingId;
+        if ($id === null) {
+            return;
+        }
 
-            return $payment;
-        });
+        $building = app(CurrentBuilding::class)->get();
 
-        $this->notify(__('billing.payment_recorded', ['receipt' => $payment->receipt_no]));
+        try {
+            $payment = DB::transaction(function () use ($building, $id) {
+                $submission = PaymentSubmission::query()
+                    ->when($building !== null, fn ($q) => $q->where('building_id', $building->id))
+                    ->with(['flat'])
+                    ->lockForUpdate()
+                    ->findOrFail($id);
+
+                $this->authorize('manage', $submission);
+
+                if ($submission->status !== PaymentSubmissionStatus::Pending) {
+                    throw new \DomainException('Submission has already been processed.');
+                }
+
+                $payment = app(RecordPayment::class)->handle(
+                    $submission->flat,
+                    $submission->amount,
+                    $submission->payment_method,
+                    $submission->payment_date,
+                    $submission->reference_number,
+                );
+
+                $submission->update([
+                    'status' => PaymentSubmissionStatus::Approved,
+                    'payment_id' => $payment->id,
+                    'reviewed_by' => Auth::id(),
+                    'reviewed_at' => now(),
+                ]);
+
+                SendResidentPushNotificationJob::dispatch(
+                    [$submission->user_id],
+                    'Payment Approved',
+                    "Your payment of BDT {$submission->amount} has been approved. Receipt: {$payment->receipt_no}",
+                    ['type' => 'payment_approved', 'payment_id' => $payment->id]
+                );
+
+                return $payment;
+            });
+
+            $this->closeApproveModal();
+            $this->notify(__('billing.payment_recorded', ['receipt' => $payment->receipt_no]));
+        } catch (\DomainException $e) {
+            $this->closeApproveModal();
+            $this->notifyError($e->getMessage());
+        }
     }
 
     public function openRejectModal(int $submissionId): void

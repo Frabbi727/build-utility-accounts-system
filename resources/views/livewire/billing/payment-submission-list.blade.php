@@ -103,8 +103,7 @@
                     <div class="inline-flex items-center gap-2">
                         @if ($sub->status === \App\Enums\PaymentSubmissionStatus::Pending)
                             <button type="button"
-                                    wire:click="approve({{ $sub->id }})"
-                                    wire:confirm="Confirm approval of BDT {{ number_format((float) $sub->amount, 2) }} for flat {{ $sub->flat->number }}? This will post directly to the ledger."
+                                    wire:click="openApproveModal({{ $sub->id }})"
                                     class="inline-flex items-center rounded-md bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600">
                                 ✓ {{ __('billing.approve_and_post') }}
                             </button>
@@ -225,5 +224,53 @@
                 <x-ui.button variant="secondary" wire:click="closeDetailModal">{{ __('masters.done') }}</x-ui.button>
             </div>
         </x-ui.modal>
+    @endif
+
+    {{-- Approve Confirmation Modal --}}
+    @if ($showApproveModal && $approvingId)
+        @php
+            $approvingSub = \App\Models\PaymentSubmission::with(['flat.owner', 'user'])->find($approvingId);
+        @endphp
+        @if ($approvingSub)
+            <x-ui.modal :title="__('billing.confirm_submission') ?? 'Confirm Payment Approval'">
+                <div class="space-y-4 px-6 py-5 text-sm">
+                    <p class="text-slate-600">
+                        {{ __('Are you sure you want to approve this payment submission? This will record the payment and post balanced entries directly to the ledger.') }}
+                    </p>
+
+                    <div class="rounded-lg bg-slate-50 p-4 border border-slate-200 grid grid-cols-2 gap-3">
+                        <div>
+                            <span class="block text-xs font-medium text-slate-500 uppercase">{{ __('billing.flat') }}</span>
+                            <span class="font-semibold text-slate-900">{{ $approvingSub->flat->number }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs font-medium text-slate-500 uppercase">{{ __('billing.owner') }}</span>
+                            <span class="font-medium text-slate-800">{{ $approvingSub->flat->owner?->name ?? $approvingSub->user->name }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs font-medium text-slate-500 uppercase">{{ __('dashboard.amount') }}</span>
+                            <span class="font-bold text-emerald-600 text-base tabular-nums">BDT {{ number_format((float) $approvingSub->amount, 2) }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs font-medium text-slate-500 uppercase">{{ __('dashboard.method') }}</span>
+                            <span class="uppercase font-medium text-slate-800">{{ $approvingSub->payment_method->value }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs font-medium text-slate-500 uppercase">{{ __('billing.reference') }}</span>
+                            <span class="font-mono text-xs font-semibold text-slate-900">{{ $approvingSub->reference_number }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs font-medium text-slate-500 uppercase">{{ __('dashboard.payment_date') }}</span>
+                            <span class="text-slate-800">{{ $approvingSub->payment_date->format('M d, Y') }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-6 py-3">
+                    <x-ui.button variant="secondary" wire:click="closeApproveModal">{{ __('masters.cancel') }}</x-ui.button>
+                    <x-ui.button variant="primary" wire:click="approve" wire:loading.attr="disabled">✓ {{ __('billing.approve_and_post') }}</x-ui.button>
+                </div>
+            </x-ui.modal>
+        @endif
     @endif
 </div>

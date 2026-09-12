@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ReadingStatus;
+use App\Models\Concerns\Auditable;
 use Database\Factories\MeterReadingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -34,6 +35,8 @@ use Illuminate\Support\Carbon;
 ])]
 class MeterReading extends Model
 {
+    use Auditable;
+
     /** @use HasFactory<MeterReadingFactory> */
     use HasFactory;
 

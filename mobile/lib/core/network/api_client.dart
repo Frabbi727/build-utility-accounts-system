@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:uuid/uuid.dart';
 import '../models/api_response.dart';
 
 /// Custom exception for API errors containing backend response envelope
@@ -23,6 +24,7 @@ class ApiException implements Exception {
 class ApiClient {
   final Dio _dio;
   final FlutterSecureStorage _secureStorage;
+  final Uuid _uuid = const Uuid();
   static const String _tokenKey = 'resident_auth_token';
 
   // Stream/callback for authentication expiration (401 Unauthorized)
@@ -53,6 +55,12 @@ class ApiClient {
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
+          // Audit correlation headers
+          options.headers['X-Request-Id'] = _uuid.v4();
+          options.headers['X-Client-Platform'] = Platform.isAndroid
+              ? 'flutter_android'
+              : (Platform.isIOS ? 'flutter_ios' : 'flutter');
+          options.headers['X-App-Version'] = '1.0.0';
           return handler.next(options);
         },
         onError: (DioException error, handler) async {

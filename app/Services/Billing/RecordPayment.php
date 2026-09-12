@@ -38,6 +38,10 @@ class RecordPayment
     ): Payment {
         $amount = bcadd($amount, '0', 2);
 
+        if (bccomp($amount, '0', 2) <= 0) {
+            throw new \InvalidArgumentException('Payment amount must be greater than zero.');
+        }
+
         return DB::transaction(function () use ($flat, $amount, $method, $receivedOn, $reference): Payment {
             $payment = Payment::create([
                 'flat_id' => $flat->id,

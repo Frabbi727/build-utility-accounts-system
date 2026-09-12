@@ -88,18 +88,34 @@ class PaymentSubmissionApiController extends Controller
             return ApiResponse::error('You are not authorized to submit payments for this flat.', 403);
         }
 
+        $refNumber = trim((string) $validated['reference_number']);
+        $existing = PaymentSubmission::where('flat_id', $flat->id)
+            ->where('reference_number', $refNumber)
+            ->whereIn('status', [PaymentSubmissionStatus::Pending, PaymentSubmissionStatus::Approved])
+            ->first();
+
+        if ($existing !== null) {
+            return ApiResponse::error(
+                'A payment submission with this transaction/reference number already exists for this flat.',
+                422,
+                ['reference_number' => ['A payment submission with this transaction/reference number already exists for this flat.']]
+            );
+        }
+
         $slipPath = null;
         if ($request->hasFile('slip')) {
             $slipPath = $request->file('slip')?->store('payment_slips', 'public');
         }
 
+        $amount = bcadd((string) $validated['amount'], '0', 2);
+
         $submission = PaymentSubmission::create([
             'building_id' => $flat->building_id,
             'flat_id' => $flat->id,
             'user_id' => $user->id,
-            'amount' => number_format((float) $validated['amount'], 2, '.', ''),
+            'amount' => $amount,
             'payment_method' => PaymentMethod::from($validated['payment_method']),
-            'reference_number' => $validated['reference_number'],
+            'reference_number' => $refNumber,
             'payment_date' => $validated['payment_date'],
             'slip_path' => $slipPath,
             'resident_notes' => $validated['resident_notes'] ?? null,

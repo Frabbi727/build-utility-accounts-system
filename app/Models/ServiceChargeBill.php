@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BillStatus;
+use App\Models\Concerns\Auditable;
 use Database\Factories\ServiceChargeBillFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -25,6 +26,8 @@ use Illuminate\Support\Carbon;
 #[Fillable(['flat_id', 'bill_no', 'billing_month', 'due_date', 'last_late_fee_on', 'total_amount', 'status'])]
 class ServiceChargeBill extends Model
 {
+    use Auditable;
+
     /** @use HasFactory<ServiceChargeBillFactory> */
     use HasFactory;
 

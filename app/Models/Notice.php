@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\NoticeType;
+use App\Models\Concerns\Auditable;
 use Database\Factories\NoticeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,6 +28,8 @@ use Illuminate\Support\Carbon;
 #[Fillable(['building_id', 'created_by', 'title', 'content', 'type', 'is_pinned', 'published_at', 'expires_at'])]
 class Notice extends Model
 {
+    use Auditable;
+
     /** @use HasFactory<NoticeFactory> */
     use HasFactory;
 
