@@ -173,4 +173,49 @@ class AuditLog extends Model
 
         return 'System';
     }
+
+    /**
+     * Get created_at timestamp converted to Dhaka timezone.
+     */
+    public function createdAtDhaka(): ?Carbon
+    {
+        return $this->created_at?->copy()->timezone('Asia/Dhaka');
+    }
+
+    /**
+     * Format created_at in Dhaka timezone.
+     */
+    public function formattedCreatedAt(string $format = 'd M Y, h:i:s A'): string
+    {
+        return $this->created_at ? $this->created_at->copy()->timezone('Asia/Dhaka')->format($format) : '—';
+    }
+
+    /**
+     * Whether this audit log has any snapshot state or payload.
+     */
+    public function hasSnapshot(): bool
+    {
+        return ! empty($this->new_values) || ! empty($this->old_values) || ! empty($this->payload);
+    }
+
+    /**
+     * Determine field names to compare in before/after snapshot.
+     *
+     * @return list<string>
+     */
+    public function getComparisonFields(): array
+    {
+        if (! empty($this->changed_fields)) {
+            return array_values($this->changed_fields);
+        }
+
+        $keys = array_unique(array_merge(
+            array_keys($this->old_values ?? []),
+            array_keys($this->new_values ?? [])
+        ));
+
+        sort($keys);
+
+        return array_values($keys);
+    }
 }

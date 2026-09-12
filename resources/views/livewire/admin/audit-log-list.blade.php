@@ -87,7 +87,7 @@
     {{-- Audit Log Table --}}
     <x-ui.table>
         <x-slot:head>
-            <th class="px-4 py-3">{{ __('Timestamp') }}</th>
+            <th class="px-4 py-3">{{ __('Timestamp (Dhaka)') }}</th>
             <th class="px-4 py-3">{{ __('User') }}</th>
             <th class="px-4 py-3">{{ __('Module / Action') }}</th>
             <th class="px-4 py-3">{{ __('Entity') }}</th>
@@ -99,7 +99,7 @@
         @forelse ($logs as $log)
             <tr wire:key="log-{{ $log->id }}" class="hover:bg-slate-50/50">
                 <td class="px-4 py-3 whitespace-nowrap text-xs text-slate-600 font-mono">
-                    {{ $log->created_at?->format('d M Y, H:i:s') }}
+                    {{ $log->formattedCreatedAt() }}
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-sm">
                     @if ($log->user)
@@ -167,10 +167,90 @@
 
     <div>{{ $logs->links() }}</div>
 
-    {{-- Audit Record Detail Modal --}}
+    {{-- Entity Chronological History Modal --}}
+    @if ($showHistoryModal)
+        <x-ui.modal :title="'Chronological History: ' . class_basename($historyEntityType) . ' #' . $historyEntityId" maxWidth="3xl" zIndex="z-40" closeAction="closeHistoryModal">
+            <div class="space-y-4 px-6 py-5 text-sm max-h-[70vh] overflow-y-auto">
+                <p class="text-xs text-slate-500">
+                    Showing complete lifecycle events for <span class="font-bold text-slate-800">{{ class_basename($historyEntityType) }} #{{ $historyEntityId }}</span> in chronological order.
+                </p>
+
+                @if ($historyLogs->isEmpty())
+                    <p class="text-sm text-slate-400 py-6 text-center">No audit history found for this entity.</p>
+                @else
+                    <div class="relative border-l-2 border-indigo-200 ml-4 space-y-6 py-2">
+                        @foreach ($historyLogs as $hLog)
+                            <div class="relative pl-6">
+                                <span class="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full border-2 border-white bg-indigo-600"></span>
+                                <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
+                                    <div class="flex items-center justify-between gap-2 text-xs">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold uppercase text-slate-900">{{ $hLog->action }}</span>
+                                            <span class="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600 font-mono text-[11px]">{{ $hLog->source ?? 'web' }}</span>
+                                        </div>
+                                        <span class="font-mono text-slate-500">{{ $hLog->formattedCreatedAt() }}</span>
+                                    </div>
+
+                                    <p class="mt-2 text-xs text-slate-800">{{ $hLog->description }}</p>
+
+                                    <div class="mt-3 text-[11px] text-slate-500 flex items-center justify-between pt-2 border-t border-slate-100">
+                                        <span>By: <strong class="text-slate-700">{{ $hLog->user?->name ?? 'System' }}</strong></span>
+                                        <button type="button" wire:click="openDetailModal({{ $hLog->id }})"
+                                                class="inline-flex items-center gap-1 rounded bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">
+                                            {{ __('View Snapshot') }} →
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            <div class="flex justify-end border-t border-slate-200 bg-slate-50 px-6 py-3">
+                <x-ui.button variant="secondary" wire:click="closeHistoryModal">{{ __('Close') }}</x-ui.button>
+            </div>
+        </x-ui.modal>
+    @endif
+
+    {{-- Audit Record Detail / Snapshot Modal --}}
     @if ($showDetailModal && $viewingLog)
-        <x-ui.modal :title="__('Audit Record #').$viewingLog->id">
-            <div class="space-y-6 px-6 py-5 text-sm">
+        @php
+            $renderSnapshotValue = function ($val) {
+                if ($val === null) {
+                    return '<span class="italic text-slate-400 text-xs font-sans">null</span>';
+                }
+                if (is_bool($val)) {
+                    return $val
+                        ? '<span class="inline-flex items-center rounded bg-emerald-100 px-1.5 py-0.5 text-xs font-semibold text-emerald-800">true</span>'
+                        : '<span class="inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-xs font-semibold text-slate-700">false</span>';
+                }
+                if (is_array($val)) {
+                    return '<pre class="text-xs font-mono text-slate-800 bg-slate-50 p-2 rounded border border-slate-200 overflow-x-auto whitespace-pre-wrap break-all">' . e(json_encode($val, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) . '</pre>';
+                }
+                if ($val === '') {
+                    return '<span class="italic text-slate-400 text-xs font-sans">(empty string)</span>';
+                }
+                return '<span class="break-all whitespace-pre-wrap font-mono text-xs">' . e((string) $val) . '</span>';
+            };
+
+            $hasDiff = !empty($viewingLog->old_values) && !empty($viewingLog->new_values);
+            $hasNewOnly = !empty($viewingLog->new_values) && empty($viewingLog->old_values);
+            $hasOldOnly = !empty($viewingLog->old_values) && empty($viewingLog->new_values);
+            $comparisonFields = $hasDiff ? $viewingLog->getComparisonFields() : [];
+        @endphp
+
+        <x-ui.modal :title="__('Audit Record #').$viewingLog->id" maxWidth="4xl" zIndex="z-50" closeAction="closeDetailModal">
+            <div class="space-y-6 px-6 py-5 text-sm max-h-[75vh] overflow-y-auto">
+                @if ($showHistoryModal)
+                    <div class="flex items-center justify-between bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2 text-xs text-indigo-900">
+                        <span class="font-medium">{{ __('Viewing snapshot from entity chronological history.') }}</span>
+                        <button type="button" wire:click="closeDetailModal" class="font-semibold text-indigo-700 hover:underline">
+                            &larr; {{ __('Back to History Timeline') }}
+                        </button>
+                    </div>
+                @endif
+
                 {{-- Metadata Grid --}}
                 <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 rounded-lg bg-slate-50 p-4 border border-slate-200 text-xs">
                     <div>
@@ -190,8 +270,8 @@
                         <span class="font-medium text-slate-900">{{ $viewingLog->entityDisplay() }}</span>
                     </div>
                     <div>
-                        <span class="block font-semibold text-slate-500 uppercase">{{ __('Date & Time') }}</span>
-                        <span class="font-mono text-slate-900">{{ $viewingLog->created_at?->format('d M Y, H:i:s') }}</span>
+                        <span class="block font-semibold text-slate-500 uppercase">{{ __('Date & Time (Dhaka)') }}</span>
+                        <span class="font-mono text-slate-900 font-medium">{{ $viewingLog->formattedCreatedAt() }} (BST)</span>
                     </div>
                     <div>
                         <span class="block font-semibold text-slate-500 uppercase">{{ __('Source / Platform') }}</span>
@@ -210,7 +290,7 @@
                             <span class="font-mono text-slate-800">{{ $viewingLog->request_id ?? '—' }}</span>
                             @if ($viewingLog->request_id)
                                 <button type="button" wire:click="filterByRequestId('{{ $viewingLog->request_id }}')"
-                                        class="text-indigo-600 hover:underline font-medium">
+                                        class="text-indigo-600 hover:underline font-medium text-xs">
                                     [Filter by this request]
                                 </button>
                             @endif
@@ -225,9 +305,12 @@
                 </div>
 
                 {{-- Before / After Comparison Table --}}
-                @if ($viewingLog->action === 'UPDATE' && !empty($viewingLog->changed_fields))
+                @if ($hasDiff)
                     <div>
-                        <h4 class="text-sm font-bold text-slate-900 mb-3">{{ __('Field Changes (Before vs After)') }}</h4>
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-bold text-slate-900">{{ __('State Snapshot & Field Changes (Before vs After)') }}</h4>
+                            <span class="text-xs text-slate-500">{{ count($comparisonFields) }} {{ __('field(s) tracked') }}</span>
+                        </div>
                         <div class="overflow-hidden rounded-lg border border-slate-200">
                             <table class="min-w-full divide-y divide-slate-200 text-xs">
                                 <thead class="bg-slate-100 font-semibold text-slate-700">
@@ -237,23 +320,25 @@
                                         <th class="px-3 py-2 text-left w-3/8 text-emerald-700 bg-emerald-50/50">{{ __('After (New Value)') }}</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-200 bg-white font-mono">
-                                    @foreach ($viewingLog->changed_fields as $field)
+                                <tbody class="divide-y divide-slate-200 bg-white">
+                                    @foreach ($comparisonFields as $field)
                                         @php
                                             $old = $viewingLog->old_values[$field] ?? null;
                                             $new = $viewingLog->new_values[$field] ?? null;
-                                            $oldStr = is_array($old) ? json_encode($old) : (is_bool($old) ? ($old ? 'true' : 'false') : (string)($old ?? 'null'));
-                                            $newStr = is_array($new) ? json_encode($new) : (is_bool($new) ? ($new ? 'true' : 'false') : (string)($new ?? 'null'));
+                                            $isChanged = $old !== $new;
                                         @endphp
-                                        <tr>
-                                            <td class="px-3 py-2 font-sans font-semibold text-slate-900 bg-slate-50/50">
-                                                {{ str_replace('_', ' ', ucfirst($field)) }}
+                                        <tr @class(['bg-slate-50/30' => !$isChanged])>
+                                            <td class="px-3 py-2 font-sans font-semibold text-slate-900 bg-slate-50/50 align-top">
+                                                <span>{{ str_replace('_', ' ', ucfirst($field)) }}</span>
+                                                @if ($isChanged)
+                                                    <span class="ml-1 inline-flex items-center rounded bg-amber-100 px-1 py-0.2 text-[10px] font-semibold text-amber-800 uppercase">changed</span>
+                                                @endif
                                             </td>
-                                            <td class="px-3 py-2 text-red-700 bg-red-50/30 whitespace-pre-wrap break-all">
-                                                {{ $oldStr }}
+                                            <td class="px-3 py-2 text-red-700 bg-red-50/30 align-top">
+                                                {!! $renderSnapshotValue($old) !!}
                                             </td>
-                                            <td class="px-3 py-2 text-emerald-700 bg-emerald-50/30 font-semibold whitespace-pre-wrap break-all">
-                                                {{ $newStr }}
+                                            <td class="px-3 py-2 text-emerald-700 bg-emerald-50/30 font-semibold align-top">
+                                                {!! $renderSnapshotValue($new) !!}
                                             </td>
                                         </tr>
                                     @endforeach
@@ -261,9 +346,12 @@
                             </table>
                         </div>
                     </div>
-                @elseif ($viewingLog->action === 'CREATE' && !empty($viewingLog->new_values))
+                @elseif ($hasNewOnly)
                     <div>
-                        <h4 class="text-sm font-bold text-slate-900 mb-3">{{ __('Created Values') }}</h4>
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-bold text-slate-900">{{ __('Created / Recorded State Snapshot') }}</h4>
+                            <span class="text-xs text-slate-500">{{ count($viewingLog->new_values) }} {{ __('field(s)') }}</span>
+                        </div>
                         <div class="overflow-hidden rounded-lg border border-slate-200">
                             <table class="min-w-full divide-y divide-slate-200 text-xs">
                                 <thead class="bg-slate-100 font-semibold text-slate-700">
@@ -272,14 +360,14 @@
                                         <th class="px-3 py-2 text-left w-2/3 text-emerald-700">{{ __('Value') }}</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-200 bg-white font-mono">
+                                <tbody class="divide-y divide-slate-200 bg-white">
                                     @foreach ($viewingLog->new_values as $key => $val)
                                         <tr>
-                                            <td class="px-3 py-2 font-sans font-semibold text-slate-900 bg-slate-50/50">
+                                            <td class="px-3 py-2 font-sans font-semibold text-slate-900 bg-slate-50/50 align-top">
                                                 {{ str_replace('_', ' ', ucfirst($key)) }}
                                             </td>
-                                            <td class="px-3 py-2 text-emerald-800 whitespace-pre-wrap break-all">
-                                                {{ is_array($val) ? json_encode($val) : (is_bool($val) ? ($val ? 'true' : 'false') : (string)($val ?? 'null')) }}
+                                            <td class="px-3 py-2 text-emerald-800 align-top">
+                                                {!! $renderSnapshotValue($val) !!}
                                             </td>
                                         </tr>
                                     @endforeach
@@ -287,9 +375,12 @@
                             </table>
                         </div>
                     </div>
-                @elseif ($viewingLog->action === 'DELETE' && !empty($viewingLog->old_values))
+                @elseif ($hasOldOnly)
                     <div>
-                        <h4 class="text-sm font-bold text-slate-900 mb-3">{{ __('Deleted Record Snapshot') }}</h4>
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-bold text-slate-900">{{ __('Deleted / Previous State Snapshot') }}</h4>
+                            <span class="text-xs text-slate-500">{{ count($viewingLog->old_values) }} {{ __('field(s)') }}</span>
+                        </div>
                         <div class="overflow-hidden rounded-lg border border-slate-200">
                             <table class="min-w-full divide-y divide-slate-200 text-xs">
                                 <thead class="bg-slate-100 font-semibold text-slate-700">
@@ -298,14 +389,14 @@
                                         <th class="px-3 py-2 text-left w-2/3 text-red-700">{{ __('Deleted Value') }}</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-200 bg-white font-mono">
+                                <tbody class="divide-y divide-slate-200 bg-white">
                                     @foreach ($viewingLog->old_values as $key => $val)
                                         <tr>
-                                            <td class="px-3 py-2 font-sans font-semibold text-slate-900 bg-slate-50/50">
+                                            <td class="px-3 py-2 font-sans font-semibold text-slate-900 bg-slate-50/50 align-top">
                                                 {{ str_replace('_', ' ', ucfirst($key)) }}
                                             </td>
-                                            <td class="px-3 py-2 text-red-800 whitespace-pre-wrap break-all">
-                                                {{ is_array($val) ? json_encode($val) : (is_bool($val) ? ($val ? 'true' : 'false') : (string)($val ?? 'null')) }}
+                                            <td class="px-3 py-2 text-red-800 align-top">
+                                                {!! $renderSnapshotValue($val) !!}
                                             </td>
                                         </tr>
                                     @endforeach
@@ -313,64 +404,29 @@
                             </table>
                         </div>
                     </div>
+                @elseif (empty($viewingLog->payload))
+                    <div class="rounded-lg border border-dashed border-slate-300 p-6 text-center text-xs text-slate-500">
+                        <p class="font-medium text-slate-700">{{ __('No state snapshot recorded for this audit entry.') }}</p>
+                        <p class="mt-1 text-slate-400">{{ __('This entry recorded an event action without model state diffs.') }}</p>
+                    </div>
                 @endif
 
                 {{-- Payload Details if Present --}}
                 @if (!empty($viewingLog->payload))
                     <div>
                         <h4 class="text-xs font-bold uppercase text-slate-600 mb-2">{{ __('Technical Payload / Extra Details') }}</h4>
-                        <pre class="rounded-lg bg-slate-900 p-3 text-xs text-emerald-400 font-mono overflow-x-auto">{{ json_encode($viewingLog->payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+                        <pre class="rounded-lg bg-slate-900 p-3 text-xs text-emerald-400 font-mono overflow-x-auto">{{ json_encode($viewingLog->payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}</pre>
                     </div>
                 @endif
             </div>
 
             <div class="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-6 py-3">
-                <x-ui.button variant="secondary" wire:click="closeDetailModal">{{ __('Close') }}</x-ui.button>
-            </div>
-        </x-ui.modal>
-    @endif
-
-    {{-- Entity Chronological History Modal --}}
-    @if ($showHistoryModal)
-        <x-ui.modal :title="'Chronological History: ' . class_basename($historyEntityType) . ' #' . $historyEntityId">
-            <div class="space-y-4 px-6 py-5 text-sm max-h-[70vh] overflow-y-auto">
-                <p class="text-xs text-slate-500">
-                    Showing complete lifecycle events for <span class="font-bold text-slate-800">{{ class_basename($historyEntityType) }} #{{ $historyEntityId }}</span> in chronological order.
-                </p>
-
-                @if ($historyLogs->isEmpty())
-                    <p class="text-sm text-slate-400 py-6 text-center">No audit history found for this entity.</p>
-                @else
-                    <div class="relative border-l-2 border-indigo-200 ml-4 space-y-6 py-2">
-                        @foreach ($historyLogs as $hLog)
-                            <div class="relative pl-6">
-                                <span class="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full border-2 border-white bg-indigo-600"></span>
-                                <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
-                                    <div class="flex items-center justify-between gap-2 text-xs">
-                                        <div class="flex items-center gap-2">
-                                            <span class="font-bold uppercase text-slate-900">{{ $hLog->action }}</span>
-                                            <span class="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600 font-mono text-[11px]">{{ $hLog->source ?? 'web' }}</span>
-                                        </div>
-                                        <span class="font-mono text-slate-500">{{ $hLog->created_at?->format('d M Y, H:i:s') }}</span>
-                                    </div>
-
-                                    <p class="mt-2 text-xs text-slate-800">{{ $hLog->description }}</p>
-
-                                    <div class="mt-2 text-[11px] text-slate-500 flex items-center justify-between">
-                                        <span>By: <strong>{{ $hLog->user?->name ?? 'System' }}</strong></span>
-                                        <button type="button" wire:click="openDetailModal({{ $hLog->id }})" class="text-indigo-600 hover:underline font-semibold">
-                                            View Snapshot →
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
+                @if ($showHistoryModal)
+                    <x-ui.button variant="secondary" wire:click="closeDetailModal">
+                        &larr; {{ __('Back to History') }}
+                    </x-ui.button>
                 @endif
-            </div>
-
-            <div class="flex justify-end border-t border-slate-200 bg-slate-50 px-6 py-3">
-                <x-ui.button variant="secondary" wire:click="closeHistoryModal">{{ __('Close') }}</x-ui.button>
+                <x-ui.button variant="secondary" wire:click="closeDetailModal">{{ __('Close') }}</x-ui.button>
             </div>
         </x-ui.modal>
     @endif

@@ -136,6 +136,18 @@ class AuditLogList extends Component
         $this->historyEntityId = null;
     }
 
+    public function cancel(): void
+    {
+        if ($this->showDetailModal) {
+            $this->closeDetailModal();
+            return;
+        }
+
+        if ($this->showHistoryModal) {
+            $this->closeHistoryModal();
+        }
+    }
+
     public function filterByRequestId(string $reqId): void
     {
         $this->closeDetailModal();
@@ -166,8 +178,14 @@ class AuditLogList extends Component
                     ->orWhere('platform', $this->source);
             }))
             ->when($this->requestId !== '', fn (Builder $q) => $q->where('request_id', $this->requestId))
-            ->when($this->dateFrom !== '', fn (Builder $q) => $q->whereDate('created_at', '>=', $this->dateFrom))
-            ->when($this->dateTo !== '', fn (Builder $q) => $q->whereDate('created_at', '<=', $this->dateTo))
+            ->when($this->dateFrom !== '', function (Builder $q): void {
+                $start = \Illuminate\Support\Carbon::parse($this->dateFrom, 'Asia/Dhaka')->startOfDay();
+                $q->where('created_at', '>=', $start);
+            })
+            ->when($this->dateTo !== '', function (Builder $q): void {
+                $end = \Illuminate\Support\Carbon::parse($this->dateTo, 'Asia/Dhaka')->endOfDay();
+                $q->where('created_at', '<=', $end);
+            })
             ->when($this->search !== '', function (Builder $q): void {
                 $term = '%'.trim($this->search).'%';
                 $q->where(function (Builder $sub) use ($term): void {
