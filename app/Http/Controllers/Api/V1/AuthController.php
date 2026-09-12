@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Flat;
 use App\Models\User;
-use App\Models\UserDeviceToken;
 use App\Services\Audit\AuditService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -108,20 +107,8 @@ class AuthController extends Controller
 
     public function registerFcmToken(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'token' => ['required', 'string', 'max:255'],
-            'device_type' => ['nullable', 'string', 'in:android,ios'],
-        ]);
-
-        UserDeviceToken::updateOrCreate(
-            ['token' => $validated['token']],
-            [
-                'user_id' => $request->user()->id,
-                'device_type' => $validated['device_type'] ?? 'android',
-            ]
-        );
-
-        return ApiResponse::success(null, 'Device token registered');
+        // Backward compatibility: proxy to new device registration
+        return app(DeviceApiController::class)->register($request);
     }
 
     public function changePassword(Request $request): JsonResponse

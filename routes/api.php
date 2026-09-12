@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\DeviceApiController;
+use App\Http\Controllers\Api\V1\NotificationApiController;
 use App\Http\Controllers\Api\V1\Resident\BillApiController;
 use App\Http\Controllers\Api\V1\Resident\DashboardController;
 use App\Http\Controllers\Api\V1\Resident\MaintenanceRequestApiController;
@@ -18,6 +20,16 @@ Route::prefix('v1')->group(function (): void {
         Route::post('auth/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
         Route::post('auth/fcm-token', [AuthController::class, 'registerFcmToken'])->name('api.v1.auth.fcm-token');
         Route::post('auth/change-password', [AuthController::class, 'changePassword'])->name('api.v1.auth.change-password');
+
+        // Device Management
+        Route::post('devices/register', [DeviceApiController::class, 'register'])->name('api.v1.devices.register');
+        Route::delete('devices/{device_id}', [DeviceApiController::class, 'destroy'])->name('api.v1.devices.destroy');
+
+        // Notification Center
+        Route::get('notifications', [NotificationApiController::class, 'index'])->name('api.v1.notifications.index');
+        Route::get('notifications/unread-count', [NotificationApiController::class, 'unreadCount'])->name('api.v1.notifications.unread-count');
+        Route::patch('notifications/read-all', [NotificationApiController::class, 'markAllRead'])->name('api.v1.notifications.read-all');
+        Route::patch('notifications/{id}/read', [NotificationApiController::class, 'markRead'])->name('api.v1.notifications.read');
 
         // Resident Portal
         Route::prefix('resident')->group(function (): void {
