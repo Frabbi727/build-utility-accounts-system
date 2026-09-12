@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Billing;
 
+use App\Enums\NotificationType;
 use App\Enums\PaymentSubmissionStatus;
 use App\Jobs\SendResidentPushNotificationJob;
 use App\Livewire\Concerns\WithNotices;
@@ -115,7 +116,11 @@ class PaymentSubmissionList extends Component
                     [$submission->user_id],
                     'Payment Approved',
                     "Your payment of BDT {$submission->amount} has been approved. Receipt: {$payment->receipt_no}",
-                    ['type' => 'payment_approved', 'payment_id' => $payment->id]
+                    ['type' => 'payment_approved', 'payment_id' => $payment->id],
+                    NotificationType::PaymentApproved,
+                    'payment',
+                    $payment->id,
+                    "payment-approved-{$payment->id}",
                 );
 
                 return $payment;
@@ -178,7 +183,11 @@ class PaymentSubmissionList extends Component
             [$submission->user_id],
             'Payment Rejected',
             "Your payment submission of BDT {$submission->amount} was rejected: {$this->rejectionReason}",
-            ['type' => 'payment_rejected', 'submission_id' => $submission->id]
+            ['type' => 'payment_rejected', 'submission_id' => $submission->id],
+            NotificationType::PaymentRejected,
+            'payment_submission',
+            $submission->id,
+            "payment-rejected-{$submission->id}",
         );
 
         $this->closeRejectModal();

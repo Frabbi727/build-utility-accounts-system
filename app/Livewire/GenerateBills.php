@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Enums\DistributionStatus;
+use App\Enums\NotificationType;
 use App\Enums\ReadingStatus;
 use App\Jobs\SendResidentPushNotificationJob;
 use App\Livewire\Concerns\PostsToLedger;
@@ -108,7 +109,11 @@ class GenerateBills extends Component
                     $userIds,
                     'New Monthly Bill Issued',
                     "Your service charge bill for {$month->format('F Y')} has been issued.",
-                    ['type' => 'new_bill', 'month' => $month->format('Y-m')]
+                    ['type' => 'new_bill', 'month' => $month->format('Y-m')],
+                    NotificationType::BillGenerated,
+                    'bill',
+                    null,
+                    "bill-generated-{$month->format('Y-m')}",
                 );
             }
         }

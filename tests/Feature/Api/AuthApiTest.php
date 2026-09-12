@@ -128,15 +128,17 @@ class AuthApiTest extends TestCase
         $user->assignRole(Role::Owner->value);
 
         $response = $this->actingAs($user, 'sanctum')->postJson('/api/v1/auth/fcm-token', [
-            'token' => 'device-fcm-sample-token-12345',
-            'device_type' => 'android',
+            'device_id' => 'test-device-hw-001',
+            'device_token' => 'device-fcm-sample-token-12345',
+            'platform' => 'android',
         ]);
 
         $response->assertStatus(200)->assertJsonPath('success', true);
-        $this->assertDatabaseHas('user_device_tokens', [
+        $this->assertDatabaseHas('user_devices', [
             'user_id' => $user->id,
-            'token' => 'device-fcm-sample-token-12345',
-            'device_type' => 'android',
+            'device_id' => 'test-device-hw-001',
+            'device_token' => 'device-fcm-sample-token-12345',
+            'platform' => 'android',
         ]);
     }
 

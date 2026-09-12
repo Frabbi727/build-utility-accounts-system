@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Enums\MaintenanceCategory;
 use App\Enums\MaintenancePriority;
 use App\Enums\MaintenanceStatus;
+use App\Enums\NotificationType;
 use App\Jobs\SendResidentPushNotificationJob;
 use App\Livewire\Concerns\WithCrudModal;
 use App\Models\Building;
@@ -147,7 +148,10 @@ class MaintenanceRequestList extends Component
                 [$record->user_id],
                 'Maintenance Ticket Updated: '.$record->title,
                 "Status: {$record->status->label()}".($record->resolution_notes ? " - {$record->resolution_notes}" : ''),
-                ['type' => 'ticket_updated', 'ticket_id' => $record->id]
+                ['type' => 'ticket_updated', 'ticket_id' => $record->id],
+                NotificationType::MaintenanceUpdated,
+                'maintenance_request',
+                $record->id,
             );
         }
 

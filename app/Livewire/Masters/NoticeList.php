@@ -3,6 +3,7 @@
 namespace App\Livewire\Masters;
 
 use App\Enums\NoticeType;
+use App\Enums\NotificationType;
 use App\Jobs\SendResidentPushNotificationJob;
 use App\Livewire\Concerns\WithCrudModal;
 use App\Models\Building;
@@ -120,7 +121,11 @@ class NoticeList extends Component
                         $userIds,
                         'New Notice: '.$notice->title,
                         Str::limit($notice->content, 100),
-                        ['type' => 'notice', 'notice_id' => $notice->id]
+                        ['type' => 'notice', 'notice_id' => $notice->id],
+                        NotificationType::NoticePublished,
+                        'notice',
+                        $notice->id,
+                        "notice-published-{$notice->id}",
                     );
                 }
             }
