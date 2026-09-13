@@ -70,8 +70,7 @@ class SendBillRemindersCommand extends Command
             NotificationTriggerEvent::BillOverdue,
         ];
 
-        $activeRules = NotificationRule::query()
-            ->active()
+        $allRules = NotificationRule::query()
             ->whereIn('trigger_event', $billTriggerEvents)
             ->get();
 
@@ -83,10 +82,10 @@ class SendBillRemindersCommand extends Command
         foreach ($buildings as $building) {
             foreach ($billTriggerEvents as $event) {
                 // Building-specific override has precedence over global rule
-                $rule = $activeRules->first(fn (NotificationRule $r) => $r->trigger_event === $event && $r->building_id === $building->id)
-                    ?? $activeRules->first(fn (NotificationRule $r) => $r->trigger_event === $event && $r->building_id === null);
+                $buildingRule = $allRules->first(fn (NotificationRule $r) => $r->trigger_event === $event && $r->building_id === $building->id);
+                $rule = $buildingRule ?? $allRules->first(fn (NotificationRule $r) => $r->trigger_event === $event && $r->building_id === null);
 
-                if ($rule === null) {
+                if ($rule === null || ! $rule->is_active) {
                     continue;
                 }
 
