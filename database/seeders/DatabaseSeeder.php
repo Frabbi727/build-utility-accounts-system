@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             ChartOfAccountsSeeder::class,
             RolesAndPermissionsSeeder::class,
             AdminUserSeeder::class,
+            NotificationRuleSeeder::class,
             // DemoBuildingSeeder::class,
             //   ChargeHeadsSeeder::class,
             // VendorsAndStaffSeeder::class,
