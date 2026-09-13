@@ -10,6 +10,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Flat;
 use App\Models\MaintenanceRequest;
 use App\Models\User;
+use App\Services\Notification\MaintenanceNotificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -101,6 +102,8 @@ class MaintenanceRequestApiController extends Controller
             'priority' => MaintenancePriority::from($validated['priority']),
             'status' => MaintenanceStatus::Open,
         ]);
+
+        app(MaintenanceNotificationService::class)->notifyTicketCreated($ticket);
 
         return ApiResponse::success([
             'id' => $ticket->id,

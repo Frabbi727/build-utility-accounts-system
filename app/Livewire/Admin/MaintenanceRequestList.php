@@ -5,12 +5,11 @@ namespace App\Livewire\Admin;
 use App\Enums\MaintenanceCategory;
 use App\Enums\MaintenancePriority;
 use App\Enums\MaintenanceStatus;
-use App\Enums\NotificationType;
-use App\Jobs\SendResidentPushNotificationJob;
 use App\Livewire\Concerns\WithCrudModal;
 use App\Models\Building;
 use App\Models\MaintenanceRequest;
 use App\Models\Vendor;
+use App\Services\Notification\MaintenanceNotificationService;
 use App\Support\CurrentBuilding;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -121,6 +120,11 @@ class MaintenanceRequestList extends Component
     {
         $record = $this->editingId === null ? new MaintenanceRequest : $this->findRecord($this->editingId);
 
+        $previousStatus = $record->exists ? $record->status : null;
+        $previousStaffId = $record->exists ? $record->assigned_staff_id : null;
+        $previousVendorId = $record->exists ? $record->assigned_vendor_id : null;
+        $previousResolutionNotes = $record->exists ? $record->resolution_notes : null;
+
         $resolvedAt = $record->resolved_at;
         if (in_array($this->status, [MaintenanceStatus::Resolved->value, MaintenanceStatus::Closed->value], true) && $resolvedAt === null) {
             $resolvedAt = now();
@@ -143,16 +147,20 @@ class MaintenanceRequestList extends Component
             'resolved_at' => $resolvedAt,
         ])->save();
 
-        if ($record->user_id) {
-            SendResidentPushNotificationJob::dispatch(
-                [$record->user_id],
-                'Maintenance Ticket Updated: '.$record->title,
-                "Status: {$record->status->label()}".($record->resolution_notes ? " - {$record->resolution_notes}" : ''),
-                ['type' => 'ticket_updated', 'ticket_id' => $record->id],
-                NotificationType::MaintenanceUpdated,
-                'maintenance_request',
-                $record->id,
-            );
+        $notificationService = app(MaintenanceNotificationService::class);
+
+        $assignmentChanged = ($record->assigned_staff_id !== $previousStaffId && $record->assigned_staff_id !== null)
+            || ($record->assigned_vendor_id !== $previousVendorId && $record->assigned_vendor_id !== null);
+
+        if ($assignmentChanged) {
+            $notificationService->notifyAssignment($record, $previousStaffId, $previousVendorId);
+        }
+
+        $statusChanged = $previousStatus !== null && $record->status !== $previousStatus;
+        $notesChanged = $previousResolutionNotes !== $record->resolution_notes && filled($record->resolution_notes);
+
+        if ($statusChanged || $notesChanged) {
+            $notificationService->notifyStatusChanged($record, $previousStatus);
         }
 
         return $record;

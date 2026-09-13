@@ -59,6 +59,15 @@ class NotificationRuleSeeder extends Seeder
                 'is_active' => true,
                 'channels' => ['push', 'in_app'],
             ],
+            [
+                'building_id' => null,
+                'trigger_event' => NotificationTriggerEvent::MaintenanceCreated,
+                'days_offset' => 0,
+                'title_template' => 'New Maintenance Request: #{ticket_id}',
+                'body_template' => 'A new maintenance request "{ticket_title}" has been submitted for Flat {flat_number}.',
+                'is_active' => true,
+                'channels' => ['push', 'in_app'],
+            ],
         ];
 
         foreach ($defaultRules as $rule) {
