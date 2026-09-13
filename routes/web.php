@@ -8,6 +8,7 @@ use App\Livewire\Accounting\PeriodList;
 use App\Livewire\AccountList;
 use App\Livewire\Admin\AuditLogList;
 use App\Livewire\Admin\MaintenanceRequestList;
+use App\Livewire\Admin\NotificationList;
 use App\Livewire\Admin\UserList;
 use App\Livewire\Billing\CostDistributionList;
 use App\Livewire\Billing\PaymentSubmissionList;
@@ -123,6 +124,7 @@ Route::middleware('auth')->group(function (): void {
         Route::get('reports/trial-balance', TrialBalance::class)->name('reports.trial-balance');
         Route::get('billing/bills/print', [BillController::class, 'month'])->name('bills.print-month');
         Route::get('payments', PaymentList::class)->name('payments.index');
+        Route::get('admin/notifications', NotificationList::class)->name('admin.notifications');
     });
 
     Route::middleware('role:admin')->group(function (): void {

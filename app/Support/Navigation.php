@@ -73,6 +73,7 @@ class Navigation
                 ['label' => 'nav.periods', 'route' => 'accounting.periods', 'access' => self::ADMIN],
                 ['label' => 'nav.users', 'route' => 'users.index', 'access' => self::ADMIN],
                 ['label' => 'nav.audit_logs', 'route' => 'admin.audit-logs', 'access' => self::ADMIN],
+                ['label' => 'nav.notifications', 'route' => 'admin.notifications', 'access' => self::STAFF],
             ],
         ],
     ];

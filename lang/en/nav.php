@@ -37,5 +37,6 @@ return [
     'periods' => 'Accounting Periods',
     'users' => 'Users & Roles',
     'audit_logs' => 'Audit Logs',
+    'notifications' => 'Notifications',
     'setup' => 'Setup',
 ];
