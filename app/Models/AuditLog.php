@@ -206,7 +206,7 @@ class AuditLog extends Model
     public function getComparisonFields(): array
     {
         if (! empty($this->changed_fields)) {
-            return array_values($this->changed_fields);
+            return $this->changed_fields;
         }
 
         $keys = array_unique(array_merge(
@@ -216,6 +216,6 @@ class AuditLog extends Model
 
         sort($keys);
 
-        return array_values($keys);
+        return $keys;
     }
 }
