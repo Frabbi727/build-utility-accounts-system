@@ -9,6 +9,7 @@ use App\Models\User;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -188,7 +189,7 @@ class AuditLogListScreenTest extends TestCase
             'module' => 'bills',
             'description' => 'Created Bill #101',
             'user_id' => $admin->id,
-            'created_at' => \Illuminate\Support\Carbon::create(2026, 9, 12, 15, 30, 0, 'Asia/Dhaka'),
+            'created_at' => Carbon::create(2026, 9, 12, 15, 30, 0, 'Asia/Dhaka'),
         ]);
 
         $this->actingAs($admin);
@@ -293,7 +294,7 @@ class AuditLogListScreenTest extends TestCase
             'module' => 'bills',
             'description' => 'Target Log on 2026-09-12',
             'user_id' => $admin->id,
-            'created_at' => \Illuminate\Support\Carbon::create(2026, 9, 12, 10, 0, 0, 'Asia/Dhaka'),
+            'created_at' => Carbon::create(2026, 9, 12, 10, 0, 0, 'Asia/Dhaka'),
         ]);
 
         $logOtherDate = AuditLog::create([
@@ -301,7 +302,7 @@ class AuditLogListScreenTest extends TestCase
             'module' => 'bills',
             'description' => 'Other Log on 2026-09-10',
             'user_id' => $admin->id,
-            'created_at' => \Illuminate\Support\Carbon::create(2026, 9, 10, 10, 0, 0, 'Asia/Dhaka'),
+            'created_at' => Carbon::create(2026, 9, 10, 10, 0, 0, 'Asia/Dhaka'),
         ]);
 
         $this->actingAs($admin);
@@ -313,5 +314,3 @@ class AuditLogListScreenTest extends TestCase
             ->assertDontSee('Other Log on 2026-09-10');
     }
 }
-
-

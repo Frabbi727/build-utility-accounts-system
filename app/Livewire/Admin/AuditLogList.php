@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -140,6 +141,7 @@ class AuditLogList extends Component
     {
         if ($this->showDetailModal) {
             $this->closeDetailModal();
+
             return;
         }
 
@@ -179,11 +181,11 @@ class AuditLogList extends Component
             }))
             ->when($this->requestId !== '', fn (Builder $q) => $q->where('request_id', $this->requestId))
             ->when($this->dateFrom !== '', function (Builder $q): void {
-                $start = \Illuminate\Support\Carbon::parse($this->dateFrom, 'Asia/Dhaka')->startOfDay();
+                $start = Carbon::parse($this->dateFrom, 'Asia/Dhaka')->startOfDay();
                 $q->where('created_at', '>=', $start);
             })
             ->when($this->dateTo !== '', function (Builder $q): void {
-                $end = \Illuminate\Support\Carbon::parse($this->dateTo, 'Asia/Dhaka')->endOfDay();
+                $end = Carbon::parse($this->dateTo, 'Asia/Dhaka')->endOfDay();
                 $q->where('created_at', '<=', $end);
             })
             ->when($this->search !== '', function (Builder $q): void {
