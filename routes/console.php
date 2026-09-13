@@ -23,3 +23,10 @@ Schedule::command('billing:generate')
 Schedule::command('billing:late-fees')
     ->dailyAt('01:00')
     ->withoutOverlapping();
+
+/**
+ * Automated push & in-app reminders for upcoming, due, and overdue bills.
+ */
+Schedule::command('notifications:send-bill-reminders')
+    ->dailyAt('08:00')
+    ->withoutOverlapping();
