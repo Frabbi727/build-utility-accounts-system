@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\ReceiptController;
+use App\Http\Controllers\ReportExportController;
 use App\Livewire\Accounting\OpeningBalances;
 use App\Livewire\Accounting\PeriodList;
 use App\Livewire\AccountList;
@@ -123,6 +124,7 @@ Route::middleware('auth')->group(function (): void {
         Route::get('reports/income-expenditure', IncomeExpenditure::class)->name('reports.income-expenditure');
         Route::get('reports/balance-sheet', BalanceSheet::class)->name('reports.balance-sheet');
         Route::get('reports/trial-balance', TrialBalance::class)->name('reports.trial-balance');
+        Route::get('reports/export/{type}', ReportExportController::class)->name('reports.export');
         Route::get('billing/bills/print', [BillController::class, 'month'])->name('bills.print-month');
         Route::get('payments', PaymentList::class)->name('payments.index');
         Route::get('admin/notifications', NotificationList::class)->name('admin.notifications');
