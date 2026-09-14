@@ -33,6 +33,7 @@ class RecordVendorBill
         array $items,
         ?int $buildingId = null,
         ?string $vendorReference = null,
+        ?int $maintenanceRequestId = null,
     ): VendorBill {
         if ($items === []) {
             throw new InvalidJournalEntryException('A vendor bill needs at least one line item.');
@@ -46,10 +47,11 @@ class RecordVendorBill
             $total = bcadd($total, $item['amount'], 2);
         }
 
-        return DB::transaction(function () use ($vendor, $billDate, $dueDate, $description, $items, $total, $buildingId, $vendorReference): VendorBill {
+        return DB::transaction(function () use ($vendor, $billDate, $dueDate, $description, $items, $total, $buildingId, $vendorReference, $maintenanceRequestId): VendorBill {
             $bill = VendorBill::create([
                 'vendor_id' => $vendor->id,
                 'building_id' => $buildingId,
+                'maintenance_request_id' => $maintenanceRequestId,
                 'bill_no' => $this->nextBillNo($billDate),
                 'vendor_reference' => $vendorReference,
                 'bill_date' => $billDate,

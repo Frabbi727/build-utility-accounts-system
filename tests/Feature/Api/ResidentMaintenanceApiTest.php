@@ -133,4 +133,62 @@ class ResidentMaintenanceApiTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    public function test_resident_can_rate_resolved_ticket(): void
+    {
+        $building = Building::factory()->create();
+        $user = User::factory()->create();
+        $user->assignRole(Role::Owner->value);
+        $owner = Owner::factory()->create(['user_id' => $user->id]);
+        $flat = Flat::factory()->create(['building_id' => $building->id, 'owner_id' => $owner->id]);
+
+        $ticket = MaintenanceRequest::factory()->create([
+            'building_id' => $building->id,
+            'flat_id' => $flat->id,
+            'user_id' => $user->id,
+            'status' => MaintenanceStatus::Resolved,
+            'resolved_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson("/api/v1/resident/maintenance-requests/{$ticket->id}/rate", [
+                'rating' => 5,
+                'rating_comment' => 'Quick response and clean repair!',
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.rating', 5);
+
+        $this->assertSame(5, $ticket->fresh()->rating);
+        $this->assertSame('Quick response and clean repair!', $ticket->fresh()->rating_comment);
+
+        $this->assertDatabaseHas('maintenance_request_activities', [
+            'maintenance_request_id' => $ticket->id,
+            'type' => 'rated',
+        ]);
+    }
+
+    public function test_resident_cannot_rate_open_ticket(): void
+    {
+        $building = Building::factory()->create();
+        $user = User::factory()->create();
+        $user->assignRole(Role::Owner->value);
+        $owner = Owner::factory()->create(['user_id' => $user->id]);
+        $flat = Flat::factory()->create(['building_id' => $building->id, 'owner_id' => $owner->id]);
+
+        $ticket = MaintenanceRequest::factory()->create([
+            'building_id' => $building->id,
+            'flat_id' => $flat->id,
+            'user_id' => $user->id,
+            'status' => MaintenanceStatus::Open,
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson("/api/v1/resident/maintenance-requests/{$ticket->id}/rate", [
+                'rating' => 4,
+            ]);
+
+        $response->assertStatus(422);
+    }
 }

@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $vendor_id
  * @property int|null $building_id
+ * @property int|null $maintenance_request_id
  * @property string $bill_no
  * @property string|null $vendor_reference
  * @property Carbon $bill_date
@@ -26,7 +27,7 @@ use Illuminate\Support\Carbon;
  * @property string $description
  */
 #[Fillable([
-    'vendor_id', 'building_id', 'bill_no', 'vendor_reference',
+    'vendor_id', 'building_id', 'maintenance_request_id', 'bill_no', 'vendor_reference',
     'bill_date', 'due_date', 'total_amount', 'status', 'description',
 ])]
 class VendorBill extends Model
@@ -59,6 +60,12 @@ class VendorBill extends Model
     public function building(): BelongsTo
     {
         return $this->belongsTo(Building::class);
+    }
+
+    /** @return BelongsTo<MaintenanceRequest, $this> */
+    public function maintenanceRequest(): BelongsTo
+    {
+        return $this->belongsTo(MaintenanceRequest::class);
     }
 
     /** @return HasMany<VendorBillItem, $this> */

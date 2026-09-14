@@ -9,7 +9,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Flat;
 use App\Models\MaintenanceRequest;
+use App\Models\MaintenanceRequestActivity;
 use App\Models\User;
+use App\Services\Maintenance\MaintenanceSlaService;
+use App\Services\Maintenance\MaintenanceTimelineService;
 use App\Services\Notification\MaintenanceNotificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -64,6 +67,15 @@ class MaintenanceRequestApiController extends Controller
             'category' => $m->category->value,
             'priority' => $m->priority->value,
             'status' => $m->status->value,
+            'due_by' => $m->due_by?->toIso8601String(),
+            'sla_status' => $m->slaStatus(),
+            'is_overdue' => $m->isOverdue(),
+            'hours_remaining' => $m->hoursRemaining(),
+            'cost' => $m->cost,
+            'rating' => $m->rating,
+            'rating_comment' => $m->rating_comment,
+            'before_photo_url' => $m->before_photo_path ? asset('storage/'.$m->before_photo_path) : null,
+            'after_photo_url' => $m->after_photo_path ? asset('storage/'.$m->after_photo_path) : null,
             'assigned_staff' => $m->assignedStaff !== null ? $m->assignedStaff->name : null,
             'resolution_notes' => $m->resolution_notes,
             'resolved_at' => $m->resolved_at?->toIso8601String(),
@@ -81,6 +93,7 @@ class MaintenanceRequestApiController extends Controller
             'description' => ['required', 'string'],
             'category' => ['required', Rule::enum(MaintenanceCategory::class)],
             'priority' => ['required', Rule::enum(MaintenancePriority::class)],
+            'before_photo' => ['nullable', 'image', 'max:5120'],
         ]);
 
         /** @var User $user */
@@ -92,6 +105,14 @@ class MaintenanceRequestApiController extends Controller
             return ApiResponse::error('You are not authorized to submit maintenance requests for this flat.', 403);
         }
 
+        $priority = MaintenancePriority::from($validated['priority']);
+        $dueBy = app(MaintenanceSlaService::class)->calculateDueBy(now(), $priority);
+
+        $beforePhotoPath = null;
+        if ($request->hasFile('before_photo')) {
+            $beforePhotoPath = $request->file('before_photo')?->store('maintenance-photos', 'public');
+        }
+
         $ticket = MaintenanceRequest::create([
             'building_id' => $flat->building_id,
             'flat_id' => $flat->id,
@@ -99,9 +120,19 @@ class MaintenanceRequestApiController extends Controller
             'title' => $validated['title'],
             'description' => $validated['description'],
             'category' => MaintenanceCategory::from($validated['category']),
-            'priority' => MaintenancePriority::from($validated['priority']),
+            'priority' => $priority,
             'status' => MaintenanceStatus::Open,
+            'due_by' => $dueBy,
+            'before_photo_path' => $beforePhotoPath,
         ]);
+
+        app(MaintenanceTimelineService::class)->record(
+            $ticket,
+            'created',
+            "Resident submitted maintenance request for Flat {$flat->number}",
+            ['priority' => $priority->value],
+            $user
+        );
 
         app(MaintenanceNotificationService::class)->notifyTicketCreated($ticket);
 
@@ -112,6 +143,9 @@ class MaintenanceRequestApiController extends Controller
             'category' => $ticket->category->value,
             'priority' => $ticket->priority->value,
             'status' => $ticket->status->value,
+            'due_by' => $ticket->due_by?->toIso8601String(),
+            'sla_status' => $ticket->slaStatus(),
+            'before_photo_url' => $ticket->before_photo_path ? asset('storage/'.$ticket->before_photo_path) : null,
             'created_at' => $ticket->created_at->toIso8601String(),
         ], 'Maintenance request submitted successfully', 201);
     }
@@ -126,7 +160,7 @@ class MaintenanceRequestApiController extends Controller
             return ApiResponse::error('You are not authorized to access this maintenance request.', 403);
         }
 
-        $maintenanceRequest->loadMissing(['assignedStaff', 'assignedVendor']);
+        $maintenanceRequest->loadMissing(['assignedStaff', 'assignedVendor', 'activities.user']);
 
         return ApiResponse::success([
             'id' => $maintenanceRequest->id,
@@ -135,12 +169,66 @@ class MaintenanceRequestApiController extends Controller
             'category' => $maintenanceRequest->category->value,
             'priority' => $maintenanceRequest->priority->value,
             'status' => $maintenanceRequest->status->value,
+            'due_by' => $maintenanceRequest->due_by?->toIso8601String(),
+            'sla_status' => $maintenanceRequest->slaStatus(),
+            'is_overdue' => $maintenanceRequest->isOverdue(),
+            'hours_remaining' => $maintenanceRequest->hoursRemaining(),
+            'cost' => $maintenanceRequest->cost,
+            'rating' => $maintenanceRequest->rating,
+            'rating_comment' => $maintenanceRequest->rating_comment,
+            'before_photo_url' => $maintenanceRequest->before_photo_path ? asset('storage/'.$maintenanceRequest->before_photo_path) : null,
+            'after_photo_url' => $maintenanceRequest->after_photo_path ? asset('storage/'.$maintenanceRequest->after_photo_path) : null,
             'assigned_staff' => $maintenanceRequest->assignedStaff !== null ? $maintenanceRequest->assignedStaff->name : null,
             'assigned_vendor' => $maintenanceRequest->assignedVendor !== null ? $maintenanceRequest->assignedVendor->name : null,
             'resolution_notes' => $maintenanceRequest->resolution_notes,
             'resolved_at' => $maintenanceRequest->resolved_at?->toIso8601String(),
+            'activities' => $maintenanceRequest->activities->map(fn (MaintenanceRequestActivity $a): array => [
+                'id' => $a->id,
+                'type' => $a->type,
+                'description' => $a->description,
+                'user' => $a->user?->name,
+                'created_at' => $a->created_at->toIso8601String(),
+            ]),
             'created_at' => $maintenanceRequest->created_at->toIso8601String(),
         ], 'Maintenance request details retrieved successfully');
+    }
+
+    public function rate(Request $request, MaintenanceRequest $maintenanceRequest): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $flats = $this->getResidentFlats($user);
+
+        if (! $flats->contains('id', $maintenanceRequest->flat_id)) {
+            return ApiResponse::error('You are not authorized to rate this maintenance request.', 403);
+        }
+
+        if (! $maintenanceRequest->status->isClosed()) {
+            return ApiResponse::error('You can only rate maintenance requests that have been resolved or closed.', 422);
+        }
+
+        $validated = $request->validate([
+            'rating' => ['required', 'integer', 'between:1,5'],
+            'rating_comment' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $maintenanceRequest->rating = (int) $validated['rating'];
+        $maintenanceRequest->rating_comment = $validated['rating_comment'] ?? null;
+        $maintenanceRequest->save();
+
+        app(MaintenanceTimelineService::class)->record(
+            $maintenanceRequest,
+            'rated',
+            "Resident submitted rating of {$maintenanceRequest->rating}/5 stars.",
+            ['rating' => $maintenanceRequest->rating, 'comment' => $maintenanceRequest->rating_comment],
+            $user
+        );
+
+        return ApiResponse::success([
+            'id' => $maintenanceRequest->id,
+            'rating' => $maintenanceRequest->rating,
+            'rating_comment' => $maintenanceRequest->rating_comment,
+        ], 'Thank you for your rating and feedback!');
     }
 
     /**

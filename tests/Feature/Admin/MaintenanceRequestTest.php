@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\AccountCode;
 use App\Enums\MaintenanceCategory;
 use App\Enums\MaintenancePriority;
 use App\Enums\MaintenanceStatus;
@@ -14,7 +15,9 @@ use App\Models\Owner;
 use App\Models\Staff;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Services\JournalService;
 use App\Support\CurrentBuilding;
+use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -151,5 +154,68 @@ class MaintenanceRequestTest extends TestCase
             ->call('delete', $request->id);
 
         $this->assertDatabaseMissing('maintenance_requests', ['id' => $request->id]);
+    }
+
+    public function test_can_filter_by_sla_and_view_timeline(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+
+        $overdueTicket = MaintenanceRequest::factory()->overdue()->create([
+            'building_id' => $this->building->id,
+            'flat_id' => $this->flat->id,
+            'title' => 'Overdue Lift Issue',
+        ]);
+
+        $onTrackTicket = MaintenanceRequest::factory()->create([
+            'building_id' => $this->building->id,
+            'flat_id' => $this->flat->id,
+            'title' => 'Routine Painting',
+            'due_by' => now()->addDays(3),
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(MaintenanceRequestList::class)
+            ->set('slaFilter', 'overdue')
+            ->assertSee('Overdue Lift Issue')
+            ->assertDontSee('Routine Painting')
+            ->call('openTimeline', $overdueTicket->id)
+            ->assertSet('showTimelineModal', true)
+            ->call('closeTimeline')
+            ->assertSet('showTimelineModal', false);
+    }
+
+    public function test_can_generate_vendor_bill_from_maintenance_list(): void
+    {
+        $this->seed(ChartOfAccountsSeeder::class);
+        $admin = $this->userWithRole(Role::Admin);
+        $vendor = Vendor::factory()->create(['name' => 'Fast Cleaners']);
+        $repairsAccount = app(JournalService::class)->account(AccountCode::RepairsMaintenance);
+
+        $ticket = MaintenanceRequest::factory()->create([
+            'building_id' => $this->building->id,
+            'flat_id' => $this->flat->id,
+            'assigned_vendor_id' => $vendor->id,
+            'status' => MaintenanceStatus::Open,
+            'cost' => '0.00',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(MaintenanceRequestList::class)
+            ->call('openBillModal', $ticket->id)
+            ->assertSet('showBillModal', true)
+            ->set('billAmount', '2500.00')
+            ->set('billVendorId', $vendor->id)
+            ->set('billExpenseAccountId', $repairsAccount->id)
+            ->set('billDescription', 'Deep cleaning fee')
+            ->call('generateVendorBill')
+            ->assertSet('showBillModal', false);
+
+        $this->assertDatabaseHas('vendor_bills', [
+            'maintenance_request_id' => $ticket->id,
+            'vendor_id' => $vendor->id,
+            'total_amount' => '2500.00',
+        ]);
+
+        $this->assertSame('2500.00', $ticket->fresh()->cost);
     }
 }

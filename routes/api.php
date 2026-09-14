@@ -45,6 +45,7 @@ Route::prefix('v1')->group(function (): void {
             Route::get('maintenance-requests', [MaintenanceRequestApiController::class, 'index'])->name('api.v1.resident.maintenance.index');
             Route::post('maintenance-requests', [MaintenanceRequestApiController::class, 'store'])->name('api.v1.resident.maintenance.store');
             Route::get('maintenance-requests/{maintenanceRequest}', [MaintenanceRequestApiController::class, 'show'])->name('api.v1.resident.maintenance.show');
+            Route::post('maintenance-requests/{maintenanceRequest}/rate', [MaintenanceRequestApiController::class, 'rate'])->name('api.v1.resident.maintenance.rate');
             Route::get('notices', [NoticeApiController::class, 'index'])->name('api.v1.resident.notices.index');
             Route::get('notices/{notice}', [NoticeApiController::class, 'show'])->name('api.v1.resident.notices.show');
         });

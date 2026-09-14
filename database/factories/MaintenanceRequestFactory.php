@@ -57,4 +57,23 @@ class MaintenanceRequestFactory extends Factory
             'resolution_notes' => 'Issue closed',
         ]);
     }
+
+    public function overdue(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => MaintenanceStatus::Open,
+            'due_by' => now()->subHours(5),
+            'created_at' => now()->subDays(2),
+        ]);
+    }
+
+    public function rated(int $rating = 5, ?string $comment = 'Great work!'): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => MaintenanceStatus::Resolved,
+            'resolved_at' => now(),
+            'rating' => $rating,
+            'rating_comment' => $comment,
+        ]);
+    }
 }

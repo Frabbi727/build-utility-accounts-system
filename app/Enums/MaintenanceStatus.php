@@ -19,6 +19,16 @@ enum MaintenanceStatus: string
         };
     }
 
+    public function isOpen(): bool
+    {
+        return $this === self::Open || $this === self::InProgress;
+    }
+
+    public function isClosed(): bool
+    {
+        return $this === self::Resolved || $this === self::Closed;
+    }
+
     public function badgeClasses(): string
     {
         return match ($this) {

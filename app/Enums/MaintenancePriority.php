@@ -19,6 +19,16 @@ enum MaintenancePriority: string
         };
     }
 
+    public function slaHours(): int
+    {
+        return match ($this) {
+            self::Emergency => 4,
+            self::High => 24,
+            self::Medium => 48,
+            self::Low => 96,
+        };
+    }
+
     public function badgeClasses(): string
     {
         return match ($this) {
