@@ -62,7 +62,7 @@ class MeterReadingCsvService
 
             fputcsv($output, [
                 $meter->id,
-                $meter->flat?->number ?? 'Common',
+                $meter->flat !== null ? $meter->flat->number : 'Common',
                 $meter->utility->name,
                 $meter->meter_no,
                 $previous,
