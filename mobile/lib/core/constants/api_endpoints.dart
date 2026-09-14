@@ -20,4 +20,16 @@ class ApiEndpoints {
   static String maintenanceDetail(int id) => '/resident/maintenance-requests/$id';
   static const String notices = '/resident/notices';
   static String noticeDetail(int id) => '/resident/notices/$id';
+
+  // Devices & Push
+  static const String devicesRegister = '/devices/register';
+  static String deviceDelete(String deviceId) => '/devices/$deviceId';
+
+  // Notifications
+  static const String notifications = '/notifications';
+  static const String notificationUnreadCount = '/notifications/unread-count';
+  static const String notificationsReadAll = '/notifications/read-all';
+  static String notificationRead(int id) => '/notifications/$id/read';
+  static const String notificationPreferences = '/notifications/preferences';
 }
+

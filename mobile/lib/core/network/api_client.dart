@@ -118,7 +118,53 @@ class ApiClient {
     }
   }
 
+  /// DELETE Request
+  Future<ApiResponse<T>> delete<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    T Function(dynamic data)? fromJson,
+  }) async {
+    try {
+      final response = await _dio.delete(path, data: data, queryParameters: queryParameters);
+      return ApiResponse<T>.fromJson(response.data as Map<String, dynamic>, fromJson);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// PUT Request
+  Future<ApiResponse<T>> put<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    T Function(dynamic data)? fromJson,
+  }) async {
+    try {
+      final response = await _dio.put(path, data: data, queryParameters: queryParameters);
+      return ApiResponse<T>.fromJson(response.data as Map<String, dynamic>, fromJson);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// PATCH Request
+  Future<ApiResponse<T>> patch<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    T Function(dynamic data)? fromJson,
+  }) async {
+    try {
+      final response = await _dio.patch(path, data: data, queryParameters: queryParameters);
+      return ApiResponse<T>.fromJson(response.data as Map<String, dynamic>, fromJson);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   /// Multipart POST Request for offline payment receipts or ticket photos
+
   Future<ApiResponse<T>> uploadMultipart<T>(
     String path, {
     required Map<String, dynamic> fields,

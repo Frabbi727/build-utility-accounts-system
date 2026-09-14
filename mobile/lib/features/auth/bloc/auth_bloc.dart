@@ -111,6 +111,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     try {
+      final deviceId = await _storageService.getDeviceId();
+      if (deviceId != null && deviceId.isNotEmpty) {
+        await _apiClient.delete(ApiEndpoints.deviceDelete(deviceId));
+      }
+    } catch (_) {}
+
+    try {
       await _apiClient.post(ApiEndpoints.logout);
     } catch (_) {}
 
@@ -118,6 +125,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     await _storageService.clearAll();
     emit(const AuthUnauthenticated());
   }
+
 
   Future<void> _onSelectFlatRequested(
     AuthSelectFlatRequested event,

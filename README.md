@@ -58,3 +58,11 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 # build-utility-accounts-system
+
+
+cd /home/techreal/utility.techrealify.com
+    git pull --rebase origin production
+    composer install --no-dev --optimize-autoloader
+    php artisan migrate --force
+    php artisan optimize:clear
+    php artisan optimize

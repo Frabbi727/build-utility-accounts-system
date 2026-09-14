@@ -8,6 +8,7 @@ class SecureStorageService {
   static const String _authTokenKey = 'uas_resident_token';
   static const String _selectedFlatKey = 'uas_selected_flat_id';
   static const String _userCacheKey = 'uas_cached_user';
+  static const String _deviceIdKey = 'uas_resident_device_id';
 
   SecureStorageService({
     FlutterSecureStorage? secureStorage,
@@ -29,7 +30,16 @@ class SecureStorageService {
     await _secureStorage.delete(key: _authTokenKey);
   }
 
+  Future<void> saveDeviceId(String deviceId) async {
+    await _secureStorage.write(key: _deviceIdKey, value: deviceId);
+  }
+
+  Future<String?> getDeviceId() async {
+    return await _secureStorage.read(key: _deviceIdKey);
+  }
+
   Future<void> saveSelectedFlatId(int flatId) async {
+
     await _prefs?.setInt(_selectedFlatKey, flatId);
   }
 

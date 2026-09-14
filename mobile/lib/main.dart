@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/network/api_client.dart';
+import 'core/services/push_notification_service.dart';
 import 'core/storage/secure_storage_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/bloc/auth_bloc.dart';
@@ -26,6 +29,14 @@ void main() async {
   try {
     await dotenv.load(fileName: '.env');
   } catch (_) {}
+
+  // Safely initialize Firebase & FCM background handler
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    debugPrint('Firebase initialization skipped or not configured: $e');
+  }
 
   final defaultBaseUrl = Platform.isAndroid
       ? 'http://10.0.2.2:8000/api/v1'
@@ -77,6 +88,12 @@ class ResidentApp extends StatelessWidget {
         listener: (context, state) {
           if (state is AuthAuthenticated) {
             context.read<DashboardBloc>().add(DashboardFetchRequested());
+            // Initialize push notifications and register device token with server
+            final apiClient = RepositoryProvider.of<ApiClient>(context);
+            final pushService = PushNotificationService();
+            pushService.initialize().then((_) {
+              pushService.registerDevice(apiClient);
+            });
           }
         },
         builder: (context, state) {
