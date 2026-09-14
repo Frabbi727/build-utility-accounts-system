@@ -6,33 +6,36 @@ use App\Enums\ReadingStatus;
 use App\Exceptions\ReadingNotConfirmableException;
 use App\Livewire\Concerns\WithConfirmation;
 use App\Livewire\Concerns\WithNotices;
+use App\Models\Building;
 use App\Models\Meter;
 use App\Models\MeterReading;
 use App\Models\Utility;
 use App\Services\Billing\ConfirmReading;
 use App\Services\Billing\MeterConsumption;
+use App\Services\Billing\MeterReadingAnomalyDetector;
+use App\Services\Billing\MeterReadingCsvService;
 use App\Support\CurrentBuilding;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Livewire\Component;
+use Livewire\WithFileUploads;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * A month's readings for every active meter, entered as one sheet.
  *
- * Deliberately not a CRUD modal per reading. Readings are taken in one pass around the
- * building, so the screen that matches the work is a grid: every meter listed with its
- * previous value already filled in, one number to type per row, then save and confirm
- * together.
- *
- * Confirming is what settles a reading: it stamps the tariff and makes the row billable.
- * Anything already on a bill is shown read-only, because a posted bill is never edited.
+ * Supports bulk CSV export & import, real-time consumption spike anomaly indicators,
+ * and meter dial photo evidence attachments.
  */
 class ReadingSheet extends Component
 {
     use WithConfirmation;
+    use WithFileUploads;
     use WithNotices;
 
     public string $month = '';
@@ -45,6 +48,21 @@ class ReadingSheet extends Component
      * @var array<int, array{current: string, date: string, estimated: bool, note: string}>
      */
     public array $rows = [];
+
+    /** @var UploadedFile|null */
+    public $csvFile = null;
+
+    public bool $showImportModal = false;
+
+    /** @var list<string> */
+    public array $importErrors = [];
+
+    /** @var UploadedFile|null */
+    public $readingPhoto = null;
+
+    public ?int $photoMeterId = null;
+
+    public ?string $viewingPhotoUrl = null;
 
     public function mount(): void
     {
@@ -104,8 +122,6 @@ class ReadingSheet extends Component
         $existing = $this->readingsForMonth();
         $default = $this->billingMonth()->copy()->endOfMonth()->toDateString();
 
-        // A plain array, not the Collection: Collection::offsetGet raises on a missing
-        // key and `??` cannot rescue it, because the error comes from inside the method.
         $existing = $existing->all();
 
         $this->rows = $this->meters()->mapWithKeys(function (Meter $meter) use ($existing, $default): array {
@@ -135,6 +151,130 @@ class ReadingSheet extends Component
             ->first();
 
         return bcadd((string) ($earlier === null ? $meter->initial_reading : $earlier->current_reading), '0', 3);
+    }
+
+    public function exportCsv(): StreamedResponse
+    {
+        $this->authorize('viewAny', MeterReading::class);
+
+        $building = Building::findOrFail(app(CurrentBuilding::class)->id());
+        $csv = app(MeterReadingCsvService::class)->export($building, $this->billingMonth(), $this->utilityId);
+        $filename = "meter-readings-{$this->month}.csv";
+
+        return response()->streamDownload(function () use ($csv): void {
+            echo $csv;
+        }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    public function openImportModal(): void
+    {
+        $this->csvFile = null;
+        $this->importErrors = [];
+        $this->showImportModal = true;
+    }
+
+    public function closeImportModal(): void
+    {
+        $this->showImportModal = false;
+        $this->csvFile = null;
+        $this->importErrors = [];
+    }
+
+    public function importCsv(): void
+    {
+        $this->authorize('create', MeterReading::class);
+
+        $this->validate([
+            'csvFile' => ['required', 'file', 'max:2048'],
+        ]);
+
+        $building = Building::findOrFail(app(CurrentBuilding::class)->id());
+        $content = (string) file_get_contents($this->csvFile->getRealPath());
+
+        $result = app(MeterReadingCsvService::class)->import(
+            $building,
+            $this->billingMonth(),
+            $content,
+            Auth::id(),
+        );
+
+        $this->importErrors = $result['errors'];
+
+        if ($result['saved'] > 0) {
+            $this->notify(__('utilities.readings_imported', ['count' => $result['saved']]));
+            if (empty($result['errors'])) {
+                $this->closeImportModal();
+            }
+        }
+
+        $this->loadRows();
+    }
+
+    public function openPhotoModal(int $meterId): void
+    {
+        $this->photoMeterId = $meterId;
+        $this->readingPhoto = null;
+    }
+
+    public function closePhotoModal(): void
+    {
+        $this->photoMeterId = null;
+        $this->readingPhoto = null;
+    }
+
+    public function savePhoto(): void
+    {
+        $this->authorize('create', MeterReading::class);
+
+        $this->validate([
+            'readingPhoto' => ['required', 'image', 'max:5120'],
+        ]);
+
+        if ($this->photoMeterId !== null) {
+            $path = $this->readingPhoto->store('meter_readings', 'public');
+            $reading = MeterReading::where('meter_id', $this->photoMeterId)
+                ->whereDate('billing_month', $this->billingMonth())
+                ->first();
+
+            if ($reading !== null) {
+                $reading->update(['image_path' => $path]);
+            } else {
+                // If row has not been saved yet, create a baseline reading record with photo
+                $meter = Meter::findOrFail($this->photoMeterId);
+                $row = $this->rows[$meter->id] ?? null;
+                $current = $row !== null && trim((string) $row['current']) !== '' ? $row['current'] : $this->previousFor($meter);
+                $previous = $this->previousFor($meter);
+                $consumption = app(MeterConsumption::class)->between($meter, $previous, $current);
+
+                MeterReading::create([
+                    'meter_id' => $meter->id,
+                    'billing_month' => $this->billingMonth(),
+                    'reading_date' => $row['date'] ?? now()->toDateString(),
+                    'previous_reading' => $previous,
+                    'current_reading' => $current,
+                    'consumption' => $consumption,
+                    'is_estimated' => (bool) ($row['estimated'] ?? false),
+                    'note' => $row['note'] ?? null,
+                    'image_path' => $path,
+                    'recorded_by' => Auth::id(),
+                    'status' => ReadingStatus::Draft,
+                ]);
+            }
+
+            $this->notify(__('utilities.photo_uploaded'));
+            $this->closePhotoModal();
+            $this->loadRows();
+        }
+    }
+
+    public function viewPhoto(string $imagePath): void
+    {
+        $this->viewingPhotoUrl = Storage::disk('public')->url($imagePath);
+    }
+
+    public function closePhotoView(): void
+    {
+        $this->viewingPhotoUrl = null;
     }
 
     public function save(): void
@@ -179,8 +319,6 @@ class ReadingSheet extends Component
                         'reading_date' => $row['date'],
                         'previous_reading' => $previous,
                         'current_reading' => $row['current'],
-                        // Computed once, at entry: rollover and meter replacement both
-                        // make this un-derivable from the two dial values later.
                         'consumption' => $consumption->between($meter, $previous, (string) $row['current']),
                         'is_estimated' => (bool) $row['estimated'],
                         'note' => $row['note'] === '' ? null : $row['note'],
@@ -288,13 +426,27 @@ class ReadingSheet extends Component
 
         $meters = $this->meters();
         $readings = $this->readingsForMonth();
+        $billingMonth = $this->billingMonth();
+        $detector = app(MeterReadingAnomalyDetector::class);
+
+        $previousMap = [];
+        $anomalies = [];
+
+        foreach ($meters as $meter) {
+            $prev = $this->previousFor($meter);
+            $previousMap[$meter->id] = $prev;
+
+            $currentRow = $this->rows[$meter->id] ?? null;
+            $currentVal = $currentRow !== null ? (string) ($currentRow['current'] ?? '') : null;
+
+            $anomalies[$meter->id] = $detector->detect($meter, $currentVal, $billingMonth, $prev);
+        }
 
         return view('livewire.utilities.reading-sheet', [
             'meters' => $meters,
             'readings' => $readings,
-            'previous' => $meters->mapWithKeys(fn (Meter $meter): array => [
-                $meter->id => $this->previousFor($meter),
-            ]),
+            'previous' => $previousMap,
+            'anomalies' => $anomalies,
             'utilities' => Utility::where('building_id', app(CurrentBuilding::class)->id())
                 ->where('is_active', true)
                 ->orderBy('sort_order')

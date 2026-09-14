@@ -19,7 +19,9 @@ use App\Support\CurrentBuilding;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -240,5 +242,59 @@ class ReadingSheetTest extends TestCase
             ->set('month', '2026-08')
             ->assertViewHas('meters', fn ($meters): bool => $meters->count() === 1
                 && ! $meters->contains('id', $foreignMeter->id));
+    }
+
+    public function test_accountant_can_export_csv_template(): void
+    {
+        Livewire::actingAs($this->accountant())
+            ->test(ReadingSheet::class)
+            ->set('month', '2026-08')
+            ->call('exportCsv')
+            ->assertFileDownloaded('meter-readings-2026-08.csv');
+    }
+
+    public function test_accountant_can_import_meter_readings_csv(): void
+    {
+        $csvContent = "meter_id,flat_number,utility,meter_no,previous_reading,current_reading,reading_date,is_estimated,note\n"
+            ."{$this->meter->id},101,Electricity,{$this->meter->meter_no},1000.000,1180.000,2026-08-25,no,CSV Import Test\n";
+
+        $file = UploadedFile::fake()->createWithContent('readings.csv', $csvContent);
+
+        Livewire::actingAs($this->accountant())
+            ->test(ReadingSheet::class)
+            ->set('month', '2026-08')
+            ->set('csvFile', $file)
+            ->call('importCsv')
+            ->assertHasNoErrors()
+            ->assertSee(__('utilities.readings_imported', ['count' => 1]));
+
+        $reading = MeterReading::where('meter_id', $this->meter->id)
+            ->whereDate('billing_month', '2026-08-01')
+            ->firstOrFail();
+
+        $this->assertSame('1180.000', (string) $reading->current_reading);
+        $this->assertSame('180.000', (string) $reading->consumption);
+    }
+
+    public function test_accountant_can_upload_meter_dial_photo(): void
+    {
+        Storage::fake('public');
+
+        $image = UploadedFile::fake()->image('dial.jpg');
+
+        Livewire::actingAs($this->accountant())
+            ->test(ReadingSheet::class)
+            ->set('month', '2026-08')
+            ->set("rows.{$this->meter->id}.current", '1150.000')
+            ->call('save')
+            ->call('openPhotoModal', $this->meter->id)
+            ->set('readingPhoto', $image)
+            ->call('savePhoto')
+            ->assertHasNoErrors()
+            ->assertSee(__('utilities.photo_uploaded'));
+
+        $reading = MeterReading::where('meter_id', $this->meter->id)->firstOrFail();
+        $this->assertNotNull($reading->image_path);
+        Storage::disk('public')->assertExists($reading->image_path);
     }
 }
