@@ -267,7 +267,7 @@ class GenerateBills extends Component
 
                     if ($search !== '') {
                         $flatNo = strtolower($sim->flat->number);
-                        $ownerName = strtolower($sim->flat->owner?->name ?? '');
+                        $ownerName = $sim->flat->owner !== null ? strtolower($sim->flat->owner->name) : '';
 
                         return str_contains($flatNo, $search) || str_contains($ownerName, $search);
                     }
