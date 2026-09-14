@@ -165,4 +165,6 @@ return [
     'custom_allocation' => 'কাস্টম বিল নির্বাচন',
     'oldest_first' => 'আগের বকেয়া আগে (FIFO)',
     'allocation_mode' => 'বরাদ্দ পদ্ধতি',
+    'cancel' => 'বাতিল',
+    'actions' => 'কার্যক্রম',
 ];

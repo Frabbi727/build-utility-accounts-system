@@ -58,6 +58,20 @@
                     @error('reference') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                 </div>
 
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('billing.allocation_mode') }}</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center gap-2 p-2 rounded-md border text-xs cursor-pointer {{ $allocationMode === 'fifo' ? 'border-slate-900 bg-slate-50 font-semibold text-slate-900' : 'border-slate-200 text-slate-600' }}">
+                            <input type="radio" wire:model.live="allocationMode" value="fifo" class="text-slate-900 focus:ring-slate-900" />
+                            <span>{{ __('billing.oldest_first') }}</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2 rounded-md border text-xs cursor-pointer {{ $allocationMode === 'custom' ? 'border-slate-900 bg-slate-50 font-semibold text-slate-900' : 'border-slate-200 text-slate-600' }}">
+                            <input type="radio" wire:model.live="allocationMode" value="custom" class="text-slate-900 focus:ring-slate-900" />
+                            <span>{{ __('billing.custom_allocation') }}</span>
+                        </label>
+                    </div>
+                </div>
+
                 <x-ui.button type="submit" wire:loading.attr="disabled" loading-target="askSave" class="w-full sm:w-auto">
                     {{ __('billing.save_payment') }}
                 </x-ui.button>
@@ -140,7 +154,9 @@
                                                 <th class="px-4 py-3 text-right">{{ __('reports.amount') }}</th>
                                                 <th class="px-4 py-3 text-right">{{ __('reports.paid') }}</th>
                                                 <th class="px-4 py-3 text-right">{{ __('reports.outstanding') }}</th>
-                                                @if ($billingDetails['allocation'] !== null)
+                                                @if ($allocationMode === 'custom')
+                                                    <th class="px-4 py-3 text-right text-indigo-800 font-bold bg-indigo-50 w-44">{{ __('billing.custom_allocation') }}</th>
+                                                @elseif ($billingDetails['allocation'] !== null)
                                                     <th class="px-4 py-3 text-right text-emerald-800 font-bold bg-emerald-50">{{ __('billing.allocating') }}</th>
                                                 @endif
                                             </tr>
@@ -158,7 +174,22 @@
                                                     <td class="px-4 py-2.5 text-right text-slate-600 tabular-nums"><x-money :amount="$bill->total_amount" /></td>
                                                     <td class="px-4 py-2.5 text-right text-slate-600 tabular-nums"><x-money :amount="$bill->allocatedAmount()" /></td>
                                                     <td class="px-4 py-2.5 text-right text-slate-900 font-medium tabular-nums"><x-money :amount="$outstanding" /></td>
-                                                    @if ($billingDetails['allocation'] !== null)
+                                                    @if ($allocationMode === 'custom')
+                                                        <td class="px-4 py-1.5 text-right bg-indigo-50/50">
+                                                            <div class="flex items-center justify-end gap-1.5">
+                                                                <input type="text"
+                                                                       wire:model.live.debounce.250ms="customAllocations.{{ $bill->id }}"
+                                                                       placeholder="0.00"
+                                                                       class="w-24 rounded-md border border-slate-300 bg-white px-2 py-1 text-right font-mono text-xs focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600" />
+                                                                <button type="button"
+                                                                        wire:click="$set('customAllocations.{{ $bill->id }}', '{{ $outstanding }}')"
+                                                                        title="Pay full bill"
+                                                                        class="rounded bg-indigo-100 px-1.5 py-1 text-[10px] font-semibold text-indigo-700 hover:bg-indigo-200 cursor-pointer">
+                                                                    Max
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    @elseif ($billingDetails['allocation'] !== null)
                                                         <td class="px-4 py-2.5 text-right font-bold bg-emerald-50 text-emerald-700 tabular-nums">
                                                             @if (bccomp($allocatedAmount, '0', 2) > 0)
                                                                 +<x-money :amount="$allocatedAmount" />

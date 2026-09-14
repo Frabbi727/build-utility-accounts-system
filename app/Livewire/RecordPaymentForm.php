@@ -44,6 +44,11 @@ class RecordPaymentForm extends Component
 
     public string $reference = '';
 
+    public string $allocationMode = 'fifo';
+
+    /** @var array<int, string> */
+    public array $customAllocations = [];
+
     public function mount(?int $flat_id = null, ?int $flatId = null): void
     {
         $this->receivedOn = now()->toDateString();
@@ -90,6 +95,20 @@ class RecordPaymentForm extends Component
             return;
         }
 
+        /** @var array<int, string>|null $custom */
+        $custom = null;
+        if ($this->allocationMode === 'custom') {
+            $filtered = [];
+            foreach ($this->customAllocations as $billId => $amt) {
+                if (is_numeric($amt) && bccomp((string) $amt, '0', 2) > 0) {
+                    $filtered[$billId] = (string) $amt;
+                }
+            }
+            if (! empty($filtered)) {
+                $custom = $filtered;
+            }
+        }
+
         $payment = $this->postGuarded(
             fn () => app(RecordPayment::class)->handle(
                 $flat,
@@ -97,6 +116,7 @@ class RecordPaymentForm extends Component
                 PaymentMethod::from($this->method),
                 Carbon::parse($this->receivedOn),
                 $this->reference !== '' ? $this->reference : null,
+                $custom,
             ),
             'receivedOn',
         );
@@ -110,7 +130,7 @@ class RecordPaymentForm extends Component
         // Kept so the operator can print the receipt straight after taking the money.
         $this->lastPaymentId = $payment->id;
 
-        $this->reset(['amount', 'reference']);
+        $this->reset(['amount', 'reference', 'customAllocations']);
     }
 
     /**
@@ -124,6 +144,18 @@ class RecordPaymentForm extends Component
 
         if ($flat === null || ! is_numeric($this->amount)) {
             return null;
+        }
+
+        if ($this->allocationMode === 'custom') {
+            $filtered = [];
+            foreach ($this->customAllocations as $billId => $amt) {
+                if (is_numeric($amt) && bccomp((string) $amt, '0', 2) > 0) {
+                    $filtered[$billId] = (string) $amt;
+                }
+            }
+            if (! empty($filtered)) {
+                return ['flat' => $flat] + app(AllocationPlanner::class)->planCustom($flat, $this->amount, $filtered);
+            }
         }
 
         return ['flat' => $flat] + app(AllocationPlanner::class)->plan($flat, $this->amount);

@@ -102,19 +102,26 @@ class NotificationRuleModelTest extends TestCase
     public function test_notification_trigger_event_enum_helpers(): void
     {
         $cases = NotificationTriggerEvent::cases();
-        $this->assertCount(6, $cases);
+        $this->assertCount(8, $cases);
 
         $this->assertSame('bill_due_upcoming', NotificationTriggerEvent::BillDueUpcoming->value);
         $this->assertSame('bill_due_today', NotificationTriggerEvent::BillDueToday->value);
         $this->assertSame('bill_overdue', NotificationTriggerEvent::BillOverdue->value);
+        $this->assertSame('payment_received', NotificationTriggerEvent::PaymentReceived->value);
+        $this->assertSame('payment_reversed', NotificationTriggerEvent::PaymentReversed->value);
         $this->assertSame('maintenance_status_changed', NotificationTriggerEvent::MaintenanceStatusChanged->value);
         $this->assertSame('maintenance_assigned', NotificationTriggerEvent::MaintenanceAssigned->value);
         $this->assertSame('maintenance_created', NotificationTriggerEvent::MaintenanceCreated->value);
 
         $this->assertSame('Bill Due Upcoming', NotificationTriggerEvent::BillDueUpcoming->label());
+        $this->assertSame('Payment Received', NotificationTriggerEvent::PaymentReceived->label());
         $this->assertNotEmpty(NotificationTriggerEvent::BillDueUpcoming->description());
         $this->assertContains('{resident_name}', NotificationTriggerEvent::BillDueUpcoming->supportedTokens());
         $this->assertContains('{due_date}', NotificationTriggerEvent::BillDueUpcoming->supportedTokens());
+
+        $this->assertContains('{receipt_no}', NotificationTriggerEvent::PaymentReceived->supportedTokens());
+        $this->assertTrue(NotificationTriggerEvent::PaymentReceived->isPaymentEvent());
+        $this->assertFalse(NotificationTriggerEvent::PaymentReceived->isBillEvent());
 
         $this->assertContains('{ticket_id}', NotificationTriggerEvent::MaintenanceStatusChanged->supportedTokens());
         $this->assertContains('{ticket_status}', NotificationTriggerEvent::MaintenanceStatusChanged->supportedTokens());

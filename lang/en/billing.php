@@ -165,4 +165,6 @@ return [
     'custom_allocation' => 'Custom Allocation',
     'oldest_first' => 'Oldest First (FIFO)',
     'allocation_mode' => 'Allocation Mode',
+    'cancel' => 'Cancel',
+    'actions' => 'Actions',
 ];
