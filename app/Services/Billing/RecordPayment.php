@@ -29,12 +29,16 @@ class RecordPayment
         private readonly AllocationPlanner $planner,
     ) {}
 
+    /**
+     * @param  array<int, string|float|int>|null  $customAllocations  [bill_id => amount]
+     */
     public function handle(
         Flat $flat,
         string $amount,
         PaymentMethod $method,
         Carbon $receivedOn,
         ?string $reference = null,
+        ?array $customAllocations = null,
     ): Payment {
         $amount = bcadd($amount, '0', 2);
 
@@ -42,7 +46,7 @@ class RecordPayment
             throw new \InvalidArgumentException('Payment amount must be greater than zero.');
         }
 
-        return DB::transaction(function () use ($flat, $amount, $method, $receivedOn, $reference): Payment {
+        return DB::transaction(function () use ($flat, $amount, $method, $receivedOn, $reference, $customAllocations): Payment {
             $payment = Payment::create([
                 'flat_id' => $flat->id,
                 'receipt_no' => $this->nextReceiptNo($receivedOn),
@@ -53,8 +57,12 @@ class RecordPayment
                 'received_by' => Auth::id(),
             ]);
 
-            $allocated = $this->allocateToOldestDues($payment, $flat, $amount);
-            $advance = bcsub($amount, $allocated, 2);
+            $plan = $customAllocations !== null
+                ? $this->planner->planCustom($flat, $amount, $customAllocations, lock: true)
+                : $this->planner->plan($flat, $amount, lock: true);
+
+            $allocated = $this->applyPlan($payment, $plan);
+            $advance = $plan['advance'];
 
             $lines = [
                 JournalLineData::debit(
@@ -95,15 +103,12 @@ class RecordPayment
     }
 
     /**
-     * Applies the payment to unpaid bills oldest-first, and returns the total allocated.
+     * Applies the calculated plan to the payment and refreshes bill statuses.
      *
-     * The ordering itself lives in AllocationPlanner so the confirmation dialog can show
-     * the operator the same answer this method is about to act on.
+     * @param  array{lines: list<array{bill: \App\Models\ServiceChargeBill, amount: string}>, allocated: string, advance: string}  $plan
      */
-    private function allocateToOldestDues(Payment $payment, Flat $flat, string $amount): string
+    private function applyPlan(Payment $payment, array $plan): string
     {
-        $plan = $this->planner->plan($flat, $amount, lock: true);
-
         foreach ($plan['lines'] as $line) {
             $payment->allocations()->create([
                 'service_charge_bill_id' => $line['bill']->id,
