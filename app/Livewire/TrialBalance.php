@@ -3,6 +3,9 @@
 namespace App\Livewire;
 
 use App\Models\Account;
+use App\Services\JournalService;
+use App\Services\Reporting\LedgerReports;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -13,26 +16,58 @@ use Livewire\Component;
  */
 class TrialBalance extends Component
 {
+    public string $from = '';
+
+    public string $to = '';
+
     public string $asOf = '';
 
     public function mount(): void
     {
-        $this->asOf = now()->endOfMonth()->toDateString();
+        $this->to = now()->endOfMonth()->toDateString();
+        $this->asOf = $this->to;
+    }
+
+    public function updatedAsOf(string $value): void
+    {
+        $this->to = $value;
+    }
+
+    public function getIsRangedProperty(): bool
+    {
+        return $this->from !== '';
     }
 
     /**
-     * @return Collection<int, array{account: Account, debit: numeric-string, credit: numeric-string}>
+     * @return Collection<int, array{
+     *     account: Account,
+     *     opening?: numeric-string,
+     *     debit: numeric-string,
+     *     credit: numeric-string,
+     *     closing?: numeric-string
+     * }>
      */
     public function rows(): Collection
     {
+        $journal = app(JournalService::class);
+        $reports = app(LedgerReports::class);
+
+        $toDate = Carbon::parse($this->to !== '' ? $this->to : ($this->asOf !== '' ? $this->asOf : now()->toDateString()));
+        $fromDate = $this->from !== '' ? Carbon::parse($this->from) : null;
+
         return Account::query()
             ->where('is_postable', true)
-            ->with(['journalLines' => fn ($q) => $q->whereHas(
-                'journalEntry', fn ($e) => $e->whereDate('entry_date', '<=', $this->asOf)
-            )])
+            ->with(['journalLines' => function ($q) use ($fromDate, $toDate): void {
+                $q->whereHas('journalEntry', function ($e) use ($fromDate, $toDate): void {
+                    if ($fromDate !== null) {
+                        $e->whereDate('entry_date', '>=', $fromDate);
+                    }
+                    $e->whereDate('entry_date', '<=', $toDate);
+                });
+            }])
             ->orderBy('code')
             ->get()
-            ->map(function (Account $account): array {
+            ->map(function (Account $account) use ($reports, $journal, $fromDate, $toDate): array {
                 $debit = '0.00';
                 $credit = '0.00';
 
@@ -41,7 +76,20 @@ class TrialBalance extends Component
                     $credit = bcadd($credit, (string) $line->credit, 2);
                 }
 
-                // Present each account on its net side, the way a trial balance reads.
+                if ($fromDate !== null) {
+                    $opening = $reports->openingBalance($account, $fromDate);
+                    $closing = $journal->balanceFor($account, null, $toDate);
+
+                    return [
+                        'account' => $account,
+                        'opening' => $opening,
+                        'debit' => $debit,
+                        'credit' => $credit,
+                        'closing' => $closing,
+                    ];
+                }
+
+                // Present each account on its net side, the way a standard trial balance reads.
                 $net = bcsub($debit, $credit, 2);
 
                 return [
@@ -50,7 +98,16 @@ class TrialBalance extends Component
                     'credit' => bccomp($net, '0', 2) < 0 ? bcmul($net, '-1', 2) : '0.00',
                 ];
             })
-            ->filter(fn (array $row): bool => bccomp($row['debit'], '0', 2) !== 0 || bccomp($row['credit'], '0', 2) !== 0)
+            ->filter(function (array $row) use ($fromDate): bool {
+                if ($fromDate !== null) {
+                    return bccomp($row['opening'] ?? '0.00', '0', 2) !== 0
+                        || bccomp($row['debit'], '0', 2) !== 0
+                        || bccomp($row['credit'], '0', 2) !== 0
+                        || bccomp($row['closing'] ?? '0.00', '0', 2) !== 0;
+                }
+
+                return bccomp($row['debit'], '0', 2) !== 0 || bccomp($row['credit'], '0', 2) !== 0;
+            })
             ->values();
     }
 
@@ -66,6 +123,7 @@ class TrialBalance extends Component
             'totalDebit' => $totalDebit,
             'totalCredit' => $totalCredit,
             'isBalanced' => bccomp($totalDebit, $totalCredit, 2) === 0,
+            'isRanged' => $this->isRanged,
         ])->layout('components.layouts.app');
     }
 }
