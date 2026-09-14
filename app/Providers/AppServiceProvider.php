@@ -10,6 +10,7 @@ use App\Services\Billing\LineSources\AdHocChargeLines;
 use App\Services\Billing\LineSources\ChargeHeadLines;
 use App\Services\Billing\LineSources\CostDistributionLines;
 use App\Services\Billing\LineSources\MeterReadingLines;
+use App\Services\Billing\SimulateMonthlyBills;
 use App\Services\JournalService;
 use App\Support\CurrentBuilding;
 use Illuminate\Support\ServiceProvider;
@@ -33,6 +34,15 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(GenerateMonthlyBills::class, fn ($app): GenerateMonthlyBills => new GenerateMonthlyBills(
             $app->make(JournalService::class),
             $app->make(ApplyAdvances::class),
+            [
+                $app->make(ChargeHeadLines::class),
+                $app->make(MeterReadingLines::class),
+                $app->make(CostDistributionLines::class),
+                $app->make(AdHocChargeLines::class),
+            ],
+        ));
+
+        $this->app->bind(SimulateMonthlyBills::class, fn ($app): SimulateMonthlyBills => new SimulateMonthlyBills(
             [
                 $app->make(ChargeHeadLines::class),
                 $app->make(MeterReadingLines::class),
