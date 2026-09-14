@@ -37,3 +37,10 @@ Schedule::command('notifications:send-bill-reminders')
 Schedule::command('maintenance:check-sla')
     ->hourly()
     ->withoutOverlapping();
+
+/**
+ * Nightly complete database and data backup at 11:30 PM (Asia/Dhaka / local time).
+ */
+Schedule::command('backup:run')
+    ->dailyAt(config('backup.scheduled_time', '23:30'))
+    ->withoutOverlapping();

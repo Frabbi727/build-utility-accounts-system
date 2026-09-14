@@ -75,6 +75,7 @@ class Navigation
                 ['label' => 'nav.users', 'route' => 'users.index', 'access' => self::ADMIN],
                 ['label' => 'nav.audit_logs', 'route' => 'admin.audit-logs', 'access' => self::ADMIN],
                 ['label' => 'nav.notifications', 'route' => 'admin.notifications', 'access' => self::STAFF],
+                ['label' => 'nav.backups', 'route' => 'admin.backups', 'access' => self::ADMIN],
             ],
         ],
     ];

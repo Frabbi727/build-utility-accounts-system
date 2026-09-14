@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\BackupDownloadController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\ReceiptController;
@@ -8,6 +9,7 @@ use App\Livewire\Accounting\OpeningBalances;
 use App\Livewire\Accounting\PeriodList;
 use App\Livewire\AccountList;
 use App\Livewire\Admin\AuditLogList;
+use App\Livewire\Admin\BackupList;
 use App\Livewire\Admin\MaintenanceRequestList;
 use App\Livewire\Admin\NotificationList;
 use App\Livewire\Admin\UserList;
@@ -135,6 +137,8 @@ Route::middleware('auth')->group(function (): void {
         Route::get('accounting/periods', PeriodList::class)->name('accounting.periods');
         Route::get('users', UserList::class)->name('users.index');
         Route::get('audit-logs', AuditLogList::class)->name('admin.audit-logs');
+        Route::get('admin/backups', BackupList::class)->name('admin.backups');
+        Route::get('admin/backups/{backup}/download', [BackupDownloadController::class, 'download'])->name('admin.backups.download');
     });
 
     Route::middleware('role:admin|accountant')->group(function (): void {

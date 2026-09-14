@@ -39,5 +39,6 @@ return [
     'users' => 'Users & Roles',
     'audit_logs' => 'Audit Logs',
     'notifications' => 'Notifications',
+    'backups' => 'Backups',
     'setup' => 'Setup',
 ];
