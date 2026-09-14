@@ -10,6 +10,7 @@ use App\Livewire\Admin\AuditLogList;
 use App\Livewire\Admin\MaintenanceRequestList;
 use App\Livewire\Admin\NotificationList;
 use App\Livewire\Admin\UserList;
+use App\Livewire\Billing\BulkPaymentEntry;
 use App\Livewire\Billing\CostDistributionList;
 use App\Livewire\Billing\PaymentSubmissionList;
 use App\Livewire\Dashboard;
@@ -136,6 +137,7 @@ Route::middleware('auth')->group(function (): void {
 
     Route::middleware('role:admin|accountant')->group(function (): void {
         Route::get('billing/generate', GenerateBills::class)->name('billing.generate');
+        Route::get('billing/bulk-payments', BulkPaymentEntry::class)->name('billing.bulk-payments');
         Route::get('payments/create', RecordPaymentForm::class)->name('payments.create');
         Route::get('billing/submissions', PaymentSubmissionList::class)->name('billing.submissions');
     });

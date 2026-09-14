@@ -7,6 +7,7 @@ return [
     'accounts' => 'Chart of Accounts',
     'generate_bills' => 'Generate Bills',
     'record_payment' => 'Record Payment',
+    'bulk_payments' => 'Bulk Payment Entry',
     'payments' => 'Payments',
     'payment_submissions' => 'Payment Submissions',
     'trial_balance' => 'Trial Balance',
