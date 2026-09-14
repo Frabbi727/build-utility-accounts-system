@@ -29,6 +29,24 @@
                 Alpine.store('sidebar', {
                     collapsed: getSidebarCollapsed(),
                     mobileOpen: false,
+                    currentPath: window.location.pathname,
+                    isActive(url) {
+                        if (!url) return false;
+                        try {
+                            const itemPath = new URL(url, window.location.origin).pathname.replace(/\/+$/, '') || '/';
+                            const curPath = (this.currentPath || window.location.pathname).replace(/\/+$/, '') || '/';
+                            return itemPath === curPath;
+                        } catch (e) {
+                            return false;
+                        }
+                    },
+                    isCategoryActive(items) {
+                        if (!Array.isArray(items)) return false;
+                        return items.some(item => this.isActive(typeof item === 'object' && item !== null ? item.url : item));
+                    },
+                    updateCurrentPath() {
+                        this.currentPath = window.location.pathname;
+                    },
                     toggleCollapse() {
                         this.collapsed = !this.collapsed;
                         setSidebarCollapsed(this.collapsed);
@@ -54,8 +72,15 @@
             const isCollapsed = getSidebarCollapsed();
             document.documentElement.classList.toggle('sidebar-collapsed', isCollapsed);
             if (window.Alpine && Alpine.store('sidebar')) {
+                Alpine.store('sidebar').updateCurrentPath();
                 Alpine.store('sidebar').collapsed = isCollapsed;
                 Alpine.store('sidebar').closeMobile();
+            }
+        });
+
+        window.addEventListener('popstate', () => {
+            if (window.Alpine && Alpine.store('sidebar')) {
+                Alpine.store('sidebar').updateCurrentPath();
             }
         });
     </script>

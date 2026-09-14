@@ -67,10 +67,10 @@ class SidebarLayoutTest extends TestCase
         $response->assertSee(__('nav.reports'));
         $response->assertSee(__('nav.settings'));
 
-        // Check wire:navigate and wire:current are used on navigation links
+        // Check wire:navigate and wire:current.exact are used on navigation links
         $response->assertSee('wire:navigate', false);
-        $response->assertSee('wire:current="!bg-slate-900 !text-white font-medium"', false);
-        $response->assertSee('wire:current="!bg-slate-100 !text-slate-900 !font-semibold"', false);
+        $response->assertSee('wire:current.exact="!bg-slate-900 !text-white font-medium"', false);
+        $response->assertSee('wire:current.exact="!bg-slate-100 !text-slate-900 !font-semibold"', false);
 
         // Check zero-FOUC hooks and styles
         $response->assertSee('data-sidebar', false);
@@ -85,22 +85,22 @@ class SidebarLayoutTest extends TestCase
         $response->assertSee('aria-haspopup="true"', false);
     }
 
-    public function test_active_routes_receive_active_styling(): void
+    public function test_active_routes_receive_active_styling_directives(): void
     {
-        // On dashboard route: Dashboard link has active styling
+        // On dashboard route: Dashboard link has exact active directive
         $responseDashboard = $this->actingAs($this->admin)
             ->get(route('dashboard'));
 
         $responseDashboard->assertOk();
-        $responseDashboard->assertSee('bg-slate-900 text-white font-medium', false);
+        $responseDashboard->assertSee('wire:current.exact="!bg-slate-900 !text-white font-medium"', false);
 
-        // On flats route: Flats link has active styling
+        // On flats route: Flats link is rendered with exact active directive
         $responseFlats = $this->actingAs($this->admin)
             ->get(route('flats.index'));
 
         $responseFlats->assertOk();
         $responseFlats->assertSee(__('nav.flats'));
-        $responseFlats->assertSee('bg-slate-100 text-slate-900 font-semibold', false);
+        $responseFlats->assertSee('wire:current.exact="!bg-slate-100 !text-slate-900 !font-semibold"', false);
     }
 
     public function test_search_trigger_button_is_present_with_open_spotlight_dispatch(): void
@@ -138,9 +138,13 @@ class SidebarLayoutTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Alpine.store(\'sidebar\'', false);
+        $response->assertSee('isActive(url)', false);
+        $response->assertSee('isCategoryActive(items)', false);
+        $response->assertSee('updateCurrentPath()', false);
         $response->assertSee('livewire:navigated', false);
         $response->assertSee('w-[4.5rem]', false);
         $response->assertSee('$store.sidebar.collapsed', false);
         $response->assertSee('$store.sidebar.mobileOpen', false);
+        $response->assertSee('$store.sidebar.isActive', false);
     }
 }

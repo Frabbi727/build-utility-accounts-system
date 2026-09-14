@@ -129,17 +129,17 @@ class NotificationListTest extends TestCase
             ->assertSet('viewingId', null);
     }
 
-    public function test_staff_can_send_manual_notification_to_all_residents(): void
+    public function test_staff_can_send_manual_notification_to_all_residents_with_safety_confirmation(): void
     {
         Queue::fake();
 
         $admin = User::factory()->create();
         $admin->assignRole(Role::Admin->value);
 
-        $resident1 = User::factory()->create();
+        $resident1 = User::factory()->create(['name' => 'Owner Person']);
         $resident1->assignRole(Role::Owner->value);
 
-        $resident2 = User::factory()->create();
+        $resident2 = User::factory()->create(['name' => 'Tenant Person']);
         $resident2->assignRole(Role::Tenant->value);
 
         $this->actingAs($admin);
@@ -152,6 +152,11 @@ class NotificationListTest extends TestCase
             ->set('sendBody', 'Water supply will be suspended tomorrow from 10 AM to 2 PM.')
             ->call('sendNotification')
             ->assertHasNoErrors()
+            ->assertSet('showBroadcastConfirmModal', true)
+            ->assertSet('broadcastSummary.recipients_count', 2)
+            ->assertSet('broadcastSummary.title', 'Building Water Tank Cleaning')
+            ->call('confirmSendBroadcast')
+            ->assertSet('showBroadcastConfirmModal', false)
             ->assertSet('showSendModal', false);
 
         $this->assertDatabaseHas('notifications', [
@@ -167,6 +172,37 @@ class NotificationListTest extends TestCase
         ]);
 
         Queue::assertPushed(SendPushNotificationJob::class);
+    }
+
+    public function test_staff_can_cancel_broadcast_confirmation(): void
+    {
+        Queue::fake();
+
+        $admin = User::factory()->create();
+        $admin->assignRole(Role::Admin->value);
+
+        $resident = User::factory()->create();
+        $resident->assignRole(Role::Owner->value);
+
+        $this->actingAs($admin);
+
+        Livewire::test(NotificationList::class)
+            ->call('openSendModal')
+            ->set('sendTarget', 'all_residents')
+            ->set('sendTitle', 'Accidental Draft Alert')
+            ->set('sendBody', 'Do not send this message.')
+            ->call('sendNotification')
+            ->assertSet('showBroadcastConfirmModal', true)
+            ->call('cancelBroadcastConfirm')
+            ->assertSet('showBroadcastConfirmModal', false)
+            ->assertSet('broadcastSummary', null)
+            ->assertSet('sendTitle', 'Accidental Draft Alert');
+
+        $this->assertDatabaseMissing('notifications', [
+            'title' => 'Accidental Draft Alert',
+        ]);
+
+        Queue::assertNothingPushed();
     }
 
     public function test_staff_can_send_manual_notification_to_single_user(): void
@@ -189,6 +225,10 @@ class NotificationListTest extends TestCase
             ->set('sendBody', 'Please collect your parcel from the lobby.')
             ->call('sendNotification')
             ->assertHasNoErrors()
+            ->assertSet('showBroadcastConfirmModal', true)
+            ->assertSet('broadcastSummary.recipients_count', 1)
+            ->call('confirmSendBroadcast')
+            ->assertSet('showBroadcastConfirmModal', false)
             ->assertSet('showSendModal', false);
 
         $this->assertDatabaseHas('notifications', [
@@ -197,7 +237,7 @@ class NotificationListTest extends TestCase
             'body' => 'Please collect your parcel from the lobby.',
         ]);
 
-        Queue::assertPushed(SendPushNotificationJob::class);
+        Queue::assertPushed(SendPushNotificationJob::class, 1);
     }
 
     public function test_send_notification_validation_rules(): void
@@ -214,6 +254,7 @@ class NotificationListTest extends TestCase
             ->set('sendTarget', 'single')
             ->set('sendUserId', null)
             ->call('sendNotification')
-            ->assertHasErrors(['sendTitle', 'sendBody', 'sendUserId']);
+            ->assertHasErrors(['sendTitle', 'sendBody', 'sendUserId'])
+            ->assertSet('showBroadcastConfirmModal', false);
     }
 }

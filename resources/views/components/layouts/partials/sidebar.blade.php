@@ -31,12 +31,11 @@
                 <div data-sidebar-expanded x-show="!$store.sidebar.collapsed">
                     <a href="{{ $entry['url'] }}"
                        wire:navigate
-                       wire:current="!bg-slate-900 !text-white font-medium"
-                       @class([
-                           'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors',
-                           'bg-slate-900 text-white font-medium' => $entry['active'],
-                           'text-slate-600 hover:bg-slate-100 hover:text-slate-900' => ! $entry['active'],
-                       ])>
+                       wire:current.exact="!bg-slate-900 !text-white font-medium"
+                       class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                       :class="$store.sidebar.isActive('{{ $entry['url'] }}')
+                           ? 'bg-slate-900 text-white font-medium'
+                           : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'">
                         <x-ui.icon :name="$entry['icon']" class="w-5 h-5 shrink-0" />
                         <span class="truncate">{{ $entry['label'] }}</span>
                     </a>
@@ -44,13 +43,12 @@
                 <div data-sidebar-collapsed x-show="$store.sidebar.collapsed" class="relative group flex justify-center">
                     <a href="{{ $entry['url'] }}"
                        wire:navigate
-                       wire:current="!bg-slate-900 !text-white font-medium"
+                       wire:current.exact="!bg-slate-900 !text-white font-medium"
                        aria-label="{{ $entry['label'] }}"
-                       @class([
-                           'flex items-center justify-center p-2 rounded-md transition-colors',
-                           'bg-slate-900 text-white font-medium' => $entry['active'],
-                           'text-slate-600 hover:bg-slate-100 hover:text-slate-900' => ! $entry['active'],
-                       ])>
+                       class="flex items-center justify-center p-2 rounded-md transition-colors"
+                       :class="$store.sidebar.isActive('{{ $entry['url'] }}')
+                           ? 'bg-slate-900 text-white font-medium'
+                           : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'">
                         <x-ui.icon :name="$entry['icon']" class="w-5 h-5 shrink-0" />
                         <span class="sr-only">{{ $entry['label'] }}</span>
                     </a>
@@ -62,39 +60,44 @@
                 {{-- Grouped Category --}}
                 @php
                     $categorySlug = \Illuminate\Support\Str::slug($entry['label']);
+                    $categoryUrls = collect($entry['items'])->pluck('url')->toJson();
                 @endphp
-                <div x-data="{ open: {{ $entry['active'] ? 'true' : 'false' }}, flyoutOpen: false }"
-                     x-on:livewire:navigated.window="$nextTick(() => { if ($el.querySelector('[data-current]')) open = true; flyoutOpen = false })"
+                <div x-data="{
+                         manualOpen: false,
+                         flyoutOpen: false,
+                         get isChildActive() {
+                             return $store.sidebar.isCategoryActive({{ $categoryUrls }});
+                         },
+                         get isOpen() {
+                             return this.isChildActive || this.manualOpen;
+                         }
+                     }"
                      class="relative">
                     {{-- Expanded Mode --}}
                     <div data-sidebar-expanded x-show="!$store.sidebar.collapsed">
                         <button type="button"
-                                @click="open = !open"
-                                :aria-expanded="open"
+                                @click="manualOpen = !isOpen"
+                                :aria-expanded="isOpen"
                                 aria-controls="category-{{ $categorySlug }}"
-                                @class([
-                                    'flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer',
-                                    'text-slate-900 font-semibold' => $entry['active'],
-                                    'text-slate-600 hover:bg-slate-100 hover:text-slate-900' => ! $entry['active'],
-                                ])>
+                                class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer"
+                                :class="isChildActive ? 'text-slate-900 font-semibold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'">
                             <div class="flex items-center gap-3 min-w-0">
                                 <x-ui.icon :name="$entry['icon']" class="w-5 h-5 shrink-0" />
                                 <span class="truncate">{{ $entry['label'] }}</span>
                             </div>
                             <x-ui.icon name="chevron-right"
                                        class="w-4 h-4 shrink-0 transition-transform duration-200"
-                                       ::class="open ? 'rotate-90' : ''" />
+                                       ::class="isOpen ? 'rotate-90' : ''" />
                         </button>
-                        <div x-show="open" x-transition id="category-{{ $categorySlug }}" class="mt-1 space-y-1 pl-8 pr-1">
+                        <div x-show="isOpen" x-transition id="category-{{ $categorySlug }}" class="mt-1 space-y-1 pl-8 pr-1">
                             @foreach ($entry['items'] as $item)
                                 <a href="{{ $item['url'] }}"
                                    wire:navigate
-                                   wire:current="!bg-slate-100 !text-slate-900 !font-semibold"
-                                   @class([
-                                       'block px-2.5 py-1.5 text-sm rounded-md transition-colors',
-                                       'bg-slate-100 text-slate-900 font-semibold' => $item['active'],
-                                       'text-slate-600 hover:bg-slate-50 hover:text-slate-900' => ! $item['active'],
-                                   ])>
+                                   wire:current.exact="!bg-slate-100 !text-slate-900 !font-semibold"
+                                   class="block px-2.5 py-1.5 text-sm rounded-md transition-colors"
+                                   :class="$store.sidebar.isActive('{{ $item['url'] }}')
+                                       ? 'bg-slate-100 text-slate-900 font-semibold'
+                                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
                                     {{ $item['label'] }}
                                 </a>
                             @endforeach
@@ -115,11 +118,8 @@
                                 :aria-expanded="flyoutOpen"
                                 aria-haspopup="true"
                                 aria-label="{{ $entry['label'] }}"
-                                @class([
-                                    'flex items-center justify-center p-2 rounded-md transition-colors cursor-pointer',
-                                    'bg-slate-100 text-slate-900 font-semibold' => $entry['active'],
-                                    'text-slate-600 hover:bg-slate-100 hover:text-slate-900' => ! $entry['active'],
-                                ])>
+                                class="flex items-center justify-center p-2 rounded-md transition-colors cursor-pointer"
+                                :class="isChildActive ? 'bg-slate-100 text-slate-900 font-semibold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'">
                             <x-ui.icon :name="$entry['icon']" class="w-5 h-5 shrink-0" />
                             <span class="sr-only">{{ $entry['label'] }}</span>
                         </button>
@@ -134,13 +134,12 @@
                                 @foreach ($entry['items'] as $item)
                                     <a href="{{ $item['url'] }}"
                                        wire:navigate
-                                       wire:current="!bg-slate-100 !text-slate-900 !font-semibold"
+                                       wire:current.exact="!bg-slate-100 !text-slate-900 !font-semibold"
                                        @click="flyoutOpen = false"
-                                       @class([
-                                           'block px-2.5 py-1.5 text-sm rounded-md transition-colors',
-                                           'bg-slate-100 text-slate-900 font-semibold' => $item['active'],
-                                           'text-slate-600 hover:bg-slate-50 hover:text-slate-900' => ! $item['active'],
-                                       ])>
+                                       class="block px-2.5 py-1.5 text-sm rounded-md transition-colors"
+                                       :class="$store.sidebar.isActive('{{ $item['url'] }}')
+                                           ? 'bg-slate-100 text-slate-900 font-semibold'
+                                           : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
                                         {{ $item['label'] }}
                                     </a>
                                 @endforeach
@@ -218,50 +217,53 @@
                 @if ($entry['url'] !== null)
                     <a href="{{ $entry['url'] }}"
                        wire:navigate
-                       wire:current="!bg-slate-900 !text-white font-medium"
+                       wire:current.exact="!bg-slate-900 !text-white font-medium"
                        @click="$store.sidebar.closeMobile()"
-                       @class([
-                           'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors',
-                           'bg-slate-900 text-white font-medium' => $entry['active'],
-                           'text-slate-600 hover:bg-slate-100 hover:text-slate-900' => ! $entry['active'],
-                       ])>
+                       class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                       :class="$store.sidebar.isActive('{{ $entry['url'] }}')
+                           ? 'bg-slate-900 text-white font-medium'
+                           : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'">
                         <x-ui.icon :name="$entry['icon']" class="w-5 h-5 shrink-0" />
                         <span class="truncate">{{ $entry['label'] }}</span>
                     </a>
                 @else
                     @php
                         $mobileCategorySlug = \Illuminate\Support\Str::slug($entry['label']);
+                        $categoryUrls = collect($entry['items'])->pluck('url')->toJson();
                     @endphp
-                    <div x-data="{ open: {{ $entry['active'] ? 'true' : 'false' }} }"
-                         x-on:livewire:navigated.window="$nextTick(() => { if ($el.querySelector('[data-current]')) open = true })">
+                    <div x-data="{
+                             manualOpen: false,
+                             get isChildActive() {
+                                 return $store.sidebar.isCategoryActive({{ $categoryUrls }});
+                             },
+                             get isOpen() {
+                                 return this.isChildActive || this.manualOpen;
+                             }
+                         }">
                         <button type="button"
-                                @click="open = !open"
-                                :aria-expanded="open"
+                                @click="manualOpen = !isOpen"
+                                :aria-expanded="isOpen"
                                 aria-controls="mobile-category-{{ $mobileCategorySlug }}"
-                                @class([
-                                    'flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer',
-                                    'text-slate-900 font-semibold' => $entry['active'],
-                                    'text-slate-600 hover:bg-slate-100 hover:text-slate-900' => ! $entry['active'],
-                                ])>
+                                class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer"
+                                :class="isChildActive ? 'text-slate-900 font-semibold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'">
                             <div class="flex items-center gap-3 min-w-0">
                                 <x-ui.icon :name="$entry['icon']" class="w-5 h-5 shrink-0" />
                                 <span class="truncate">{{ $entry['label'] }}</span>
                             </div>
                             <x-ui.icon name="chevron-right"
                                        class="w-4 h-4 shrink-0 transition-transform duration-200"
-                                       ::class="open ? 'rotate-90' : ''" />
+                                       ::class="isOpen ? 'rotate-90' : ''" />
                         </button>
-                        <div x-show="open" x-transition id="mobile-category-{{ $mobileCategorySlug }}" class="mt-1 space-y-1 pl-8 pr-1">
+                        <div x-show="isOpen" x-transition id="mobile-category-{{ $mobileCategorySlug }}" class="mt-1 space-y-1 pl-8 pr-1">
                             @foreach ($entry['items'] as $item)
                                 <a href="{{ $item['url'] }}"
                                    wire:navigate
-                                   wire:current="!bg-slate-100 !text-slate-900 !font-semibold"
+                                   wire:current.exact="!bg-slate-100 !text-slate-900 !font-semibold"
                                    @click="$store.sidebar.closeMobile()"
-                                   @class([
-                                       'block px-2.5 py-1.5 text-sm rounded-md transition-colors',
-                                       'bg-slate-100 text-slate-900 font-semibold' => $item['active'],
-                                       'text-slate-600 hover:bg-slate-50 hover:text-slate-900' => ! $item['active'],
-                                   ])>
+                                   class="block px-2.5 py-1.5 text-sm rounded-md transition-colors"
+                                   :class="$store.sidebar.isActive('{{ $item['url'] }}')
+                                       ? 'bg-slate-100 text-slate-900 font-semibold'
+                                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
                                     {{ $item['label'] }}
                                 </a>
                             @endforeach

@@ -199,7 +199,11 @@ class AdminNotificationManagementTest extends TestCase
             ->set('sendTitle', 'Notice of Power Outage')
             ->set('sendBody', 'Power will be interrupted for maintenance from 2 PM to 4 PM.')
             ->call('sendNotification')
-            ->assertHasNoErrors();
+            ->assertHasNoErrors()
+            ->assertSet('showBroadcastConfirmModal', true)
+            ->assertSet('broadcastSummary.recipients_count', 1)
+            ->call('confirmSendBroadcast')
+            ->assertSet('showBroadcastConfirmModal', false);
 
         $this->assertDatabaseHas('notifications', [
             'user_id' => $resident->id,

@@ -74,8 +74,15 @@ class NotificationList extends Component
      */
     public ?array $dryRunSummary = null;
 
-    // Manual send modal
+    // Manual send / broadcast modal & confirmation state
     public bool $showSendModal = false;
+
+    public bool $showBroadcastConfirmModal = false;
+
+    /**
+     * @var array{target_label: string, recipients_count: int, title: string, body: string, sample_recipient_names: array<int, string>}|null
+     */
+    public ?array $broadcastSummary = null;
 
     public string $sendTitle = '';
 
@@ -373,7 +380,51 @@ class NotificationList extends Component
         $recipients = $this->resolveRecipients();
 
         if ($recipients->isEmpty()) {
-            $this->addError('sendTarget', 'No users found for the selected target.');
+            $this->addError('sendTarget', __('No users found for the selected target audience.'));
+
+            return;
+        }
+
+        $targetLabels = [
+            'all_residents' => __('All Residents (Owners & Tenants)'),
+            'owners' => __('Owners Only'),
+            'tenants' => __('Tenants Only'),
+            'staff' => __('Staff & Admins'),
+            'single' => __('Single User: :name', ['name' => $recipients->first()?->name ?? 'User']),
+        ];
+
+        $this->broadcastSummary = [
+            'target_label' => $targetLabels[$this->sendTarget] ?? $this->sendTarget,
+            'recipients_count' => $recipients->count(),
+            'title' => $this->sendTitle,
+            'body' => $this->sendBody,
+            'sample_recipient_names' => $recipients->take(3)->pluck('name')->all(),
+        ];
+
+        $this->showBroadcastConfirmModal = true;
+    }
+
+    public function cancelBroadcastConfirm(): void
+    {
+        $this->showBroadcastConfirmModal = false;
+        $this->broadcastSummary = null;
+    }
+
+    public function confirmSendBroadcast(): void
+    {
+        $this->validate([
+            'sendTitle' => ['required', 'string', 'max:255'],
+            'sendBody' => ['required', 'string', 'max:2000'],
+            'sendTarget' => ['required', 'in:all_residents,owners,tenants,staff,single'],
+            'sendUserId' => ['required_if:sendTarget,single', 'nullable', 'exists:users,id'],
+        ]);
+
+        $recipients = $this->resolveRecipients();
+
+        if ($recipients->isEmpty()) {
+            $this->showBroadcastConfirmModal = false;
+            $this->broadcastSummary = null;
+            $this->addError('sendTarget', __('No users found for the selected target audience.'));
 
             return;
         }
@@ -386,8 +437,11 @@ class NotificationList extends Component
             ['source' => 'admin_manual'],
         );
 
+        $recipientsCount = $recipients->count();
+        $this->showBroadcastConfirmModal = false;
+        $this->broadcastSummary = null;
         $this->closeSendModal();
-        $this->notify(__('Notification sent successfully.'));
+        $this->notify(__('Broadcast notification dispatched successfully to :count recipient(s).', ['count' => $recipientsCount]));
     }
 
     /**

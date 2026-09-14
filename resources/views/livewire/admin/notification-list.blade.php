@@ -339,9 +339,11 @@
                         </div>
 
                         <div class="flex justify-end pt-3">
-                            <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                            <button type="submit"
+                                    wire:loading.attr="disabled"
+                                    class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer transition-colors">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                                {{ __('Dispatch Broadcast') }}
+                                {{ __('Review & Dispatch Broadcast') }}
                             </button>
                         </div>
                     </form>
@@ -469,39 +471,160 @@
         </div>
     @endif
 
-    {{-- Reminders Dry-Run & Confirmation Modal --}}
-    @if ($showRemindersConfirmModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" wire:click.self="closeRemindersConfirmModal">
-            <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl space-y-4">
-                <div class="flex items-center justify-between border-b border-slate-200 pb-3">
-                    <h3 class="text-lg font-semibold text-slate-800">{{ __('Trigger Automated Bill Reminders') }}</h3>
-                    <button wire:click="closeRemindersConfirmModal" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+    {{-- Broadcast Safety Confirmation Modal --}}
+    @if ($showBroadcastConfirmModal && $broadcastSummary)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4" wire:click.self="cancelBroadcastConfirm">
+            <div class="w-full max-w-lg rounded-xl bg-white shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                {{-- Modal Header with Warning Icon --}}
+                <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-600 shrink-0">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-semibold text-slate-900">{{ __('Confirm Broadcast Alert') }}</h3>
+                            <p class="text-xs text-slate-500">{{ __('Review message & target audience before dispatching.') }}</p>
+                        </div>
+                    </div>
+                    <button type="button" wire:click="cancelBroadcastConfirm" class="text-slate-400 hover:text-slate-600 text-xl font-bold cursor-pointer" aria-label="{{ __('Cancel') }}">&times;</button>
                 </div>
 
-                <div class="rounded-lg bg-indigo-50 p-4 border border-indigo-100">
-                    <div class="text-sm font-medium text-indigo-900 mb-2">{{ __('Dry-Run Reminder Evaluation') }}</div>
-                    <div class="grid grid-cols-2 gap-4 text-center">
-                        <div class="bg-white rounded-lg p-3 border border-indigo-100 shadow-xs">
-                            <div class="text-2xl font-bold text-indigo-700">{{ $dryRunSummary['bills_count'] ?? 0 }}</div>
-                            <div class="text-xs text-slate-500 mt-0.5">{{ __('Eligible Bills') }}</div>
+                {{-- Modal Body --}}
+                <div class="p-6 space-y-4">
+                    {{-- Audience & Recipient Stats --}}
+                    <div class="rounded-lg border border-indigo-100 bg-indigo-50/60 p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-semibold uppercase tracking-wider text-indigo-700">{{ __('Target Audience') }}</span>
+                                <div class="text-sm font-bold text-slate-800 mt-0.5">{{ $broadcastSummary['target_label'] }}</div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-indigo-700">{{ __('Recipients') }}</span>
+                                <div class="text-lg font-extrabold text-indigo-700 mt-0.5">
+                                    {{ $broadcastSummary['recipients_count'] }} <span class="text-xs font-normal text-slate-500">{{ __('user(s)') }}</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="bg-white rounded-lg p-3 border border-indigo-100 shadow-xs">
-                            <div class="text-2xl font-bold text-indigo-700">{{ $dryRunSummary['notifications_count'] ?? 0 }}</div>
-                            <div class="text-xs text-slate-500 mt-0.5">{{ __('Recipients') }}</div>
+
+                        @if (! empty($broadcastSummary['sample_recipient_names']))
+                            <div class="mt-2 pt-2 border-t border-indigo-100/80 text-xs text-slate-600">
+                                <span class="font-medium text-slate-700">{{ __('Sample recipients:') }}</span>
+                                {{ implode(', ', $broadcastSummary['sample_recipient_names']) }}
+                                @if ($broadcastSummary['recipients_count'] > count($broadcastSummary['sample_recipient_names']))
+                                    <span class="text-slate-400 font-normal">{{ __('and :more more...', ['more' => $broadcastSummary['recipients_count'] - count($broadcastSummary['sample_recipient_names'])]) }}</span>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- Message Preview --}}
+                    <div>
+                        <span class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">{{ __('Message Preview') }}</span>
+                        <div class="rounded-lg border border-slate-200 bg-slate-50 p-3.5 space-y-1.5">
+                            <div class="flex items-center gap-2">
+                                <span class="h-2 w-2 rounded-full bg-indigo-600"></span>
+                                <span class="font-semibold text-sm text-slate-900">{{ $broadcastSummary['title'] }}</span>
+                            </div>
+                            <p class="text-xs text-slate-700 whitespace-pre-line leading-relaxed pl-4">{{ $broadcastSummary['body'] }}</p>
                         </div>
+                    </div>
+
+                    {{-- Safety Warning Banner --}}
+                    <div class="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 flex items-start gap-2.5">
+                        <svg class="h-4 w-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>{{ __('Push and in-app notifications will be delivered immediately to all selected devices and cannot be undone.') }}</span>
                     </div>
                 </div>
 
-                <p class="text-xs text-slate-500">
-                    {{ __('Dispatching will evaluate active reminder rules (upcoming, due today, and overdue) and send real-time push & in-app alerts.') }}
-                </p>
-
-                <div class="flex justify-end gap-3 pt-2 border-t border-slate-200">
-                    <button type="button" wire:click="closeRemindersConfirmModal" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                {{-- Modal Actions --}}
+                <div class="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
+                    <button type="button"
+                            wire:click="cancelBroadcastConfirm"
+                            wire:loading.attr="disabled"
+                            class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-xs hover:bg-slate-50 transition-colors cursor-pointer">
                         {{ __('Cancel') }}
                     </button>
-                    <button type="button" wire:click="sendRemindersNow" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-700">
-                        {{ __('Send Reminders Now') }}
+                    <button type="button"
+                            wire:click="confirmSendBroadcast"
+                            wire:loading.attr="disabled"
+                            class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors cursor-pointer">
+                        <span wire:loading.remove wire:target="confirmSendBroadcast">
+                            <svg class="h-4 w-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                            {{ __('Confirm & Dispatch Broadcast') }}
+                        </span>
+                        <span wire:loading wire:target="confirmSendBroadcast" class="inline-flex items-center gap-2">
+                            <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            {{ __('Dispatching...') }}
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Reminders Dry-Run & Confirmation Modal --}}
+    @if ($showRemindersConfirmModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4" wire:click.self="closeRemindersConfirmModal">
+            <div class="w-full max-w-md rounded-xl bg-white shadow-2xl overflow-hidden space-y-0 animate-in fade-in zoom-in-95 duration-200">
+                <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 shrink-0">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-semibold text-slate-900">{{ __('Trigger Automated Reminders') }}</h3>
+                            <p class="text-xs text-slate-500">{{ __('Dry-run evaluation for bill due alerts') }}</p>
+                        </div>
+                    </div>
+                    <button type="button" wire:click="closeRemindersConfirmModal" class="text-slate-400 hover:text-slate-600 text-xl font-bold cursor-pointer" aria-label="{{ __('Cancel') }}">&times;</button>
+                </div>
+
+                <div class="p-6 space-y-4">
+                    <div class="rounded-lg bg-indigo-50/70 p-4 border border-indigo-100">
+                        <div class="text-xs font-semibold uppercase tracking-wider text-indigo-900 mb-2">{{ __('Dry-Run Evaluation Summary') }}</div>
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                            <div class="bg-white rounded-lg p-3 border border-indigo-100 shadow-xs">
+                                <div class="text-2xl font-bold text-indigo-700">{{ $dryRunSummary['bills_count'] ?? 0 }}</div>
+                                <div class="text-xs text-slate-500 mt-0.5">{{ __('Eligible Bills') }}</div>
+                            </div>
+                            <div class="bg-white rounded-lg p-3 border border-indigo-100 shadow-xs">
+                                <div class="text-2xl font-bold text-indigo-700">{{ $dryRunSummary['notifications_count'] ?? 0 }}</div>
+                                <div class="text-xs text-slate-500 mt-0.5">{{ __('Recipients') }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 space-y-1">
+                        <p class="font-medium text-slate-700">{{ __('Rules being evaluated:') }}</p>
+                        <p>• {{ __('Upcoming bill reminders (before due date)') }}</p>
+                        <p>• {{ __('Due today bill reminders') }}</p>
+                        <p>• {{ __('Overdue bill reminders') }}</p>
+                    </div>
+
+                    <div class="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 flex items-start gap-2">
+                        <svg class="h-4 w-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <span>{{ __('Dispatching will instantly send real-time push & in-app alerts to all matching residents.') }}</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
+                    <button type="button"
+                            wire:click="closeRemindersConfirmModal"
+                            wire:loading.attr="disabled"
+                            class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-xs hover:bg-slate-50 cursor-pointer">
+                        {{ __('Cancel') }}
+                    </button>
+                    <button type="button"
+                            wire:click="sendRemindersNow"
+                            wire:loading.attr="disabled"
+                            class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer">
+                        <span wire:loading.remove wire:target="sendRemindersNow">
+                            {{ __('Send Reminders Now') }}
+                        </span>
+                        <span wire:loading wire:target="sendRemindersNow" class="inline-flex items-center gap-2">
+                            <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            {{ __('Sending...') }}
+                        </span>
                     </button>
                 </div>
             </div>
