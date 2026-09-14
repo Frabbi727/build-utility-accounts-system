@@ -3,11 +3,13 @@
 namespace App\Services\Billing;
 
 use App\Enums\AccountCode;
+use App\Enums\NotificationType;
 use App\Enums\PaymentMethod;
 use App\Models\Flat;
 use App\Models\Payment;
 use App\Models\ServiceChargeBill;
 use App\Services\JournalService;
+use App\Services\Notification\NotificationService;
 use App\Support\JournalLineData;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -28,6 +30,7 @@ class RecordPayment
     public function __construct(
         private readonly JournalService $journal,
         private readonly AllocationPlanner $planner,
+        private readonly NotificationService $notificationService,
     ) {}
 
     /**
@@ -98,6 +101,37 @@ class RecordPayment
                 $lines,
                 $payment,
             );
+
+            // Dispatch push notification to flat owner and active residents
+            $flat->loadMissing(['owner', 'tenants']);
+            $recipientUserIds = collect();
+            if ($flat->owner?->user_id) {
+                $recipientUserIds->push($flat->owner->user_id);
+            }
+            foreach ($flat->tenants as $tenant) {
+                if ($tenant->is_active && $tenant->user_id) {
+                    $recipientUserIds->push($tenant->user_id);
+                }
+            }
+
+            $recipientUserIds = $recipientUserIds->unique()->values();
+
+            if ($recipientUserIds->isNotEmpty()) {
+                $this->notificationService->send(
+                    recipients: $recipientUserIds->all(),
+                    type: NotificationType::PaymentApproved,
+                    title: 'Payment Received',
+                    body: "Payment of BDT {$amount} for Flat {$flat->number} recorded. Receipt: {$payment->receipt_no}",
+                    data: [
+                        'screen' => NotificationType::PaymentApproved->screen(),
+                        'payment_id' => $payment->id,
+                        'receipt_no' => $payment->receipt_no,
+                    ],
+                    referenceType: 'payment',
+                    referenceId: $payment->id,
+                    notificationKey: "payment-received-{$payment->id}",
+                );
+            }
 
             return $payment->load('allocations');
         });

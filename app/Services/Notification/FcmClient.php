@@ -159,7 +159,17 @@ class FcmClient
     {
         $credentialsPath = config('services.fcm.credentials_path');
 
-        if (! $credentialsPath || ! file_exists($credentialsPath)) {
+        if (! $credentialsPath) {
+            return null;
+        }
+
+        if (! str_starts_with($credentialsPath, '/')) {
+            $credentialsPath = base_path($credentialsPath);
+        }
+
+        if (! file_exists($credentialsPath)) {
+            Log::error("FCM service account file not found at: {$credentialsPath}");
+
             return null;
         }
 

@@ -112,16 +112,30 @@ class PaymentSubmissionList extends Component
                     'reviewed_at' => now(),
                 ]);
 
-                SendResidentPushNotificationJob::dispatch(
-                    [$submission->user_id],
-                    'Payment Approved',
-                    "Your payment of BDT {$submission->amount} has been approved. Receipt: {$payment->receipt_no}",
-                    ['type' => 'payment_approved', 'payment_id' => $payment->id],
-                    NotificationType::PaymentApproved,
-                    'payment',
-                    $payment->id,
-                    "payment-approved-{$payment->id}",
-                );
+                $submission->flat->loadMissing(['owner', 'tenants']);
+                $recipientUserIds = collect([$submission->user_id]);
+                if ($submission->flat->owner?->user_id) {
+                    $recipientUserIds->push($submission->flat->owner->user_id);
+                }
+                foreach ($submission->flat->tenants as $tenant) {
+                    if ($tenant->is_active && $tenant->user_id) {
+                        $recipientUserIds->push($tenant->user_id);
+                    }
+                }
+                $recipientUserIds = $recipientUserIds->filter()->unique()->values()->all();
+
+                if (! empty($recipientUserIds)) {
+                    SendResidentPushNotificationJob::dispatch(
+                        $recipientUserIds,
+                        'Payment Approved',
+                        "Your payment of BDT {$submission->amount} has been approved. Receipt: {$payment->receipt_no}",
+                        ['type' => 'payment_approved', 'payment_id' => $payment->id],
+                        NotificationType::PaymentApproved,
+                        'payment',
+                        $payment->id,
+                        "payment-approved-{$payment->id}",
+                    );
+                }
 
                 return $payment;
             });
@@ -168,6 +182,7 @@ class PaymentSubmissionList extends Component
 
         $submission = PaymentSubmission::query()
             ->when($building !== null, fn ($q) => $q->where('building_id', $building->id))
+            ->with(['flat.owner', 'flat.tenants'])
             ->findOrFail($this->rejectingId);
 
         $this->authorize('manage', $submission);
@@ -179,16 +194,29 @@ class PaymentSubmissionList extends Component
             'reviewed_at' => now(),
         ]);
 
-        SendResidentPushNotificationJob::dispatch(
-            [$submission->user_id],
-            'Payment Rejected',
-            "Your payment submission of BDT {$submission->amount} was rejected: {$this->rejectionReason}",
-            ['type' => 'payment_rejected', 'submission_id' => $submission->id],
-            NotificationType::PaymentRejected,
-            'payment_submission',
-            $submission->id,
-            "payment-rejected-{$submission->id}",
-        );
+        $recipientUserIds = collect([$submission->user_id]);
+        if ($submission->flat?->owner?->user_id) {
+            $recipientUserIds->push($submission->flat->owner->user_id);
+        }
+        foreach ($submission->flat?->tenants ?? [] as $tenant) {
+            if ($tenant->is_active && $tenant->user_id) {
+                $recipientUserIds->push($tenant->user_id);
+            }
+        }
+        $recipientUserIds = $recipientUserIds->filter()->unique()->values()->all();
+
+        if (! empty($recipientUserIds)) {
+            SendResidentPushNotificationJob::dispatch(
+                $recipientUserIds,
+                'Payment Rejected',
+                "Your payment submission of BDT {$submission->amount} was rejected: {$this->rejectionReason}",
+                ['type' => 'payment_rejected', 'submission_id' => $submission->id],
+                NotificationType::PaymentRejected,
+                'payment_submission',
+                $submission->id,
+                "payment-rejected-{$submission->id}",
+            );
+        }
 
         $this->closeRejectModal();
         $this->notify(__('billing.rejected'));
