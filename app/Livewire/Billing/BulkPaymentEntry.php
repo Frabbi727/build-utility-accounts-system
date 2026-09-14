@@ -124,7 +124,7 @@ class BulkPaymentEntry extends Component
         }
 
         if ($enabledCount === 0) {
-            $this->notify(__('billing.no_payments_entered'), 'error');
+            $this->notifyError(__('billing.no_payments_entered'));
 
             return;
         }
@@ -229,7 +229,7 @@ class BulkPaymentEntry extends Component
 
         return view('livewire.billing.bulk-payment-entry', [
             'methods' => PaymentMethod::cases(),
-            'flatsData' => $this->flatsData,
+            'flatsData' => $this->getFlatsDataProperty(),
         ])->layout('components.layouts.app');
     }
 }

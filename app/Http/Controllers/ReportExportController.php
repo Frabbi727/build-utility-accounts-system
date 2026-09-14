@@ -40,7 +40,10 @@ class ReportExportController extends Controller
 
             case 'cash-book':
                 $accountId = $request->integer('account_id');
-                $account = Account::findOrFail($accountId);
+                $accountCode = $request->string('account_code')->toString();
+                $account = $accountId > 0
+                    ? Account::findOrFail($accountId)
+                    : Account::where('code', $accountCode)->firstOrFail();
                 $from = $from ?? now()->startOfMonth();
                 $to = $to ?? now()->endOfMonth();
                 $content = $csvService->cashBook($account, $from, $to);

@@ -3,6 +3,7 @@
 namespace App\Livewire\Reports;
 
 use App\Enums\AccountType;
+use App\Livewire\Reports\Concerns\WithLedgerDrillDown;
 use App\Services\Reporting\LedgerReports;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
@@ -17,6 +18,8 @@ use Livewire\Component;
  */
 class BalanceSheet extends Component
 {
+    use WithLedgerDrillDown;
+
     public string $asOf = '';
 
     public function mount(): void

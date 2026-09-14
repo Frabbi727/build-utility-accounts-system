@@ -437,7 +437,7 @@ class ReadingSheet extends Component
             $previousMap[$meter->id] = $prev;
 
             $currentRow = $this->rows[$meter->id] ?? null;
-            $currentVal = $currentRow !== null ? (string) ($currentRow['current'] ?? '') : null;
+            $currentVal = $currentRow !== null ? $currentRow['current'] : null;
 
             $anomalies[$meter->id] = $detector->detect($meter, $currentVal, $billingMonth, $prev);
         }

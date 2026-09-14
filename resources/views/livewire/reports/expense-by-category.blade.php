@@ -8,6 +8,12 @@
             <span class="mr-2 text-slate-600">{{ __('reports.to') }}</span>
             <input type="date" wire:model.live="to" class="rounded-md border-slate-300 text-sm shadow-sm">
         </label>
+        <a href="{{ route('reports.export', ['type' => 'expense-by-category', 'from' => $from, 'to' => $to]) }}"
+           target="_blank"
+           class="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+            <x-ui.icon name="download" class="w-4 h-4 text-slate-500" />
+            <span>CSV</span>
+        </a>
     </x-report-header>
 
     <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
@@ -24,7 +30,13 @@
                 @forelse ($rows as $row)
                     <tr>
                         <td class="px-4 py-2 font-mono text-xs text-slate-500">{{ $row['account']->code }}</td>
-                        <td class="px-4 py-2">{{ app()->getLocale() === 'bn' ? ($row['account']->name_bn ?? $row['account']->name) : $row['account']->name }}</td>
+                        <td class="px-4 py-2">
+                            <button type="button"
+                                    wire:click="openDrillDown({{ $row['account']->id }})"
+                                    class="text-left font-medium text-slate-900 hover:text-indigo-600 hover:underline cursor-pointer">
+                                {{ app()->getLocale() === 'bn' ? ($row['account']->name_bn ?? $row['account']->name) : $row['account']->name }}
+                            </button>
+                        </td>
                         <td class="px-4 py-2 text-right"><x-money :amount="$row['amount']" /></td>
                         <td class="px-4 py-2">
                             <div class="flex items-center gap-2">
@@ -48,4 +60,6 @@
             </tfoot>
         </table>
     </div>
+
+    @include('livewire.reports.partials.drilldown-modal')
 </div>

@@ -75,7 +75,7 @@ class MeterReadingAnomalyDetector
 
         $isZeroOccupied = bccomp($units, '0', 3) === 0
             && $meter->flat_id !== null
-            && ($meter->flat?->is_active ?? true);
+            && ($meter->flat !== null ? $meter->flat->is_active : true);
 
         $warnings = [];
         if ($hasSpike && $variancePercentage !== null) {

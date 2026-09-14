@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Reports\Concerns\WithLedgerDrillDown;
 use App\Models\Account;
 use App\Services\JournalService;
 use App\Services\Reporting\LedgerReports;
@@ -16,6 +17,8 @@ use Livewire\Component;
  */
 class TrialBalance extends Component
 {
+    use WithLedgerDrillDown;
+
     public string $from = '';
 
     public string $to = '';
@@ -39,13 +42,7 @@ class TrialBalance extends Component
     }
 
     /**
-     * @return Collection<int, array{
-     *     account: Account,
-     *     opening?: numeric-string,
-     *     debit: numeric-string,
-     *     credit: numeric-string,
-     *     closing?: numeric-string
-     * }>
+     * @return Collection<int, array{account: Account, debit: numeric-string, credit: numeric-string}|array{account: Account, opening: numeric-string, debit: numeric-string, credit: numeric-string, closing: string}>
      */
     public function rows(): Collection
     {
@@ -123,7 +120,7 @@ class TrialBalance extends Component
             'totalDebit' => $totalDebit,
             'totalCredit' => $totalCredit,
             'isBalanced' => bccomp($totalDebit, $totalCredit, 2) === 0,
-            'isRanged' => $this->isRanged,
+            'isRanged' => $this->getIsRangedProperty(),
         ])->layout('components.layouts.app');
     }
 }

@@ -16,6 +16,12 @@
             <span class="mr-2 text-slate-600">{{ __('reports.to') }}</span>
             <input type="date" wire:model.live="to" class="rounded-md border-slate-300 text-sm shadow-sm">
         </label>
+        <a href="{{ route('reports.export', ['type' => 'cash-book', 'account_code' => $account, 'from' => $from, 'to' => $to]) }}"
+           target="_blank"
+           class="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+            <x-ui.icon name="download" class="w-4 h-4 text-slate-500" />
+            <span>CSV</span>
+        </a>
     </x-report-header>
 
     <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">

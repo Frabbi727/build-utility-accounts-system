@@ -32,6 +32,8 @@
         </div>
     </div>
 
+    <x-ui.notice :message="$notice" :type="$noticeType" />
+
     {{-- Control Toolbar --}}
     <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">

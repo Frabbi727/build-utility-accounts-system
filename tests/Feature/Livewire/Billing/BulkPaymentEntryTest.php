@@ -3,7 +3,7 @@
 namespace Tests\Feature\Livewire\Billing;
 
 use App\Enums\AccountCode;
-use App\Enums\PaymentMethod;
+use App\Enums\Role;
 use App\Livewire\Billing\BulkPaymentEntry;
 use App\Models\Building;
 use App\Models\Flat;
@@ -11,7 +11,6 @@ use App\Models\User;
 use App\Services\Billing\GenerateMonthlyBills;
 use App\Services\JournalService;
 use App\Support\CurrentBuilding;
-use App\Enums\Role;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;

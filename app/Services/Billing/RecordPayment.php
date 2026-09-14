@@ -6,6 +6,7 @@ use App\Enums\AccountCode;
 use App\Enums\PaymentMethod;
 use App\Models\Flat;
 use App\Models\Payment;
+use App\Models\ServiceChargeBill;
 use App\Services\JournalService;
 use App\Support\JournalLineData;
 use Illuminate\Support\Carbon;
@@ -105,7 +106,7 @@ class RecordPayment
     /**
      * Applies the calculated plan to the payment and refreshes bill statuses.
      *
-     * @param  array{lines: list<array{bill: \App\Models\ServiceChargeBill, amount: string}>, allocated: string, advance: string}  $plan
+     * @param  array{lines: list<array{bill: ServiceChargeBill, amount: string}>, allocated: string, advance: string}  $plan
      */
     private function applyPlan(Payment $payment, array $plan): string
     {
