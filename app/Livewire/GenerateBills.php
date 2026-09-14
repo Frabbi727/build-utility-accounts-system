@@ -16,7 +16,10 @@ use App\Models\Meter;
 use App\Models\MeterReading;
 use App\Models\ServiceChargeBill;
 use App\Services\Billing\GenerateMonthlyBills;
+use App\Services\Billing\SimulateMonthlyBills;
+use App\Support\BillSimulationResult;
 use App\Support\CurrentBuilding;
+use App\Support\FlatBillSimulation;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -26,8 +29,8 @@ use Livewire\Component;
  * (flat_id, billing_month) and generation skips flats already billed, so anything left
  * unconfirmed or unapproved will not join this month's bill — it rides the next one.
  *
- * That is recoverable but confusing, so the confirmation dialog states exactly what is
- * about to be left behind before the operator commits.
+ * This screen provides an in-memory dry-run simulation to review exact totals and warnings
+ * before confirming generation.
  */
 class GenerateBills extends Component
 {
@@ -38,6 +41,12 @@ class GenerateBills extends Component
     public ?int $buildingId = null;
 
     public string $month = '';
+
+    public string $search = '';
+
+    public string $filter = 'all';
+
+    public bool $simulated = false;
 
     public function mount(): void
     {
@@ -51,6 +60,33 @@ class GenerateBills extends Component
     protected function confirmableActions(): array
     {
         return ['generate'];
+    }
+
+    public function updatedBuildingId(): void
+    {
+        $this->simulated = false;
+    }
+
+    public function updatedMonth(): void
+    {
+        $this->simulated = false;
+    }
+
+    public function simulate(): void
+    {
+        $this->authorize('create', ServiceChargeBill::class);
+
+        $this->validate($this->rules());
+        $this->clearNotice();
+
+        $this->simulated = true;
+    }
+
+    public function clearSimulation(): void
+    {
+        $this->simulated = false;
+        $this->search = '';
+        $this->filter = 'all';
     }
 
     /**
@@ -117,6 +153,8 @@ class GenerateBills extends Component
                 );
             }
         }
+
+        $this->simulated = false;
 
         $this->notify($bills->isEmpty()
             ? __('billing.nothing_to_generate')
@@ -185,6 +223,22 @@ class GenerateBills extends Component
         return $building->activeFlats()->whereNotIn('flats.id', $alreadyBilled)->count();
     }
 
+    public function simulationResult(): ?BillSimulationResult
+    {
+        if (! $this->simulated || $this->buildingId === null || ! $this->isValidMonth()) {
+            return null;
+        }
+
+        $building = Building::find($this->buildingId);
+        if ($building === null) {
+            return null;
+        }
+
+        $month = Carbon::createFromFormat('Y-m', $this->month)->startOfMonth();
+
+        return app(SimulateMonthlyBills::class)->handle($building, $month);
+    }
+
     private function isValidMonth(): bool
     {
         return preg_match('/^\d{4}-\d{2}$/', $this->month) === 1;
@@ -192,9 +246,42 @@ class GenerateBills extends Component
 
     public function render(): View
     {
+        $simulation = $this->simulationResult();
+        $filteredSimulations = [];
+
+        if ($simulation !== null) {
+            $search = strtolower(trim($this->search));
+
+            $filteredSimulations = array_values(array_filter(
+                $simulation->flats,
+                function (FlatBillSimulation $sim) use ($search): bool {
+                    if ($this->filter === 'to_bill' && ! $sim->willBeBilled()) {
+                        return false;
+                    }
+                    if ($this->filter === 'warnings' && ! $sim->hasWarnings()) {
+                        return false;
+                    }
+                    if ($this->filter === 'already_billed' && ! $sim->isAlreadyBilled) {
+                        return false;
+                    }
+
+                    if ($search !== '') {
+                        $flatNo = strtolower($sim->flat->number);
+                        $ownerName = strtolower($sim->flat->owner?->name ?? '');
+
+                        return str_contains($flatNo, $search) || str_contains($ownerName, $search);
+                    }
+
+                    return true;
+                }
+            ));
+        }
+
         return view('livewire.generate-bills', [
             'buildings' => Building::orderBy('name')->get(),
             'pending' => $this->pendingWork(),
+            'simulation' => $simulation,
+            'filteredFlats' => $filteredSimulations,
         ])->layout('components.layouts.app');
     }
 }
