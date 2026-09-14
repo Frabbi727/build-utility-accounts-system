@@ -43,4 +43,9 @@ class PaymentPolicy
     {
         return $user->canManageMoney();
     }
+
+    public function reverse(User $user, Payment $payment): bool
+    {
+        return $user->canManageMoney() && ! $payment->isReversed();
+    }
 }

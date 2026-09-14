@@ -22,8 +22,22 @@ use Illuminate\Support\Carbon;
  * @property Carbon $received_on
  * @property string|null $reference
  * @property int|null $received_by
+ * @property Carbon|null $reversed_at
+ * @property string|null $reversal_reason
+ * @property int|null $reversed_by
  */
-#[Fillable(['flat_id', 'receipt_no', 'amount', 'method', 'received_on', 'reference', 'received_by'])]
+#[Fillable([
+    'flat_id',
+    'receipt_no',
+    'amount',
+    'method',
+    'received_on',
+    'reference',
+    'received_by',
+    'reversed_at',
+    'reversal_reason',
+    'reversed_by',
+])]
 class Payment extends Model
 {
     use Auditable;
@@ -40,6 +54,7 @@ class Payment extends Model
             'amount' => 'decimal:2',
             'method' => PaymentMethod::class,
             'received_on' => 'date',
+            'reversed_at' => 'datetime',
         ];
     }
 
@@ -66,10 +81,28 @@ class Payment extends Model
         return $this->belongsTo(User::class, 'received_by');
     }
 
+    /**
+     * The operator who reversed the payment.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function reversedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reversed_by');
+    }
+
     /** @return MorphMany<JournalEntry, $this> */
     public function journalEntries(): MorphMany
     {
         return $this->morphMany(JournalEntry::class, 'source');
+    }
+
+    /**
+     * Whether this payment has been reversed.
+     */
+    public function isReversed(): bool
+    {
+        return $this->reversed_at !== null;
     }
 
     /**
