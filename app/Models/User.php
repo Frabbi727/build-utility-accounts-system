@@ -95,4 +95,21 @@ class User extends Authenticatable
     {
         return $this->hasMany(Notification::class);
     }
+
+    /** @return HasMany<UserNotificationPreference, $this> */
+    public function notificationPreferences(): HasMany
+    {
+        return $this->hasMany(UserNotificationPreference::class);
+    }
+
+    public function prefersChannel(string $channel, string $category): bool
+    {
+        $preference = $this->notificationPreferences
+            ->where('channel', $channel)
+            ->where('category', $category)
+            ->first();
+
+        // Default to enabled if not explicitly opted out
+        return $preference !== null ? $preference->is_enabled : true;
+    }
 }

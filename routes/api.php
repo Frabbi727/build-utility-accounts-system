@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\DeviceApiController;
 use App\Http\Controllers\Api\V1\NotificationApiController;
+use App\Http\Controllers\Api\V1\NotificationPreferenceApiController;
 use App\Http\Controllers\Api\V1\Resident\BillApiController;
 use App\Http\Controllers\Api\V1\Resident\DashboardController;
 use App\Http\Controllers\Api\V1\Resident\MaintenanceRequestApiController;
@@ -30,6 +31,8 @@ Route::prefix('v1')->group(function (): void {
         Route::get('notifications/unread-count', [NotificationApiController::class, 'unreadCount'])->name('api.v1.notifications.unread-count');
         Route::patch('notifications/read-all', [NotificationApiController::class, 'markAllRead'])->name('api.v1.notifications.read-all');
         Route::patch('notifications/{id}/read', [NotificationApiController::class, 'markRead'])->name('api.v1.notifications.read');
+        Route::get('notifications/preferences', [NotificationPreferenceApiController::class, 'index'])->name('api.v1.notifications.preferences.index');
+        Route::put('notifications/preferences', [NotificationPreferenceApiController::class, 'update'])->name('api.v1.notifications.preferences.update');
 
         // Resident Portal
         Route::prefix('resident')->group(function (): void {

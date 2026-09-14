@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\BillStatus;
+use App\Enums\LateFeeType;
 use App\Enums\NotificationTriggerEvent;
 use App\Enums\NotificationType;
 use App\Models\Building;
@@ -126,6 +127,16 @@ class SendBillRemindersCommand extends Command
 
                     $recipients = $recipients->unique('id');
 
+                    $daysOverdue = max(0, (int) Carbon::parse($bill->due_date)->startOfDay()->diffInDays($targetDate->copy()->startOfDay()));
+                    $lateFee = '0.00';
+                    if ($building->late_fee_type->charges() && (float) $building->late_fee_amount > 0) {
+                        if ($building->late_fee_type === LateFeeType::Fixed) {
+                            $lateFee = (string) $building->late_fee_amount;
+                        } elseif ($building->late_fee_type === LateFeeType::Percent) {
+                            $lateFee = bcdiv(bcmul((string) $bill->total_amount, (string) $building->late_fee_amount, 4), '100', 2);
+                        }
+                    }
+
                     foreach ($recipients as $user) {
                         $tokenData = [
                             'resident_name' => $user->name,
@@ -134,6 +145,8 @@ class SendBillRemindersCommand extends Command
                             'due_date' => $bill->due_date,
                             'billing_month' => $bill->billing_month,
                             'building_name' => $building->name,
+                            'days_overdue' => (string) $daysOverdue,
+                            'late_fee' => $lateFee,
                         ];
 
                         $title = TemplateParser::render($rule->title_template, $tokenData);

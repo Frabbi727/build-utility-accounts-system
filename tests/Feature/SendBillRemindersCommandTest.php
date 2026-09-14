@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\BillStatus;
+use App\Enums\LateFeeType;
 use App\Enums\NotificationTriggerEvent;
 use App\Enums\NotificationType;
 use App\Models\Building;
@@ -423,5 +424,46 @@ class SendBillRemindersCommandTest extends TestCase
         ])->assertSuccessful();
 
         $this->assertDatabaseCount('notifications', 0);
+    }
+
+    public function test_it_renders_late_fee_tokens_in_overdue_reminders(): void
+    {
+        $today = Carbon::parse('2026-09-15');
+        $dueDate = Carbon::parse('2026-09-10'); // 5 days overdue
+
+        $building = Building::factory()->create([
+            'late_fee_type' => LateFeeType::Fixed,
+            'late_fee_amount' => '150.00',
+        ]);
+
+        NotificationRule::factory()->create([
+            'building_id' => $building->id,
+            'trigger_event' => NotificationTriggerEvent::BillOverdue,
+            'days_offset' => 5,
+            'title_template' => 'Bill Overdue for {flat_number}',
+            'body_template' => 'Your bill is {days_overdue} days overdue. Late fee of {late_fee} BDT applies.',
+            'is_active' => true,
+        ]);
+
+        $user = User::factory()->create();
+        $owner = Owner::factory()->create(['user_id' => $user->id]);
+        $flat = Flat::factory()->create(['building_id' => $building->id, 'owner_id' => $owner->id, 'number' => '101']);
+
+        ServiceChargeBill::factory()->create([
+            'flat_id' => $flat->id,
+            'due_date' => $dueDate,
+            'total_amount' => '2000.00',
+            'status' => BillStatus::Unpaid,
+        ]);
+
+        $this->artisan('notifications:send-bill-reminders', [
+            '--date' => $today->toDateString(),
+        ])->assertSuccessful();
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $user->id,
+            'title' => 'Bill Overdue for 101',
+            'body' => 'Your bill is 5 days overdue. Late fee of 150.00 BDT applies.',
+        ]);
     }
 }

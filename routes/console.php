@@ -30,3 +30,10 @@ Schedule::command('billing:late-fees')
 Schedule::command('notifications:send-bill-reminders')
     ->dailyAt('08:00')
     ->withoutOverlapping();
+
+/**
+ * Scan open maintenance tickets hourly for SLA breaches.
+ */
+Schedule::command('maintenance:check-sla')
+    ->hourly()
+    ->withoutOverlapping();

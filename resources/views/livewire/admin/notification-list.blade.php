@@ -76,6 +76,7 @@
                             <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Trigger Event') }}</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Timing Offset') }}</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Title Template') }}</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Channels') }}</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Scope') }}</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Active') }}</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('Actions') }}</th>
@@ -109,12 +110,21 @@
                                         @endif
                                     @else
                                         <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                                            {{ __('Immediate (0)') }}
+                                             {{ __('Immediate (0)') }}
                                         </span>
                                     @endif
                                 </td>
                                 <td class="px-4 py-3 text-sm text-slate-700 max-w-xs truncate" title="{{ $rule->title_template }}">
                                     {{ $rule->title_template }}
+                                </td>
+                                <td class="px-4 py-3 text-sm">
+                                    <div class="flex flex-wrap gap-1">
+                                        @foreach ($rule->channels ?? ['push', 'in_app'] as $ch)
+                                            <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                                                {{ strtoupper($ch) }}
+                                            </span>
+                                        @endforeach
+                                    </div>
                                 </td>
                                 <td class="px-4 py-3 text-sm">
                                     @if ($rule->building_id)
@@ -152,7 +162,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-4 py-8 text-center text-sm text-slate-400">
+                                <td colspan="7" class="px-4 py-8 text-center text-sm text-slate-400">
                                     {{ __('No notification rules configured.') }}
                                 </td>
                             </tr>
@@ -400,6 +410,30 @@
                             </div>
                         </div>
                     @endif
+
+                    {{-- Delivery Channels --}}
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">{{ __('Delivery Channels') }}</label>
+                        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            <label class="relative flex items-center p-3 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50">
+                                <input type="checkbox" value="in_app" wire:model="editingChannels" class="rounded border-slate-300 text-indigo-600 shadow-xs focus:ring-indigo-500">
+                                <span class="ml-2 text-xs font-medium text-slate-800">{{ __('In-App') }}</span>
+                            </label>
+                            <label class="relative flex items-center p-3 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50">
+                                <input type="checkbox" value="push" wire:model="editingChannels" class="rounded border-slate-300 text-indigo-600 shadow-xs focus:ring-indigo-500">
+                                <span class="ml-2 text-xs font-medium text-slate-800">{{ __('Push Alert') }}</span>
+                            </label>
+                            <label class="relative flex items-center p-3 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50">
+                                <input type="checkbox" value="sms" wire:model="editingChannels" class="rounded border-slate-300 text-indigo-600 shadow-xs focus:ring-indigo-500">
+                                <span class="ml-2 text-xs font-medium text-slate-800">{{ __('SMS Text') }}</span>
+                            </label>
+                            <label class="relative flex items-center p-3 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50">
+                                <input type="checkbox" value="email" wire:model="editingChannels" class="rounded border-slate-300 text-indigo-600 shadow-xs focus:ring-indigo-500">
+                                <span class="ml-2 text-xs font-medium text-slate-800">{{ __('Email') }}</span>
+                            </label>
+                        </div>
+                        @error('editingChannels') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
 
                     {{-- Active Toggle --}}
                     <div class="flex items-center gap-2 pt-1">

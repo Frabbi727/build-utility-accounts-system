@@ -59,6 +59,11 @@ class NotificationList extends Component
     /**
      * @var array<int, string>
      */
+    public array $editingChannels = ['push', 'in_app'];
+
+    /**
+     * @var array<int, string>
+     */
     public array $supportedTokens = [];
 
     // On-demand Reminders state
@@ -156,6 +161,7 @@ class NotificationList extends Component
         $this->editingTitleTemplate = $rule->title_template;
         $this->editingBodyTemplate = $rule->body_template;
         $this->editingIsActive = (bool) $rule->is_active;
+        $this->editingChannels = $rule->channels ?? ['push', 'in_app'];
         $this->supportedTokens = $event->supportedTokens();
         $this->showEditRuleModal = true;
     }
@@ -174,6 +180,7 @@ class NotificationList extends Component
             'editingTitleTemplate' => ['required', 'string', 'max:255'],
             'editingBodyTemplate' => ['required', 'string', 'max:2000'],
             'editingIsActive' => ['boolean'],
+            'editingChannels' => ['array'],
         ]);
 
         $rule = NotificationRule::findOrFail($this->editingRuleId);
@@ -188,7 +195,6 @@ class NotificationList extends Component
                 'building_id' => $buildingId,
                 'trigger_event' => $rule->trigger_event,
             ]);
-            $targetRule->channels = $rule->channels ?? ['push', 'in_app'];
         } else {
             $targetRule = $rule;
         }
@@ -196,6 +202,7 @@ class NotificationList extends Component
         $targetRule->days_offset = (int) $this->editingDaysOffset;
         $targetRule->title_template = $this->editingTitleTemplate;
         $targetRule->body_template = $this->editingBodyTemplate;
+        $targetRule->channels = ! empty($this->editingChannels) ? array_values($this->editingChannels) : ['push', 'in_app'];
         $targetRule->is_active = (bool) $this->editingIsActive;
         $targetRule->save();
 

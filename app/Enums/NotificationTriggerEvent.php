@@ -53,6 +53,8 @@ enum NotificationTriggerEvent: string
                 '{amount}',
                 '{due_date}',
                 '{billing_month}',
+                '{days_overdue}',
+                '{late_fee}',
             ],
             self::PaymentReceived, self::PaymentReversed => [
                 '{resident_name}',
