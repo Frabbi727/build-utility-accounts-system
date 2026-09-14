@@ -24,6 +24,7 @@ use Illuminate\Support\Carbon;
  * @property string $consumption
  * @property bool $is_estimated
  * @property string|null $note
+ * @property string|null $image_path
  * @property int|null $recorded_by
  * @property ReadingStatus $status
  * @property int|null $applied_to_bill_id
@@ -31,7 +32,7 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'meter_id', 'utility_tariff_id', 'billing_month', 'reading_date',
     'previous_reading', 'current_reading', 'consumption', 'is_estimated',
-    'note', 'recorded_by', 'status', 'applied_to_bill_id',
+    'note', 'image_path', 'recorded_by', 'status', 'applied_to_bill_id',
 ])]
 class MeterReading extends Model
 {
