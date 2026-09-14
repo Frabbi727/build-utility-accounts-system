@@ -133,7 +133,7 @@ class SendBillRemindersCommand extends Command
                             'amount' => $bill->total_amount,
                             'due_date' => $bill->due_date,
                             'billing_month' => $bill->billing_month,
-                            'building_name' => $flat->building?->name ?? $building->name,
+                            'building_name' => $building->name,
                         ];
 
                         $title = TemplateParser::render($rule->title_template, $tokenData);

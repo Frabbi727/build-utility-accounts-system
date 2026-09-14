@@ -21,6 +21,9 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
+/**
+ * @property-read Collection<int, NotificationRule> $rules
+ */
 class NotificationList extends Component
 {
     use WithNotices, WithPagination;
@@ -146,9 +149,7 @@ class NotificationList extends Component
 
         $this->editingRuleId = $rule->id;
 
-        $event = $rule->trigger_event instanceof NotificationTriggerEvent
-            ? $rule->trigger_event
-            : NotificationTriggerEvent::from((string) $rule->trigger_event);
+        $event = $rule->trigger_event;
 
         $this->editingTriggerEvent = $event->value;
         $this->editingDaysOffset = $rule->days_offset;

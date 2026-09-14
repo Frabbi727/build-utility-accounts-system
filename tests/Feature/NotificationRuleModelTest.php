@@ -142,7 +142,7 @@ class NotificationRuleModelTest extends TestCase
     {
         $this->seed(NotificationRuleSeeder::class);
 
-        $this->assertDatabaseCount('notification_rules', 5);
+        $this->assertDatabaseCount('notification_rules', 6);
 
         $this->assertDatabaseHas('notification_rules', [
             'building_id' => null,
@@ -184,8 +184,16 @@ class NotificationRuleModelTest extends TestCase
             'is_active' => true,
         ]);
 
+        $this->assertDatabaseHas('notification_rules', [
+            'building_id' => null,
+            'trigger_event' => 'maintenance_created',
+            'days_offset' => 0,
+            'title_template' => 'New Maintenance Request: #{ticket_id}',
+            'is_active' => true,
+        ]);
+
         // Verify idempotency: running seeder again does not create duplicates
         $this->seed(NotificationRuleSeeder::class);
-        $this->assertDatabaseCount('notification_rules', 5);
+        $this->assertDatabaseCount('notification_rules', 6);
     }
 }

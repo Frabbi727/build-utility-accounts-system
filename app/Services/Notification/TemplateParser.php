@@ -41,7 +41,7 @@ class TemplateParser
      */
     public static function render(string $template, array $data = []): string
     {
-        return (new static)->parse($template, $data);
+        return (new self)->parse($template, $data);
     }
 
     /**
@@ -57,7 +57,7 @@ class TemplateParser
 
         preg_match_all('/\{([a-zA-Z0-9_]+)\}/', $template, $matches);
 
-        return array_values(array_unique($matches[1] ?? []));
+        return array_values(array_unique($matches[1]));
     }
 
     /**
@@ -67,7 +67,7 @@ class TemplateParser
      */
     public static function tokens(string $template): array
     {
-        return (new static)->extractTokens($template);
+        return (new self)->extractTokens($template);
     }
 
     /**

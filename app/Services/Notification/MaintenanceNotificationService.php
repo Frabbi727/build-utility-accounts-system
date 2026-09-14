@@ -41,8 +41,8 @@ class MaintenanceNotificationService
 
         $tokens = $this->buildTokenData($ticket);
 
-        $titleTemplate = $rule?->title_template ?? 'Maintenance Ticket Updated: #{ticket_id}';
-        $bodyTemplate = $rule?->body_template ?? 'Your ticket "{ticket_title}" status changed to {ticket_status}. {resolution_notes}';
+        $titleTemplate = $rule !== null ? $rule->title_template : 'Maintenance Ticket Updated: #{ticket_id}';
+        $bodyTemplate = $rule !== null ? $rule->body_template : 'Your ticket "{ticket_title}" status changed to {ticket_status}. {resolution_notes}';
 
         $title = $this->templateParser->parse($titleTemplate, $tokens);
         $body = $this->templateParser->parse($bodyTemplate, $tokens);
@@ -89,8 +89,8 @@ class MaintenanceNotificationService
             $tokens['assigned_to'] = 'Technician';
         }
 
-        $titleTemplate = $rule?->title_template ?? 'Technician Assigned: #{ticket_id}';
-        $bodyTemplate = $rule?->body_template ?? 'Technician {assigned_to} has been assigned to your ticket "{ticket_title}".';
+        $titleTemplate = $rule !== null ? $rule->title_template : 'Technician Assigned: #{ticket_id}';
+        $bodyTemplate = $rule !== null ? $rule->body_template : 'Technician {assigned_to} has been assigned to your ticket "{ticket_title}".';
 
         $title = $this->templateParser->parse($titleTemplate, $tokens);
         $body = $this->templateParser->parse($bodyTemplate, $tokens);
@@ -115,20 +115,6 @@ class MaintenanceNotificationService
                 $ticket->id,
             );
             $notifications = $notifications->merge($sent);
-        }
-
-        // Also notify assigned staff user if linked
-        if (isset($ticket->assignedStaff?->user) && $ticket->assignedStaff->user instanceof User) {
-            $staffSent = $this->notificationService->send(
-                $ticket->assignedStaff->user,
-                NotificationType::MaintenanceAssigned,
-                $title,
-                $body,
-                $data,
-                'maintenance_request',
-                $ticket->id,
-            );
-            $notifications = $notifications->merge($staffSent);
         }
 
         return $notifications;
@@ -159,8 +145,8 @@ class MaintenanceNotificationService
 
         $tokens = $this->buildTokenData($ticket);
 
-        $titleTemplate = $rule?->title_template ?? 'New Maintenance Request: #{ticket_id}';
-        $bodyTemplate = $rule?->body_template ?? 'A new maintenance request "{ticket_title}" has been submitted for Flat {flat_number}.';
+        $titleTemplate = $rule !== null ? $rule->title_template : 'New Maintenance Request: #{ticket_id}';
+        $bodyTemplate = $rule !== null ? $rule->body_template : 'A new maintenance request "{ticket_title}" has been submitted for Flat {flat_number}.';
 
         $title = $this->templateParser->parse($titleTemplate, $tokens);
         $body = $this->templateParser->parse($bodyTemplate, $tokens);
@@ -231,19 +217,23 @@ class MaintenanceNotificationService
      */
     protected function buildTokenData(MaintenanceRequest $ticket): array
     {
-        $assignedTo = $ticket->assignedStaff?->name
-            ?? $ticket->assignedVendor?->name
-            ?? '';
+        $assignedTo = $ticket->assignedStaff !== null
+            ? $ticket->assignedStaff->name
+            : ($ticket->assignedVendor !== null ? $ticket->assignedVendor->name : '');
+
+        $buildingName = $ticket->building !== null
+            ? $ticket->building->name
+            : ($ticket->flat !== null && $ticket->flat->building !== null ? $ticket->flat->building->name : '');
 
         return [
-            'resident_name' => $ticket->user?->name ?? 'Resident',
-            'flat_number' => $ticket->flat?->number ?? '',
+            'resident_name' => $ticket->user !== null ? $ticket->user->name : 'Resident',
+            'flat_number' => $ticket->flat !== null ? $ticket->flat->number : '',
             'ticket_id' => (string) $ticket->id,
             'ticket_title' => $ticket->title,
             'ticket_status' => $ticket->status->label(),
             'assigned_to' => $assignedTo,
             'resolution_notes' => $ticket->resolution_notes ?? '',
-            'building_name' => $ticket->building?->name ?? $ticket->flat?->building?->name ?? '',
+            'building_name' => $buildingName,
         ];
     }
 }

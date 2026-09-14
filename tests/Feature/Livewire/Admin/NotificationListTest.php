@@ -47,7 +47,7 @@ class NotificationListTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->get(route('admin.notifications'))
+            ->get(route('admin.notifications', ['tab' => 'history']))
             ->assertOk()
             ->assertSee('Important Maintenance Notice');
     }
@@ -76,6 +76,7 @@ class NotificationListTest extends TestCase
         $this->actingAs($admin);
 
         Livewire::test(NotificationList::class)
+            ->call('setTab', 'history')
             ->set('type', NotificationType::BillGenerated->value)
             ->assertSee('Bill For Flat 101')
             ->assertDontSee('Ticket Resolved 202')
