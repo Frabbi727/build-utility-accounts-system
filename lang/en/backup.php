@@ -62,4 +62,5 @@ return [
     'restore_step_2' => '2. Automatic Pre-Restore Safety Snapshot (Fallback)',
     'restore_step_3' => '3. Atomic PostgreSQL Database & File Sync',
     'restore_step_4' => '4. Schema & Data Health Validation (Auto-Rollback on failure)',
+    'upload_file_types' => 'ZIP or ENC up to 500MB',
 ];

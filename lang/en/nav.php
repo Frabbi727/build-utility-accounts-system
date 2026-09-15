@@ -41,4 +41,5 @@ return [
     'notifications' => 'Notifications',
     'backups' => 'Backups',
     'setup' => 'Setup',
+    'general' => 'General',
 ];

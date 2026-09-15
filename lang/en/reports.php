@@ -32,6 +32,7 @@ return [
     'no_flat_linked' => 'No flat is linked to your account yet.',
     'owner_dues' => 'Owner Dues & Aging',
     'owner_dues_hint' => 'Who owes what, and for how long.',
+    'collections' => 'Collections',
     'collection_report' => 'Collection Report',
     'collection_report_hint' => 'Receipts taken over a period, by method.',
     'expense_by_category' => 'Expense by Category',

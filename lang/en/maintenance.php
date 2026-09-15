@@ -51,4 +51,5 @@ return [
     'repair_cost' => 'Repair Cost',
     'no_photos' => 'No photos attached.',
     'no_activities' => 'No activities recorded yet.',
+    'view_requests' => 'View Requests',
 ];

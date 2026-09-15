@@ -167,4 +167,6 @@ return [
     'allocation_mode' => 'Allocation Mode',
     'cancel' => 'Cancel',
     'actions' => 'Actions',
+    'total_charges' => 'Total Charges',
+    'confirm_submission' => 'Confirm Submission',
 ];

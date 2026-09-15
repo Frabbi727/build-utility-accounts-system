@@ -167,4 +167,6 @@ return [
     'allocation_mode' => 'বরাদ্দ পদ্ধতি',
     'cancel' => 'বাতিল',
     'actions' => 'কার্যক্রম',
+    'total_charges' => 'মোট চার্জ',
+    'confirm_submission' => 'অনুমোদন নিশ্চিত করুন',
 ];
