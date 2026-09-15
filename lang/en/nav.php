@@ -42,4 +42,12 @@ return [
     'backups' => 'Backups',
     'setup' => 'Setup',
     'general' => 'General',
+    'property_management' => 'Property & Units',
+    'residents_community' => 'Residents & Community',
+    'utilities_metering' => 'Utilities & Metering',
+    'billing_collections' => 'Billing & Collections',
+    'expenses_payables' => 'Expenses & Payables',
+    'accounts_reports' => 'Accounts & Reports',
+    'administration' => 'Administration',
+    'reports_hub' => 'Reports Overview',
 ];

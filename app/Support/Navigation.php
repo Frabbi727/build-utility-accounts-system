@@ -27,54 +27,62 @@ class Navigation
     private const MENU = [
         ['label' => 'nav.dashboard', 'route' => 'dashboard', 'access' => self::ANY, 'icon' => 'dashboard'],
         [
-            'label' => 'nav.billing', 'access' => self::STAFF, 'icon' => 'billing', 'items' => [
+            'label' => 'nav.property_management', 'access' => self::STAFF, 'icon' => 'building', 'items' => [
+                ['label' => 'nav.buildings', 'route' => 'buildings.index', 'access' => self::STAFF],
+                ['label' => 'nav.floors', 'route' => 'floors.index', 'access' => self::STAFF],
+                ['label' => 'nav.unit_types', 'route' => 'unit-types.index', 'access' => self::STAFF],
+                ['label' => 'nav.flats', 'route' => 'flats.index', 'access' => self::STAFF],
+            ],
+        ],
+        [
+            'label' => 'nav.residents_community', 'access' => self::STAFF, 'icon' => 'users', 'items' => [
+                ['label' => 'nav.owners', 'route' => 'owners.index', 'access' => self::STAFF],
+                ['label' => 'nav.tenants', 'route' => 'tenants.index', 'access' => self::STAFF],
+                ['label' => 'nav.notices', 'route' => 'notices.index', 'access' => self::STAFF],
+                ['label' => 'nav.maintenance_requests', 'route' => 'maintenance-requests.index', 'access' => self::STAFF],
+            ],
+        ],
+        [
+            'label' => 'nav.utilities_metering', 'access' => self::STAFF, 'icon' => 'utilities', 'items' => [
+                ['label' => 'nav.readings', 'route' => 'readings.index', 'access' => self::STAFF],
+                ['label' => 'nav.meters', 'route' => 'meters.index', 'access' => self::STAFF],
+                ['label' => 'nav.utilities_list', 'route' => 'utilities.index', 'access' => self::STAFF],
+                ['label' => 'nav.tariffs', 'route' => 'tariffs.index', 'access' => self::STAFF],
+            ],
+        ],
+        [
+            'label' => 'nav.billing_collections', 'access' => self::STAFF, 'icon' => 'billing', 'items' => [
                 ['label' => 'nav.generate_bills', 'route' => 'billing.generate', 'access' => self::MONEY],
                 ['label' => 'nav.record_payment', 'route' => 'payments.create', 'access' => self::MONEY],
                 ['label' => 'nav.bulk_payments', 'route' => 'billing.bulk-payments', 'access' => self::MONEY],
                 ['label' => 'nav.payment_submissions', 'route' => 'billing.submissions', 'access' => self::MONEY],
                 ['label' => 'nav.payments', 'route' => 'payments.index', 'access' => self::STAFF],
                 ['label' => 'nav.shared_costs', 'route' => 'shared-costs.index', 'access' => self::MONEY],
-            ],
-        ],
-        [
-            'label' => 'nav.expenses', 'access' => self::STAFF, 'icon' => 'expenses', 'items' => [
-                ['label' => 'nav.expenses', 'route' => 'expenses.index', 'access' => self::STAFF],
-                ['label' => 'nav.vendor_bills', 'route' => 'vendor-bills.index', 'access' => self::STAFF],
-            ],
-        ],
-        [
-            'label' => 'nav.masters', 'access' => self::STAFF, 'icon' => 'masters', 'items' => [
-                ['label' => 'nav.flats', 'route' => 'flats.index', 'access' => self::STAFF],
-                ['label' => 'nav.owners', 'route' => 'owners.index', 'access' => self::STAFF],
-                ['label' => 'nav.tenants', 'route' => 'tenants.index', 'access' => self::STAFF],
-                ['label' => 'nav.vendors', 'route' => 'vendors.index', 'access' => self::STAFF],
-                ['label' => 'nav.staff', 'route' => 'staff.index', 'access' => self::STAFF],
-                ['label' => 'nav.notices', 'route' => 'notices.index', 'access' => self::STAFF],
-                ['label' => 'nav.maintenance_requests', 'route' => 'maintenance-requests.index', 'access' => self::STAFF],
-                ['label' => 'nav.buildings', 'route' => 'buildings.index', 'access' => self::STAFF],
-                ['label' => 'nav.floors', 'route' => 'floors.index', 'access' => self::STAFF],
                 ['label' => 'nav.charge_heads', 'route' => 'charge-heads.index', 'access' => self::STAFF],
-                ['label' => 'nav.unit_types', 'route' => 'unit-types.index', 'access' => self::STAFF],
                 ['label' => 'nav.ad_hoc_charges', 'route' => 'ad-hoc-charges.index', 'access' => self::STAFF],
             ],
         ],
         [
-            'label' => 'nav.utilities', 'access' => self::STAFF, 'icon' => 'utilities', 'items' => [
-                ['label' => 'nav.readings', 'route' => 'readings.index', 'access' => self::STAFF],
-                ['label' => 'nav.utilities_list', 'route' => 'utilities.index', 'access' => self::STAFF],
-                ['label' => 'nav.meters', 'route' => 'meters.index', 'access' => self::STAFF],
-                ['label' => 'nav.tariffs', 'route' => 'tariffs.index', 'access' => self::STAFF],
+            'label' => 'nav.expenses_payables', 'access' => self::STAFF, 'icon' => 'expenses', 'items' => [
+                ['label' => 'nav.expenses', 'route' => 'expenses.index', 'access' => self::STAFF],
+                ['label' => 'nav.vendor_bills', 'route' => 'vendor-bills.index', 'access' => self::STAFF],
+                ['label' => 'nav.vendors', 'route' => 'vendors.index', 'access' => self::STAFF],
+                ['label' => 'nav.staff', 'route' => 'staff.index', 'access' => self::STAFF],
             ],
         ],
-        ['label' => 'nav.reports', 'route' => 'reports.index', 'access' => self::STAFF, 'icon' => 'reports'],
         [
-            'label' => 'nav.settings', 'access' => self::STAFF, 'icon' => 'settings', 'items' => [
+            'label' => 'nav.accounts_reports', 'access' => self::STAFF, 'icon' => 'reports', 'items' => [
+                ['label' => 'nav.reports_hub', 'route' => 'reports.index', 'access' => self::STAFF],
                 ['label' => 'nav.accounts', 'route' => 'accounts.index', 'access' => self::STAFF],
                 ['label' => 'nav.opening_balances', 'route' => 'accounting.opening-balances', 'access' => self::ADMIN],
                 ['label' => 'nav.periods', 'route' => 'accounting.periods', 'access' => self::ADMIN],
+            ],
+        ],
+        [
+            'label' => 'nav.administration', 'access' => self::STAFF, 'icon' => 'settings', 'items' => [
                 ['label' => 'nav.users', 'route' => 'users.index', 'access' => self::ADMIN],
-                ['label' => 'nav.audit_logs', 'route' => 'admin.audit-logs', 'access' => self::ADMIN],
                 ['label' => 'nav.notifications', 'route' => 'admin.notifications', 'access' => self::STAFF],
+                ['label' => 'nav.audit_logs', 'route' => 'admin.audit-logs', 'access' => self::ADMIN],
                 ['label' => 'nav.backups', 'route' => 'admin.backups', 'access' => self::ADMIN],
             ],
         ],

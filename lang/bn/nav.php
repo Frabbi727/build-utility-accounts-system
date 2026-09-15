@@ -42,4 +42,12 @@ return [
     'backups' => 'ডাটা ব্যাকআপ',
     'setup' => 'সেটআপ',
     'general' => 'সাধারণ',
+    'property_management' => 'সম্পত্তি ও ফ্ল্যাট',
+    'residents_community' => 'অধিবাসী ও যোগাযোগ',
+    'utilities_metering' => 'ইউটিলিটি ও মিটারিং',
+    'billing_collections' => 'বিলিং ও আদায়',
+    'expenses_payables' => 'ব্যয় ও বকেয়া পরিশোধ',
+    'accounts_reports' => 'হিসাব ও প্রতিবেদন',
+    'administration' => 'সিস্টেম প্রশাসন',
+    'reports_hub' => 'প্রতিবেদন সারসংক্ষেপ',
 ];

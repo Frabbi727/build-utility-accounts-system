@@ -60,12 +60,13 @@ class SidebarLayoutTest extends TestCase
 
         // Check top-level navigation entries
         $response->assertSee(__('nav.dashboard'));
-        $response->assertSee(__('nav.billing'));
-        $response->assertSee(__('nav.masters'));
-        $response->assertSee(__('nav.expenses'));
-        $response->assertSee(__('nav.utilities'));
-        $response->assertSee(__('nav.reports'));
-        $response->assertSee(__('nav.settings'));
+        $response->assertSee(__('nav.property_management'));
+        $response->assertSee(__('nav.residents_community'));
+        $response->assertSee(__('nav.utilities_metering'));
+        $response->assertSee(__('nav.billing_collections'));
+        $response->assertSee(__('nav.expenses_payables'));
+        $response->assertSee(__('nav.accounts_reports'));
+        $response->assertSee(__('nav.administration'));
 
         // Check wire:navigate and wire:current.exact are used on navigation links
         $response->assertSee('wire:navigate', false);

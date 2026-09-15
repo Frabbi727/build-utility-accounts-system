@@ -137,7 +137,7 @@ class PaymentListTest extends TestCase
         $user->syncRoles([Role::Committee->value]);
 
         $menu = app(Navigation::class)->for($user);
-        $billing = collect($menu)->firstWhere('label', __('nav.billing'));
+        $billing = collect($menu)->firstWhere('label', __('nav.billing_collections'));
 
         $this->assertNotNull($billing, 'The Billing group should be visible to a committee member.');
         $this->assertTrue(
@@ -151,7 +151,7 @@ class PaymentListTest extends TestCase
         $user = $this->accountant();
 
         $menu = app(Navigation::class)->for($user);
-        $billing = collect($menu)->firstWhere('label', __('nav.billing'));
+        $billing = collect($menu)->firstWhere('label', __('nav.billing_collections'));
 
         $this->assertNotNull($billing);
         $urls = collect($billing['items'])->pluck('url');
@@ -168,6 +168,6 @@ class PaymentListTest extends TestCase
 
         $menu = app(Navigation::class)->for($user);
 
-        $this->assertNull(collect($menu)->firstWhere('label', __('nav.billing')));
+        $this->assertNull(collect($menu)->firstWhere('label', __('nav.billing_collections')));
     }
 }

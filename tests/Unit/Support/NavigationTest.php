@@ -39,12 +39,13 @@ class NavigationTest extends TestCase
 
         $expectedGroupIcons = [
             __('nav.dashboard') => 'dashboard',
-            __('nav.billing') => 'billing',
-            __('nav.expenses') => 'expenses',
-            __('nav.masters') => 'masters',
-            __('nav.utilities') => 'utilities',
-            __('nav.reports') => 'reports',
-            __('nav.settings') => 'settings',
+            __('nav.property_management') => 'building',
+            __('nav.residents_community') => 'users',
+            __('nav.utilities_metering') => 'utilities',
+            __('nav.billing_collections') => 'billing',
+            __('nav.expenses_payables') => 'expenses',
+            __('nav.accounts_reports') => 'reports',
+            __('nav.administration') => 'settings',
         ];
 
         foreach ($expectedGroupIcons as $label => $expectedIcon) {
@@ -61,7 +62,7 @@ class NavigationTest extends TestCase
         $nav = new Navigation;
         $menu = $nav->for($user);
 
-        $billing = collect($menu)->firstWhere('label', __('nav.billing'));
+        $billing = collect($menu)->firstWhere('label', __('nav.billing_collections'));
         $this->assertNotNull($billing);
         $this->assertNotEmpty($billing['items']);
 
@@ -95,10 +96,10 @@ class NavigationTest extends TestCase
         $this->assertSame(__('nav.dashboard'), $dashboardItem['category']);
         $this->assertSame('dashboard', $dashboardItem['icon']);
 
-        // Billing item has Billing as category
+        // Billing item has Billing & Collections as category
         $billingItem = collect($flat)->firstWhere('url', route('billing.generate'));
         $this->assertNotNull($billingItem);
-        $this->assertSame(__('nav.billing'), $billingItem['category']);
+        $this->assertSame(__('nav.billing_collections'), $billingItem['category']);
     }
 
     public function test_all_flat_items_filters_by_user_permissions(): void
