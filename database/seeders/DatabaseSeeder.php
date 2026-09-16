@@ -13,9 +13,9 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             AdminUserSeeder::class,
             NotificationRuleSeeder::class,
-            // DemoBuildingSeeder::class,
-            //   ChargeHeadsSeeder::class,
-            // VendorsAndStaffSeeder::class,
+             DemoBuildingSeeder::class,
+               ChargeHeadsSeeder::class,
+             VendorsAndStaffSeeder::class,
         ]);
     }
 }
