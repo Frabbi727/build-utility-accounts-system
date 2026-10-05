@@ -63,6 +63,9 @@ Route::post('locale', function (): RedirectResponse {
     return back();
 })->name('locale.switch');
 
+Route::view('privacy-policy', 'privacy-policy')->name('privacy.policy');
+Route::redirect('privacy', 'privacy-policy');
+
 Route::middleware('guest')->group(function (): void {
     Route::get('login', [LoginController::class, 'create'])->name('login');
     Route::post('login', [LoginController::class, 'store'])->name('login.store');

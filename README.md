@@ -66,3 +66,4 @@ cd /home/techreal/utility.techrealify.com
     php artisan migrate --force
     php artisan optimize:clear
     php artisan optimize
+

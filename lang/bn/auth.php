@@ -7,4 +7,5 @@ return [
     'sign_in' => 'সাইন ইন',
     'email' => 'ইমেইল',
     'remember_me' => 'মনে রাখুন',
+    'privacy_policy' => 'গোপনীয়তা নীতি',
 ];

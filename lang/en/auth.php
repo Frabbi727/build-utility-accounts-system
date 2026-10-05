@@ -7,4 +7,5 @@ return [
     'sign_in' => 'Sign in',
     'email' => 'Email',
     'remember_me' => 'Remember me',
+    'privacy_policy' => 'Privacy Policy',
 ];

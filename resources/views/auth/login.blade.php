@@ -30,5 +30,11 @@
                 {{ __('auth.sign_in') }}
             </button>
         </form>
+
+        <div class="mt-6 border-t border-slate-100 pt-4 text-center">
+            <a href="{{ route('privacy.policy') }}" class="text-xs text-slate-500 hover:text-slate-900 hover:underline">
+                {{ __('auth.privacy_policy') }}
+            </a>
+        </div>
     </div>
 </x-layouts.app>
