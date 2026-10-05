@@ -64,6 +64,22 @@ class FcmClient
                     'body' => $body,
                 ],
                 'data' => $this->normalizeData($data),
+                'android' => [
+                    'priority' => 'HIGH',
+                    'notification' => [
+                        'channel_id' => 'uas_channel_alerts',
+                        'sound' => 'default',
+                        'default_vibrate_timings' => true,
+                    ],
+                ],
+                'apns' => [
+                    'payload' => [
+                        'aps' => [
+                            'sound' => 'default',
+                            'badge' => 1,
+                        ],
+                    ],
+                ],
             ],
         ];
 
