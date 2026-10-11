@@ -22,11 +22,11 @@ class ChargeHeadsSeeder extends Seeder
      * @var list<array{name: string, name_bn: string, basis: ChargeBasis, amount: string}>
      */
     private const HEADS = [
-        ['name' => 'Guard Salary Share', 'name_bn' => 'নিরাপত্তা কর্মীর বেতন', 'basis' => ChargeBasis::PerFlat, 'amount' => '1200.00'],
-        ['name' => 'Lift Maintenance', 'name_bn' => 'লিফট রক্ষণাবেক্ষণ', 'basis' => ChargeBasis::PerFlat, 'amount' => '500.00'],
-        ['name' => 'Common Electricity', 'name_bn' => 'সাধারণ বিদ্যুৎ', 'basis' => ChargeBasis::PerFlat, 'amount' => '400.00'],
-        ['name' => 'Water (WASA)', 'name_bn' => 'পানি (ওয়াসা)', 'basis' => ChargeBasis::PerSqft, 'amount' => '1.50'],
-        ['name' => 'Cleaning Contract', 'name_bn' => 'পরিচ্ছন্নতা চুক্তি', 'basis' => ChargeBasis::EqualShare, 'amount' => '8000.00'],
+        ['name' => 'Guard Salary Share', 'name_bn' => 'নিরাপত্তা কর্মীর বেতন', 'basis' => ChargeBasis::PerFlat, 'amount' => '0.00'],
+        ['name' => 'Lift Maintenance', 'name_bn' => 'লিফট রক্ষণাবেক্ষণ', 'basis' => ChargeBasis::PerFlat, 'amount' => '0.00'],
+        ['name' => 'Common Electricity', 'name_bn' => 'সাধারণ বিদ্যুৎ', 'basis' => ChargeBasis::PerFlat, 'amount' => '0.00'],
+        ['name' => 'Water (WASA)', 'name_bn' => 'পানি (ওয়াসা)', 'basis' => ChargeBasis::PerSqft, 'amount' => '0.00'],
+        ['name' => 'Cleaning Contract', 'name_bn' => 'পরিচ্ছন্নতা চুক্তি', 'basis' => ChargeBasis::EqualShare, 'amount' => '0.00'],
     ];
 
     public function run(): void

@@ -5,7 +5,7 @@ namespace App\Support;
 class MeterGenerationResultData
 {
     /**
-     * @param list<string> $errors
+     * @param  list<string>  $errors
      */
     public function __construct(
         public readonly int $flatsConsidered,

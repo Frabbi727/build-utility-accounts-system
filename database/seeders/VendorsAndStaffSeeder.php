@@ -31,8 +31,8 @@ class VendorsAndStaffSeeder extends Seeder
         }
 
         foreach ([
-            ['name' => 'Abdul Karim', 'designation' => 'Guard', 'salary' => '12000.00', 'code' => AccountCode::GuardSalary],
-            ['name' => 'Nasima Begum', 'designation' => 'Cleaner', 'salary' => '9000.00', 'code' => AccountCode::Cleaning],
+            ['name' => 'Abdul Karim', 'designation' => 'Guard', 'salary' => '0.00', 'code' => AccountCode::GuardSalary],
+            ['name' => 'Nasima Begum', 'designation' => 'Cleaner', 'salary' => '0.00', 'code' => AccountCode::Cleaning],
         ] as $member) {
             Staff::firstOrCreate(
                 ['name' => $member['name'], 'building_id' => $building->id],

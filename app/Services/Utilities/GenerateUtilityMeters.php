@@ -15,9 +15,9 @@ use Illuminate\Support\Str;
 class GenerateUtilityMeters
 {
     /**
-     * @param list<int> $flatIds
-     * @param list<int> $utilityIds
-     * @param array<string, bool> $flatUtilityOverrides
+     * @param  list<int>  $flatIds
+     * @param  list<int>  $utilityIds
+     * @param  array<string, bool>  $flatUtilityOverrides
      */
     public function preview(
         Building $building,
@@ -68,6 +68,7 @@ class GenerateUtilityMeters
                         'utility_name' => $utility->displayName(),
                         'reason' => 'Excluded by configuration',
                     ];
+
                     continue;
                 }
 
@@ -93,6 +94,7 @@ class GenerateUtilityMeters
                         'utility_name' => $utility->displayName(),
                         'reason' => $existing->is_active ? 'Active meter already exists' : 'Inactive meter already exists',
                     ];
+
                     continue;
                 }
 
@@ -113,10 +115,10 @@ class GenerateUtilityMeters
     }
 
     /**
-     * @param list<int> $flatIds
-     * @param list<int> $utilityIds
-     * @param array<int, string> $utilityPrefixes
-     * @param array<string, bool> $flatUtilityOverrides
+     * @param  list<int>  $flatIds
+     * @param  list<int>  $utilityIds
+     * @param  array<int, string>  $utilityPrefixes
+     * @param  array<string, bool>  $flatUtilityOverrides
      */
     public function handle(
         Building $building,
@@ -178,6 +180,7 @@ class GenerateUtilityMeters
 
                     if (! $isEnabled) {
                         $excludedCount++;
+
                         continue;
                     }
 
@@ -187,6 +190,7 @@ class GenerateUtilityMeters
 
                     if ($existing !== null) {
                         $skippedCount++;
+
                         continue;
                     }
 

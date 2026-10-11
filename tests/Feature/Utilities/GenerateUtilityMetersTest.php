@@ -13,7 +13,6 @@ use App\Models\Utility;
 use App\Services\Utilities\GenerateUtilityMeters;
 use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class GenerateUtilityMetersTest extends TestCase
