@@ -103,4 +103,16 @@ class Flat extends Model
     {
         return $this->hasMany(MaintenanceRequest::class);
     }
+
+    /** @return HasMany<FlatUtilityConfig, $this> */
+    public function utilityConfigs(): HasMany
+    {
+        return $this->hasMany(FlatUtilityConfig::class);
+    }
+
+    /** @return HasMany<Meter, $this> */
+    public function meters(): HasMany
+    {
+        return $this->hasMany(Meter::class);
+    }
 }

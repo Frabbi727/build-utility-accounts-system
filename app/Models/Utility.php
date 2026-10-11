@@ -63,6 +63,12 @@ class Utility extends Model
         return $this->hasMany(UtilityTariff::class);
     }
 
+    /** @return HasMany<FlatUtilityConfig, $this> */
+    public function flatConfigs(): HasMany
+    {
+        return $this->hasMany(FlatUtilityConfig::class);
+    }
+
     /**
      * The tariff in force on a date, or null if the utility had no rate set then.
      *
