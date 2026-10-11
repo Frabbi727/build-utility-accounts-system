@@ -7,6 +7,7 @@ use App\Enums\Role;
 use App\Livewire\Utilities\MeterList;
 use App\Models\Building;
 use App\Models\Flat;
+use App\Models\FlatUtilityConfig;
 use App\Models\Floor;
 use App\Models\Meter;
 use App\Models\User;
@@ -206,5 +207,77 @@ class MeterListAutoGenerateTest extends TestCase
             ->assertForbidden();
 
         $this->assertSame(0, Meter::count());
+    }
+
+    public function test_translations_render_cleanly_in_both_en_and_bn(): void
+    {
+        app()->setLocale('en');
+        $enString = __('utilities.auto_generate_meters');
+        $this->assertSame('Auto-generate meters', $enString);
+        $this->assertIsString(__('utilities.meters_generated_summary', ['created' => 2, 'skipped' => 1, 'excluded' => 0]));
+
+        app()->setLocale('bn');
+        $bnString = __('utilities.auto_generate_meters');
+        $this->assertSame('স্বয়ংক্রিয় মিটার তৈরি', $bnString);
+        $this->assertIsString(__('utilities.meters_generated_summary', ['created' => 2, 'skipped' => 1, 'excluded' => 0]));
+
+        app()->setLocale('en');
+    }
+
+    public function test_empty_utilities_or_empty_flats_validation_in_execute_auto_generate(): void
+    {
+        // 1. Empty utilities selected
+        Livewire::actingAs($this->userWithRole(Role::Admin))
+            ->test(MeterList::class)
+            ->call('startAutoGenerate')
+            ->set('selectedUtilityIds', [])
+            ->call('executeAutoGenerate')
+            ->assertSet('noticeType', 'error')
+            ->assertSet('notice', __('utilities.no_utilities_selected'));
+
+        $this->assertSame(0, Meter::count());
+
+        // 2. Empty flats selected
+        Livewire::actingAs($this->userWithRole(Role::Admin))
+            ->test(MeterList::class)
+            ->call('startAutoGenerate')
+            ->set('scope', 'selected')
+            ->set('selectedFlatIds', [])
+            ->call('executeAutoGenerate')
+            ->assertSet('noticeType', 'error')
+            ->assertSet('notice', __('utilities.no_flats_selected'));
+
+        $this->assertSame(0, Meter::count());
+    }
+
+    public function test_updated_selected_flat_ids_reactively_updates_preview(): void
+    {
+        Livewire::actingAs($this->userWithRole(Role::Accountant))
+            ->test(MeterList::class)
+            ->call('startAutoGenerate')
+            ->set('scope', 'selected')
+            // setting selectedFlatIds triggers updatedSelectedFlatIds() automatically
+            ->set('selectedFlatIds', [$this->flat101->id])
+            ->assertSet('previewSummary.totalFlatsCount', 1)
+            ->assertSet('previewSummary.eligibleMetersCount', 2)
+            ->set('selectedFlatIds', [$this->flat101->id, $this->flat102->id])
+            ->assertSet('previewSummary.totalFlatsCount', 2)
+            ->assertSet('previewSummary.eligibleMetersCount', 4);
+    }
+
+    public function test_preloads_saved_flat_utility_config_state_in_wizard(): void
+    {
+        FlatUtilityConfig::create([
+            'flat_id' => $this->flat101->id,
+            'utility_id' => $this->elec->id,
+            'is_enabled' => false,
+        ]);
+
+        Livewire::actingAs($this->userWithRole(Role::Accountant))
+            ->test(MeterList::class)
+            ->call('startAutoGenerate')
+            ->assertSet("flatUtilityOverrides.{$this->flat101->id}-{$this->elec->id}", false)
+            ->assertSet('previewSummary.excludedFlatsCount', 1)
+            ->assertSet('previewSummary.eligibleMetersCount', 5);
     }
 }

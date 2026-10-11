@@ -4,6 +4,7 @@ namespace App\Livewire\Utilities;
 
 use App\Livewire\Concerns\WithCrudModal;
 use App\Models\Flat;
+use App\Models\FlatUtilityConfig;
 use App\Models\Floor;
 use App\Models\Meter;
 use App\Models\Utility;
@@ -164,6 +165,14 @@ class MeterList extends Component
         $this->flatUtilityOverrides = [];
         $this->persistOverrides = true;
 
+        $savedConfigs = FlatUtilityConfig::whereIn('flat_id', $activeFlats->pluck('id'))
+            ->whereIn('utility_id', $activeUtilities->pluck('id'))
+            ->get();
+
+        foreach ($savedConfigs as $config) {
+            $this->flatUtilityOverrides["{$config->flat_id}-{$config->utility_id}"] = (bool) $config->is_enabled;
+        }
+
         $this->utilityPrefixes = [];
         foreach ($activeUtilities as $utility) {
             $this->utilityPrefixes[$utility->id] = strtoupper(Str::limit($utility->name, 4, ''));
@@ -216,6 +225,11 @@ class MeterList extends Component
                 ->all();
         }
 
+        $this->updatePreview();
+    }
+
+    public function updatedSelectedFlatIds(): void
+    {
         $this->updatePreview();
     }
 
