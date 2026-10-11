@@ -99,37 +99,96 @@
                             </x-ui.badge>
                         </td>
                         <td class="px-4 py-2 text-right">
-                            <div class="flex flex-wrap justify-end gap-3">
-                                @php
-                                    $hasDue = bccomp($dues[$flat->id], '0', 2) > 0;
-                                    $reminder = $hasDue ? \App\Support\DuesReminder::for($flat, $dues[$flat->id]) : null;
-                                @endphp
+                            <div x-data="{ open: false, dropUp: false }"
+                                 @click.outside="open = false"
+                                 @keydown.escape.window="open = false"
+                                 class="relative inline-block text-left">
+                                <button type="button"
+                                        @click="
+                                            open = !open;
+                                            if (open) {
+                                                const rect = $el.getBoundingClientRect();
+                                                dropUp = (window.innerHeight - rect.bottom) < 220;
+                                            }
+                                        "
+                                        title="{{ __('masters.actions') }}"
+                                        aria-label="{{ __('masters.actions') }}"
+                                        class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition focus:outline-none focus:ring-2 focus:ring-slate-300 cursor-pointer">
+                                    <x-ui.icon name="dots-vertical" class="w-4 h-4" />
+                                </button>
 
-                                @if ($reminder && $reminder['whatsapp_url'] !== '')
-                                    <a href="{{ $reminder['whatsapp_url'] }}" target="_blank" rel="noopener noreferrer"
-                                       title="{{ __('reminders.remind_whatsapp') }}"
-                                       class="text-sm font-medium text-emerald-600 hover:text-emerald-800">{{ __('reminders.whatsapp') }}</a>
-                                 @endif
+                                <div x-show="open"
+                                     x-transition:enter="transition ease-out duration-100"
+                                     x-transition:enter-start="transform opacity-0 scale-95"
+                                     x-transition:enter-end="transform opacity-100 scale-100"
+                                     x-transition:leave="transition ease-in duration-75"
+                                     x-transition:leave-start="transform opacity-100 scale-100"
+                                     x-transition:leave-end="transform opacity-0 scale-95"
+                                     :class="dropUp ? 'bottom-full mb-1 origin-bottom-right' : 'top-full mt-1 origin-top-right'"
+                                     class="absolute right-0 z-50 w-48 rounded-lg bg-white py-1 shadow-lg ring-1 ring-slate-900/10 divide-y divide-slate-100 focus:outline-none text-left"
+                                     style="display: none;">
+                                    @php
+                                        $hasDue = bccomp($dues[$flat->id], '0', 2) > 0;
+                                        $reminder = $hasDue ? \App\Support\DuesReminder::for($flat, $dues[$flat->id]) : null;
+                                    @endphp
 
-                                @can('create', App\Models\Payment::class)
-                                    <a href="{{ route('payments.create', ['flat_id' => $flat->id]) }}"
-                                       class="text-sm font-medium text-emerald-600 hover:text-emerald-800">{{ __('billing.collect') }}</a>
-                                @endcan
-                                <a href="{{ route('flats.statement', $flat) }}"
-                                   class="text-sm text-slate-600 hover:text-slate-900">{{ __('reports.statement') }}</a>
+                                    <div class="py-1">
+                                        @if ($reminder && $reminder['whatsapp_url'] !== '')
+                                            <a href="{{ $reminder['whatsapp_url'] }}" target="_blank" rel="noopener noreferrer"
+                                               class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-50 transition">
+                                                <x-ui.icon name="whatsapp" class="w-4 h-4 shrink-0" />
+                                                <span>{{ __('reminders.whatsapp') }}</span>
+                                            </a>
+                                        @endif
 
-                                @can('manage', App\Models\Flat::class)
-                                    <a href="{{ route('flats.charges', $flat) }}"
-                                       class="text-sm text-slate-600 hover:text-slate-900">{{ __('masters.overrides') }}</a>
-                                    <button type="button" wire:click="edit({{ $flat->id }})"
-                                            class="text-sm font-medium text-slate-600 hover:text-slate-900">
-                                        {{ __('masters.edit') }}
-                                    </button>
-                                    <button type="button" wire:click="toggleActive({{ $flat->id }})"
-                                            class="text-sm font-medium text-slate-600 hover:text-slate-900">
-                                        {{ $flat->is_active ? __('masters.deactivate') : __('masters.activate') }}
-                                    </button>
-                                @endcan
+                                        @can('create', App\Models\Payment::class)
+                                            <a href="{{ route('payments.create', ['flat_id' => $flat->id]) }}"
+                                               class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-50 transition">
+                                                <x-ui.icon name="collect" class="w-4 h-4 shrink-0" />
+                                                <span>{{ __('billing.collect') }}</span>
+                                            </a>
+                                        @endcan
+
+                                        <a href="{{ route('flats.statement', $flat) }}"
+                                           class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition">
+                                            <x-ui.icon name="statement" class="w-4 h-4 shrink-0 text-indigo-600" />
+                                            <span>{{ __('reports.statement') }}</span>
+                                        </a>
+                                    </div>
+
+                                    @can('manage', App\Models\Flat::class)
+                                        <div class="py-1">
+                                            <a href="{{ route('flats.charges', $flat) }}"
+                                               class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition">
+                                                <x-ui.icon name="overrides" class="w-4 h-4 shrink-0 text-slate-500" />
+                                                <span>{{ __('masters.overrides') }}</span>
+                                            </a>
+
+                                            <button type="button"
+                                                    @click="open = false; $wire.edit({{ $flat->id }})"
+                                                    class="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition text-left cursor-pointer">
+                                                <x-ui.icon name="edit" class="w-4 h-4 shrink-0 text-slate-500" />
+                                                <span>{{ __('masters.edit') }}</span>
+                                            </button>
+
+                                            <button type="button"
+                                                    @click="open = false; $wire.toggleActive({{ $flat->id }})"
+                                                    @class([
+                                                        'flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium transition text-left cursor-pointer',
+                                                        'text-amber-600 hover:bg-amber-50' => $flat->is_active,
+                                                        'text-emerald-600 hover:bg-emerald-50' => ! $flat->is_active,
+                                                    ])>
+                                                @if ($flat->is_active)
+                                                    <x-ui.icon name="ban" class="w-4 h-4 shrink-0" />
+                                                    <span>{{ __('masters.deactivate') }}</span>
+                                                @else
+                                                    <x-ui.icon name="check-circle" class="w-4 h-4 shrink-0" />
+                                                    <span>{{ __('masters.activate') }}</span>
+                                                @endif
+                                            </button>
+                                        </div>
+                                    @endcan
+                                </div>
                             </div>
                         </td>
                     </tr>
