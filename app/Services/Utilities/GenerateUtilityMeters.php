@@ -194,9 +194,12 @@ class GenerateUtilityMeters
                         continue;
                     }
 
-                    $meterNo = "{$prefix}-{$flat->number}";
-                    if (Meter::where('utility_id', $utility->id)->where('meter_no', $meterNo)->exists()) {
-                        $meterNo = "{$prefix}-{$flat->number}-".Str::upper(Str::random(3));
+                    $baseMeterNo = "{$prefix}-{$flat->number}";
+                    $meterNo = $baseMeterNo;
+                    $attempts = 0;
+                    while (Meter::where('utility_id', $utility->id)->where('meter_no', $meterNo)->exists() && $attempts < 5) {
+                        $meterNo = "{$baseMeterNo}-".Str::upper(Str::random(3));
+                        $attempts++;
                     }
 
                     Meter::create([
