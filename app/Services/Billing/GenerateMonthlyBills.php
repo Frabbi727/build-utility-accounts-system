@@ -111,6 +111,7 @@ class GenerateMonthlyBills
             $bill = ServiceChargeBill::create([
                 'flat_id' => $flat->id,
                 'bill_no' => $this->nextBillNo($billingMonth),
+                'title' => 'Service Charge Bill — '.$billingMonth->format('F Y'),
                 'billing_month' => $billingMonth,
                 'due_date' => $dueDate,
                 'total_amount' => $total,

@@ -16,6 +16,7 @@ class ServiceChargeBillFactory extends Factory
         return [
             'flat_id' => Flat::factory(),
             'bill_no' => 'BILL-'.fake()->unique()->numerify('######'),
+            'title' => 'Service Charge Bill — '.now()->format('F Y'),
             'billing_month' => now()->startOfMonth()->toDateString(),
             'due_date' => now()->startOfMonth()->addDays(9)->toDateString(),
             'total_amount' => '3000.00',

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\Resident;
 
-use App\Enums\AccountCode;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Flat;
@@ -10,10 +9,8 @@ use App\Models\MaintenanceRequest;
 use App\Models\Notice;
 use App\Models\Payment;
 use App\Models\PaymentSubmission;
-use App\Models\ServiceChargeBill;
 use App\Models\User;
-use App\Services\Billing\BillSummary;
-use App\Services\JournalService;
+use App\Services\Billing\ResidentBalanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -37,7 +34,7 @@ class DashboardController extends Controller
         return ApiResponse::success($data, 'Flats retrieved successfully');
     }
 
-    public function index(Request $request, JournalService $journal, BillSummary $billSummary): JsonResponse
+    public function index(Request $request, ResidentBalanceService $balanceService): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
@@ -57,38 +54,14 @@ class DashboardController extends Controller
             return ApiResponse::error('You are not authorized to access this flat.', 403);
         }
 
-        $latestBill = ServiceChargeBill::where('flat_id', $flat->id)
-            ->with(['items', 'flat.building', 'flat.owner'])
-            ->latest('billing_month')
-            ->first();
-
-        $serviceChargeReceivable = $journal->account(AccountCode::ServiceChargeReceivable);
-        $advanceAccount = $journal->account(AccountCode::AdvanceFromOwners);
-
-        $grossTotalDue = $journal->balanceFor($serviceChargeReceivable, $flat->id);
-        $grossAdvanceHeld = $journal->balanceFor($advanceAccount, $flat->id);
-
-        if ($latestBill !== null) {
-            $summaryData = $billSummary->for($latestBill);
-            $currentMonthCharges = $summaryData->monthCharges;
-            $grossArrears = $summaryData->broughtForward;
-        } else {
-            $currentMonthCharges = '0.00';
-            $grossArrears = $grossTotalDue;
-        }
-
-        // Net amounts for resident presentation (advances cover outstanding dues)
-        $totalDue = bccomp($grossTotalDue, $grossAdvanceHeld, 2) > 0
-            ? bcsub($grossTotalDue, $grossAdvanceHeld, 2)
-            : '0.00';
-
-        $advanceHeld = bccomp($grossAdvanceHeld, $grossTotalDue, 2) > 0
-            ? bcsub($grossAdvanceHeld, $grossTotalDue, 2)
-            : '0.00';
-
-        $arrears = bccomp($grossArrears, $grossAdvanceHeld, 2) > 0
-            ? bcsub($grossArrears, $grossAdvanceHeld, 2)
-            : '0.00';
+        $balance = $balanceService->forFlat($flat);
+        $latestBill = $balance->latestBill;
+        $totalDue = $balance->totalDue;
+        $advanceHeld = $balance->advanceHeld;
+        $arrears = $balance->arrears;
+        $currentMonthCharges = $balance->currentMonthCharges;
+        $grossTotalDue = $balance->grossTotalDue;
+        $grossAdvanceHeld = $balance->grossAdvanceHeld;
 
         /** @var \Illuminate\Database\Eloquent\Collection<int, Payment> $payments */
         $payments = Payment::where('flat_id', $flat->id)
@@ -159,7 +132,9 @@ class DashboardController extends Controller
             $latestBillData = [
                 'id' => $latestBill->id,
                 'bill_no' => $latestBill->bill_no,
+                'title' => $latestBill->title,
                 'billing_month' => $latestBill->billing_month->format('Y-m'),
+                'billing_month_formatted' => $latestBill->billing_month->format('F Y'),
                 'total_amount' => $latestBill->total_amount,
                 'due_date' => $latestBill->due_date->toDateString(),
                 'status' => $latestBill->status->value,

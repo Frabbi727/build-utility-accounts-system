@@ -14,7 +14,7 @@
             @endif
         </div>
         <div class="text-right">
-            <p class="text-xs uppercase tracking-wide text-slate-500">{{ __('billing.bill') }}</p>
+            <p class="text-xs uppercase tracking-wide text-slate-500">{{ $bill->title ?? __('billing.bill') }}</p>
             <p class="font-mono text-sm font-semibold">{{ $bill->bill_no }}</p>
         </div>
     </header>

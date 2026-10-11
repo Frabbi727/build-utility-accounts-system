@@ -22,6 +22,7 @@ use App\Models\PaymentSubmission;
 use App\Models\ServiceChargeBill;
 use App\Models\User;
 use App\Services\Billing\BillSummary;
+use App\Services\Billing\ResidentBalanceService;
 use App\Services\JournalService;
 use App\Support\CurrentBuilding;
 use Illuminate\Support\Collection;
@@ -252,24 +253,13 @@ class Dashboard extends Component
             $mySubmissions = collect();
 
             if ($selectedFlat !== null) {
-                $latestBill = ServiceChargeBill::where('flat_id', $selectedFlat->id)
-                    ->with(['items', 'flat.building', 'flat.owner'])
-                    ->latest('billing_month')
-                    ->first();
-
-                $serviceChargeReceivable = $journal->account(AccountCode::ServiceChargeReceivable);
-                $advanceAccount = $journal->account(AccountCode::AdvanceFromOwners);
-
-                $totalDue = $journal->balanceFor($serviceChargeReceivable, $selectedFlat->id);
-                $advanceHeld = $journal->balanceFor($advanceAccount, $selectedFlat->id);
-
-                if ($latestBill !== null) {
-                    $billSummaryData = $billSummary->for($latestBill);
-                    $currentMonthCharges = $billSummaryData->monthCharges;
-                    $arrears = $billSummaryData->broughtForward;
-                } else {
-                    $arrears = $totalDue;
-                }
+                $balanceData = app(ResidentBalanceService::class)->forFlat($selectedFlat);
+                $latestBill = $balanceData->latestBill;
+                $billSummaryData = $balanceData->billSummary;
+                $totalDue = $balanceData->totalDue;
+                $advanceHeld = $balanceData->advanceHeld;
+                $currentMonthCharges = $balanceData->currentMonthCharges;
+                $arrears = $balanceData->arrears;
 
                 $recentPayments = Payment::where('flat_id', $selectedFlat->id)
                     ->latest('received_on')

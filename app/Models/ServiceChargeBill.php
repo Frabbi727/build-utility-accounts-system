@@ -17,13 +17,14 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $flat_id
  * @property string $bill_no
+ * @property string|null $title
  * @property Carbon $billing_month
  * @property Carbon $due_date
  * @property Carbon|null $last_late_fee_on
  * @property string $total_amount
  * @property BillStatus $status
  */
-#[Fillable(['flat_id', 'bill_no', 'billing_month', 'due_date', 'last_late_fee_on', 'total_amount', 'status'])]
+#[Fillable(['flat_id', 'bill_no', 'title', 'billing_month', 'due_date', 'last_late_fee_on', 'total_amount', 'status'])]
 class ServiceChargeBill extends Model
 {
     use Auditable;
@@ -43,6 +44,19 @@ class ServiceChargeBill extends Model
             'total_amount' => 'decimal:2',
             'status' => BillStatus::class,
         ];
+    }
+
+    public function getTitleAttribute(?string $value): string
+    {
+        if (! empty($value)) {
+            return $value;
+        }
+
+        $formattedMonth = $this->billing_month ? $this->billing_month->format('F Y') : '';
+
+        return $formattedMonth !== ''
+            ? "Service Charge Bill — {$formattedMonth}"
+            : 'Service Charge Bill';
     }
 
     /** @return BelongsTo<Flat, $this> */

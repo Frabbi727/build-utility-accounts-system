@@ -90,8 +90,10 @@ class ResidentBillsApiTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.bill_no', $bill->bill_no)
+            ->assertJsonPath('data.title', $bill->title)
             ->assertJsonPath('data.total_amount', '4500.00')
-            ->assertJsonPath('data.items.0.description', 'Lift Maintenance');
+            ->assertJsonPath('data.items.0.description', 'Lift Maintenance')
+            ->assertJsonPath('data.items.0.title', 'Lift Maintenance');
     }
 
     public function test_resident_forbidden_from_viewing_another_flat_bill(): void

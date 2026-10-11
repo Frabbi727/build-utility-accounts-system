@@ -57,6 +57,7 @@ class BillApiController extends Controller
         $transformed = $paginator->through(fn (ServiceChargeBill $bill): array => [
             'id' => $bill->id,
             'bill_no' => $bill->bill_no,
+            'title' => $bill->title,
             'billing_month' => $bill->billing_month->format('Y-m'),
             'billing_month_formatted' => $bill->billing_month->format('F Y'),
             'total_amount' => $bill->total_amount,
@@ -106,6 +107,7 @@ class BillApiController extends Controller
 
         $itemsData = $items->map(fn (BillItem $item): array => [
             'id' => $item->id,
+            'title' => $item->description,
             'description' => $item->description,
             'charge_head_name' => $item->description,
             'amount' => $item->amount,
@@ -117,6 +119,7 @@ class BillApiController extends Controller
         return ApiResponse::success([
             'id' => $bill->id,
             'bill_no' => $bill->bill_no,
+            'title' => $bill->title,
             'billing_month' => $bill->billing_month->format('Y-m'),
             'billing_month_formatted' => $bill->billing_month->format('F Y'),
             'total_amount' => $bill->total_amount,

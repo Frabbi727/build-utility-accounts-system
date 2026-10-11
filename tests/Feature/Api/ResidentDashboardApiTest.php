@@ -3,11 +3,13 @@
 namespace Tests\Feature\Api;
 
 use App\Enums\AccountCode;
+use App\Enums\BillStatus;
 use App\Enums\Role;
 use App\Models\Building;
 use App\Models\Flat;
 use App\Models\Notice;
 use App\Models\Owner;
+use App\Models\ServiceChargeBill;
 use App\Models\User;
 use App\Services\JournalService;
 use App\Support\JournalLineData;
@@ -66,11 +68,19 @@ class ResidentDashboardApiTest extends TestCase
             'published_at' => now(),
         ]);
 
+        $bill = ServiceChargeBill::factory()->create([
+            'flat_id' => $flat->id,
+            'status' => BillStatus::Unpaid,
+            'total_amount' => '3200.00',
+        ]);
+
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/resident/dashboard?flat_id='.$flat->id);
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
+            ->assertJsonPath('data.latest_bill.bill_no', $bill->bill_no)
+            ->assertJsonPath('data.latest_bill.title', $bill->title)
             ->assertJsonStructure([
                 'data' => [
                     'flat' => ['id', 'number', 'building_name'],
@@ -80,7 +90,7 @@ class ResidentDashboardApiTest extends TestCase
                         'current_month_charges',
                         'arrears',
                     ],
-                    'latest_bill',
+                    'latest_bill' => ['id', 'bill_no', 'title', 'billing_month', 'total_amount', 'due_date', 'status'],
                     'active_notices' => [
                         ['id', 'title'],
                     ],

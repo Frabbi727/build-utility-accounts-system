@@ -658,8 +658,8 @@
                             <div>
                                 <h2 class="text-base font-bold text-slate-900">{{ __('dashboard.latest_bill') }}</h2>
                                 @if ($latestBill)
-                                    <p class="text-xs text-slate-500">
-                                        {{ __('dashboard.bill_no') }}: <span class="font-mono font-semibold text-slate-700">{{ $latestBill->bill_no }}</span> &bull; {{ \Carbon\Carbon::parse($latestBill->billing_month)->format('F Y') }}
+                                    <p class="text-xs text-slate-700 font-medium mt-0.5">
+                                        {{ $latestBill->title }} &bull; <span class="font-mono text-slate-500">{{ $latestBill->bill_no }}</span>
                                     </p>
                                 @endif
                             </div>
@@ -686,8 +686,15 @@
                         @else
                             <div class="mt-4 divide-y divide-slate-100 text-xs">
                                 @foreach ($latestBill->items as $item)
-                                    <div class="flex justify-between py-2.5">
-                                        <span class="text-slate-600 font-medium">{{ $item->charge_name }}</span>
+                                    <div class="flex justify-between items-center py-2.5">
+                                        <div class="flex flex-col">
+                                            <span class="text-slate-700 font-semibold">{{ $item->description }}</span>
+                                            @if ($item->isMetered())
+                                                <span class="text-[11px] text-slate-400">
+                                                    {{ rtrim(rtrim($item->quantity, '0'), '.') }} {{ $item->unit_label }} &times; ৳{{ rtrim(rtrim($item->unit_rate, '0'), '.') }}
+                                                </span>
+                                            @endif
+                                        </div>
                                         <span class="font-bold tabular-nums text-slate-900">৳{{ number_format((float) $item->amount, 2) }}</span>
                                     </div>
                                 @endforeach
