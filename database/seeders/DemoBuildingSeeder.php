@@ -27,6 +27,8 @@ class DemoBuildingSeeder extends Seeder
             ],
         );
 
+        app(UtilitySeeder::class)->seedForBuilding($building);
+
         foreach (range(1, 4) as $level) {
             $floor = Floor::firstOrCreate(
                 ['building_id' => $building->id, 'level' => $level],
