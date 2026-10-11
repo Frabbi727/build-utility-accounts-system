@@ -1,4 +1,4 @@
-<?php
+
 
 return [
     // Utilities
@@ -98,4 +98,37 @@ return [
     'upload_photo' => 'Upload Photo',
     'view_photo' => 'View Photo',
     'photo_uploaded' => 'Meter dial photo uploaded successfully.',
+
+    // Auto-generate meters
+    'auto_generate_meters' => 'Auto-generate meters',
+    'auto_generate_meters_title' => 'Auto-generate utility meters',
+    'auto_generate_meters_description' => 'Bulk-create individual utility meters for flats based on scope and active utilities.',
+    'scope' => 'Scope',
+    'all_flats' => 'All Flats',
+    'by_floor' => 'By Floor',
+    'selected_flats' => 'Selected Flats',
+    'select_floor' => 'Select Floor',
+    'select_flats' => 'Select Flats',
+    'select_utilities' => 'Select Utilities',
+    'utility_prefix' => 'Prefix',
+    'utility_prefixes' => 'Utility Prefixes',
+    'utility_prefixes_help' => 'Prefixes used in generated meter numbers (e.g., ELEC-101).',
+    'flat_matrix_title' => 'Flat & Utility Inclusions',
+    'flat_matrix_help' => 'Customize which utilities should have meters generated for each flat.',
+    'persist_exclusions' => 'Remember exclusions for future generations',
+    'persist_exclusions_help' => 'Save these flat utility inclusions/exclusions for future billings and generations.',
+    'preview_summary' => 'Preview Summary',
+    'total_flats' => 'Total Flats',
+    'eligible_meters' => 'Meters to Create',
+    'skipped_existing' => 'Skipped Existing',
+    'flats_excluded' => 'Flats Excluded',
+    'inactive_warnings' => 'Inactive Meter Warnings',
+    'inactive_warnings_help' => 'The following flats have inactive meters that will not be touched or duplicated:',
+    'skipped_details_title' => 'Skipped Units Details',
+    'reason' => 'Reason',
+    'confirm_generate_meters' => 'Confirm & Generate',
+    'meters_generated_title' => 'Meters Generated',
+    'meters_generated_summary' => 'Successfully created :created meter(s). Skipped :skipped existing, excluded :excluded flat(s).',
+    'no_utilities_selected' => 'Please select at least one utility.',
+    'no_flats_selected' => 'No flats match the selected scope.',
 ];

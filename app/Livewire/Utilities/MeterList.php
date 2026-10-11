@@ -4,10 +4,13 @@ namespace App\Livewire\Utilities;
 
 use App\Livewire\Concerns\WithCrudModal;
 use App\Models\Flat;
+use App\Models\Floor;
 use App\Models\Meter;
 use App\Models\Utility;
+use App\Services\Utilities\GenerateUtilityMeters;
 use App\Support\CurrentBuilding;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -38,8 +41,31 @@ class MeterList extends Component
 
     public bool $isActive = true;
 
-    /** Table filter, not part of the form. */
     public ?int $filterUtilityId = null;
+
+    /** Auto Generate Wizard State */
+    public bool $showAutoGenerateModal = false;
+
+    public string $scope = 'all'; // 'all', 'floor', 'selected'
+
+    public ?int $scopeFloorId = null;
+
+    /** @var list<int> */
+    public array $selectedFlatIds = [];
+
+    /** @var list<int> */
+    public array $selectedUtilityIds = [];
+
+    /** @var array<int, string> */
+    public array $utilityPrefixes = []; // utility_id => prefix string
+
+    /** @var array<string, bool> */
+    public array $flatUtilityOverrides = []; // "$flatId-$utilityId" => bool
+
+    public bool $persistOverrides = true;
+
+    /** @var array{totalFlatsCount: int, eligibleMetersCount: int, skippedMetersCount: int, excludedFlatsCount: int, skippedDetails: list<array{flat_id: int, flat_number: string, utility_id: int, utility_name: string, reason: string}>, inactiveWarnings: list<array{flat_id: int, flat_number: string, utility_id: int, utility_name: string, meter_no: string}>, utilityCounts: array<int, int>}|null */
+    public ?array $previewSummary = null;
 
     /**
      * @return array<string, mixed>
@@ -114,6 +140,195 @@ class MeterList extends Component
         return $meter;
     }
 
+    public function startAutoGenerate(): void
+    {
+        $this->authorizeAction('create');
+
+        $building = app(CurrentBuilding::class)->getOrFail();
+
+        $activeUtilities = Utility::where('building_id', $building->id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        $activeFlats = Flat::where('building_id', $building->id)
+            ->where('is_active', true)
+            ->orderBy('number')
+            ->get();
+
+        $this->scope = 'all';
+        $this->scopeFloorId = null;
+        $this->selectedFlatIds = $activeFlats->pluck('id')->all();
+        $this->selectedUtilityIds = $activeUtilities->pluck('id')->all();
+        $this->flatUtilityOverrides = [];
+        $this->persistOverrides = true;
+
+        $this->utilityPrefixes = [];
+        foreach ($activeUtilities as $utility) {
+            $this->utilityPrefixes[$utility->id] = strtoupper(Str::limit($utility->name, 4, ''));
+        }
+
+        $this->showAutoGenerateModal = true;
+        $this->updatePreview();
+    }
+
+    public function cancelAutoGenerate(): void
+    {
+        $this->showAutoGenerateModal = false;
+        $this->scope = 'all';
+        $this->scopeFloorId = null;
+        $this->selectedFlatIds = [];
+        $this->selectedUtilityIds = [];
+        $this->utilityPrefixes = [];
+        $this->flatUtilityOverrides = [];
+        $this->previewSummary = null;
+    }
+
+    public function updatedScope(): void
+    {
+        $building = app(CurrentBuilding::class)->getOrFail();
+
+        if ($this->scope === 'all') {
+            $this->selectedFlatIds = Flat::where('building_id', $building->id)
+                ->where('is_active', true)
+                ->pluck('id')
+                ->all();
+        } elseif ($this->scope === 'floor' && $this->scopeFloorId !== null) {
+            $this->selectedFlatIds = Flat::where('building_id', $building->id)
+                ->where('floor_id', $this->scopeFloorId)
+                ->where('is_active', true)
+                ->pluck('id')
+                ->all();
+        }
+
+        $this->updatePreview();
+    }
+
+    public function updatedScopeFloorId(): void
+    {
+        if ($this->scope === 'floor') {
+            $building = app(CurrentBuilding::class)->getOrFail();
+            $this->selectedFlatIds = Flat::where('building_id', $building->id)
+                ->where('floor_id', $this->scopeFloorId)
+                ->where('is_active', true)
+                ->pluck('id')
+                ->all();
+        }
+
+        $this->updatePreview();
+    }
+
+    public function updatedSelectedUtilityIds(): void
+    {
+        $this->updatePreview();
+    }
+
+    public function toggleFlatUtility(int $flatId, int $utilityId): void
+    {
+        $key = "{$flatId}-{$utilityId}";
+        $current = $this->flatUtilityOverrides[$key] ?? true;
+        $this->flatUtilityOverrides[$key] = ! $current;
+
+        $this->updatePreview();
+    }
+
+    public function updatePreview(?GenerateUtilityMeters $generator = null): void
+    {
+        $generator ??= app(GenerateUtilityMeters::class);
+        $building = app(CurrentBuilding::class)->getOrFail();
+
+        $targetFlatIds = $this->resolveScopedFlatIds();
+
+        $preview = $generator->preview(
+            building: $building,
+            flatIds: $targetFlatIds,
+            utilityIds: $this->selectedUtilityIds,
+            flatUtilityOverrides: $this->flatUtilityOverrides,
+        );
+
+        $this->previewSummary = [
+            'totalFlatsCount' => $preview->totalFlatsCount,
+            'eligibleMetersCount' => $preview->eligibleMetersCount,
+            'skippedMetersCount' => $preview->skippedMetersCount,
+            'excludedFlatsCount' => $preview->excludedFlatsCount,
+            'skippedDetails' => $preview->skippedDetails,
+            'inactiveWarnings' => $preview->inactiveWarnings,
+            'utilityCounts' => $preview->utilityCounts,
+        ];
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function resolveScopedFlatIds(): array
+    {
+        $building = app(CurrentBuilding::class)->getOrFail();
+
+        if ($this->scope === 'all') {
+            return Flat::where('building_id', $building->id)
+                ->where('is_active', true)
+                ->pluck('id')
+                ->all();
+        }
+
+        if ($this->scope === 'floor') {
+            if ($this->scopeFloorId === null) {
+                return [];
+            }
+
+            return Flat::where('building_id', $building->id)
+                ->where('floor_id', $this->scopeFloorId)
+                ->where('is_active', true)
+                ->pluck('id')
+                ->all();
+        }
+
+        return Flat::where('building_id', $building->id)
+            ->whereIn('id', $this->selectedFlatIds)
+            ->where('is_active', true)
+            ->pluck('id')
+            ->all();
+    }
+
+    public function executeAutoGenerate(?GenerateUtilityMeters $generator = null): void
+    {
+        $this->authorizeAction('create');
+
+        $generator ??= app(GenerateUtilityMeters::class);
+        $building = app(CurrentBuilding::class)->getOrFail();
+
+        if (empty($this->selectedUtilityIds)) {
+            $this->notifyError(__('utilities.no_utilities_selected'));
+
+            return;
+        }
+
+        $targetFlatIds = $this->resolveScopedFlatIds();
+        if (empty($targetFlatIds)) {
+            $this->notifyError(__('utilities.no_flats_selected'));
+
+            return;
+        }
+
+        $result = $generator->handle(
+            building: $building,
+            flatIds: $targetFlatIds,
+            utilityIds: $this->selectedUtilityIds,
+            utilityPrefixes: $this->utilityPrefixes,
+            flatUtilityOverrides: $this->flatUtilityOverrides,
+            persistOverrides: $this->persistOverrides,
+        );
+
+        $this->cancelAutoGenerate();
+
+        $this->notify(__('utilities.meters_generated_summary', [
+            'created' => $result->metersCreated,
+            'skipped' => $result->metersSkipped,
+            'excluded' => $result->flatsExcluded,
+        ]));
+    }
+
     public function render(): View
     {
         $this->authorize('viewAny', Meter::class);
@@ -136,6 +351,9 @@ class MeterList extends Component
             'flats' => Flat::where('building_id', $buildingId)
                 ->where('is_active', true)
                 ->orderBy('number')
+                ->get(),
+            'floors' => Floor::where('building_id', $buildingId)
+                ->orderBy('level')
                 ->get(),
         ])->layout('components.layouts.app');
     }
