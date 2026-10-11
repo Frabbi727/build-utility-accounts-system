@@ -85,6 +85,22 @@ class BillApiController extends Controller
         $bill->loadMissing(['items', 'flat.building', 'flat.owner']);
         $summary = $billSummary->for($bill);
 
+        $grossTotalDue = $summary->totalDue;
+        $grossAdvanceHeld = $summary->advanceHeld;
+        $grossArrears = $summary->broughtForward;
+
+        $totalDue = bccomp($grossTotalDue, $grossAdvanceHeld, 2) > 0
+            ? bcsub($grossTotalDue, $grossAdvanceHeld, 2)
+            : '0.00';
+
+        $advanceHeld = bccomp($grossAdvanceHeld, $grossTotalDue, 2) > 0
+            ? bcsub($grossAdvanceHeld, $grossTotalDue, 2)
+            : '0.00';
+
+        $arrears = bccomp($grossArrears, $grossAdvanceHeld, 2) > 0
+            ? bcsub($grossArrears, $grossAdvanceHeld, 2)
+            : '0.00';
+
         /** @var \Illuminate\Database\Eloquent\Collection<int, BillItem> $items */
         $items = $bill->items;
 
@@ -107,9 +123,11 @@ class BillApiController extends Controller
             'month_charges' => $summary->monthCharges,
             'paid_amount' => $summary->paidOnThisBill,
             'due_amount' => $summary->thisBillOutstanding,
-            'total_due' => $summary->totalDue,
-            'advance_held' => $summary->advanceHeld,
-            'arrears' => $summary->broughtForward,
+            'total_due' => $totalDue,
+            'advance_held' => $advanceHeld,
+            'arrears' => $arrears,
+            'gross_total_due' => $grossTotalDue,
+            'gross_advance_held' => $grossAdvanceHeld,
             'due_date' => $bill->due_date->toDateString(),
             'status' => $bill->status->value,
             'is_overdue' => $bill->status !== BillStatus::Paid && $bill->due_date->isPast(),

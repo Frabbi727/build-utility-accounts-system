@@ -3,6 +3,8 @@
 namespace App\Services\Billing;
 
 use App\Enums\AccountCode;
+use App\Enums\BillStatus;
+use App\Models\Flat;
 use App\Models\Payment;
 use App\Models\ServiceChargeBill;
 use App\Services\JournalService;
@@ -72,33 +74,92 @@ class ApplyAdvances
                 $applied = bcadd($applied, $apply, 2);
             }
 
-            if (bccomp($applied, '0', 2) <= 0) {
+            if (bccomp($applied, '0', 2) > 0) {
+                $bill->refreshStatus();
+
+                $this->journal->post(
+                    $on ?? Carbon::parse($bill->billing_month),
+                    __('billing.advance_applied', ['flat' => $bill->flat->number, 'bill' => $bill->bill_no]),
+                    [
+                        Line::debit(
+                            $this->journal->account(AccountCode::AdvanceFromOwners),
+                            $applied,
+                            $bill->flat_id,
+                            $bill->bill_no,
+                        ),
+                        Line::credit(
+                            $this->journal->account(AccountCode::ServiceChargeReceivable),
+                            $applied,
+                            $bill->flat_id,
+                            $bill->bill_no,
+                        ),
+                    ],
+                    $bill,
+                );
+            }
+
+            $this->applyToUnbilledReceivables($bill->flat, $on);
+
+            return $applied;
+        });
+    }
+
+    /**
+     * Offset any advance held against unbilled receivables (e.g. opening balance arrears).
+     * Returns the total applied.
+     */
+    public function applyToUnbilledReceivables(Flat $flat, ?Carbon $on = null): string
+    {
+        return DB::transaction(function () use ($flat, $on): string {
+            $receivableAccount = $this->journal->account(AccountCode::ServiceChargeReceivable);
+            $advanceAccount = $this->journal->account(AccountCode::AdvanceFromOwners);
+
+            $receivableBalance = $this->journal->balanceFor($receivableAccount, $flat->id);
+            $advanceBalance = $this->journal->balanceFor($advanceAccount, $flat->id);
+
+            if (bccomp($receivableBalance, '0', 2) <= 0 || bccomp($advanceBalance, '0', 2) <= 0) {
                 return '0.00';
             }
 
-            $bill->refreshStatus();
+            $billedOutstanding = ServiceChargeBill::where('flat_id', $flat->id)
+                ->whereIn('status', [BillStatus::Unpaid, BillStatus::PartiallyPaid])
+                ->get()
+                ->reduce(fn (string $carry, ServiceChargeBill $b): string => bcadd($carry, $b->outstandingAmount(), 2), '0.00');
+
+            $unbilledReceivable = bcsub($receivableBalance, $billedOutstanding, 2);
+
+            if (bccomp($unbilledReceivable, '0', 2) <= 0) {
+                return '0.00';
+            }
+
+            $apply = bccomp($advanceBalance, $unbilledReceivable, 2) < 0 ? $advanceBalance : $unbilledReceivable;
+
+            if (bccomp($apply, '0', 2) <= 0) {
+                return '0.00';
+            }
 
             $this->journal->post(
-                $on ?? Carbon::parse($bill->billing_month),
-                __('billing.advance_applied', ['flat' => $bill->flat->number, 'bill' => $bill->bill_no]),
+                $on ?? now(),
+                __('billing.advance_applied_unbilled', ['flat' => $flat->number])
+                    ?: "Advance applied to opening balance arrears for flat {$flat->number}",
                 [
                     Line::debit(
-                        $this->journal->account(AccountCode::AdvanceFromOwners),
-                        $applied,
-                        $bill->flat_id,
-                        $bill->bill_no,
+                        $advanceAccount,
+                        $apply,
+                        $flat->id,
+                        'Advance drawdown (unbilled)',
                     ),
                     Line::credit(
-                        $this->journal->account(AccountCode::ServiceChargeReceivable),
-                        $applied,
-                        $bill->flat_id,
-                        $bill->bill_no,
+                        $receivableAccount,
+                        $apply,
+                        $flat->id,
+                        'Advance drawdown (unbilled)',
                     ),
                 ],
-                $bill,
+                $flat,
             );
 
-            return $applied;
+            return $apply;
         });
     }
 

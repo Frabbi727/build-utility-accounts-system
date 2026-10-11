@@ -7,6 +7,7 @@ return [
     'late_fee_charged' => 'ফ্ল্যাট :flat এর বিলম্ব ফি — বিল :bill',
     'late_fee_item' => 'বিলম্ব ফি (:month)',
     'advance_applied' => 'ফ্ল্যাট :flat এর অগ্রিম সমন্বয় — বিল :bill',
+    'advance_applied_unbilled' => 'ফ্ল্যাট :flat এর অগ্রিম সমন্বয় — বকেয়া প্রাপ্য',
     'generate_monthly_bills' => 'মাসিক বিল তৈরি',
     'generate_help' => 'প্রতিটি সক্রিয় ফ্ল্যাটের জন্য প্রাপ্য হিসাব পোস্ট করে। পুনরায় চালানো নিরাপদ — যে ফ্ল্যাটের বিল হয়ে গেছে তা বাদ যাবে।',
     'building' => 'ভবন',

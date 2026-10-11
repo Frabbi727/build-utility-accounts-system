@@ -3,6 +3,7 @@
 namespace App\Services\Billing;
 
 use App\Enums\AccountCode;
+use App\Enums\BillStatus;
 use App\Enums\NotificationType;
 use App\Enums\PaymentMethod;
 use App\Models\Flat;
@@ -67,6 +68,23 @@ class RecordPayment
 
             $allocated = $this->applyPlan($payment, $plan);
             $advance = $plan['advance'];
+
+            // Settle any unbilled receivable (e.g. opening balances) before routing remaining funds to advance
+            $receivableAccount = $this->journal->account(AccountCode::ServiceChargeReceivable);
+            $receivableBalance = $this->journal->balanceFor($receivableAccount, $flat->id);
+
+            $billedRemaining = ServiceChargeBill::where('flat_id', $flat->id)
+                ->whereIn('status', [BillStatus::Unpaid, BillStatus::PartiallyPaid])
+                ->get()
+                ->reduce(fn (string $carry, ServiceChargeBill $b): string => bcadd($carry, $b->outstandingAmount(), 2), '0.00');
+
+            $unbilledReceivable = bcsub(bcsub($receivableBalance, $billedRemaining, 2), $allocated, 2);
+
+            if (bccomp($advance, '0', 2) > 0 && bccomp($unbilledReceivable, '0', 2) > 0) {
+                $settleUnbilled = bccomp($advance, $unbilledReceivable, 2) < 0 ? $advance : $unbilledReceivable;
+                $allocated = bcadd($allocated, $settleUnbilled, 2);
+                $advance = bcsub($advance, $settleUnbilled, 2);
+            }
 
             $lines = [
                 JournalLineData::debit(

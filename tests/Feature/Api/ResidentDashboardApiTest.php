@@ -2,12 +2,15 @@
 
 namespace Tests\Feature\Api;
 
+use App\Enums\AccountCode;
 use App\Enums\Role;
 use App\Models\Building;
 use App\Models\Flat;
 use App\Models\Notice;
 use App\Models\Owner;
 use App\Models\User;
+use App\Services\JournalService;
+use App\Support\JournalLineData;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -105,5 +108,44 @@ class ResidentDashboardApiTest extends TestCase
 
         $response->assertStatus(403)
             ->assertJsonPath('success', false);
+    }
+
+    public function test_resident_dashboard_reflects_net_balances_when_advance_is_held(): void
+    {
+        $building = Building::factory()->create();
+        $user = User::factory()->create();
+        $user->assignRole(Role::Owner->value);
+        $owner = Owner::factory()->create(['user_id' => $user->id]);
+        $flat = Flat::factory()->create([
+            'building_id' => $building->id,
+            'owner_id' => $owner->id,
+            'number' => '2A',
+        ]);
+
+        $journal = app(JournalService::class);
+        $rec = $journal->account(AccountCode::ServiceChargeReceivable);
+        $adv = $journal->account(AccountCode::AdvanceFromOwners);
+
+        $journal->post(
+            now(),
+            'Test balances',
+            [
+                JournalLineData::debit($rec, '1200.00', $flat->id),
+                JournalLineData::credit($adv, '3600.00', $flat->id),
+                JournalLineData::debit($journal->account(AccountCode::Bank), '2400.00'),
+            ],
+            $flat
+        );
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson('/api/v1/resident/dashboard?flat_id='.$flat->id);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.balances.total_due', '0.00')
+            ->assertJsonPath('data.balances.advance_held', '2400.00')
+            ->assertJsonPath('data.balances.arrears', '0.00')
+            ->assertJsonPath('data.balances.gross_total_due', '1200.00')
+            ->assertJsonPath('data.balances.gross_advance_held', '3600.00');
     }
 }

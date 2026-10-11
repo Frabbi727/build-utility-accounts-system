@@ -10,6 +10,7 @@ use App\Models\Flat;
 use App\Services\Billing\GenerateMonthlyBills;
 use App\Services\Billing\RecordPayment;
 use App\Services\JournalService;
+use App\Support\JournalLineData;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -126,5 +127,57 @@ class RecordPaymentTest extends TestCase
 
         $this->assertSame('0.00', $this->journal->balanceFor($receivable, $this->flat->id));
         $this->assertSame('3000.00', $this->journal->balanceFor($receivable, $other->id));
+    }
+
+    public function test_payments_settle_unbilled_opening_receivable_before_advance(): void
+    {
+        $receivable = $this->journal->account(AccountCode::ServiceChargeReceivable);
+        $generalFund = $this->journal->account(AccountCode::GeneralFund);
+
+        $this->journal->post(
+            Carbon::parse('2026-07-31'),
+            'Opening balance',
+            [
+                JournalLineData::debit($receivable, '1200.00', $this->flat->id),
+                JournalLineData::credit($generalFund, '1200.00'),
+            ],
+            $this->flat
+        );
+
+        $this->generate('2026-08-01');
+
+        app(RecordPayment::class)->handle($this->flat, '4200.00', PaymentMethod::Cash, Carbon::parse('2026-08-20'));
+
+        $this->assertSame(BillStatus::Paid, $this->flat->serviceChargeBills()->first()->status);
+        $this->assertSame('0.00', $this->journal->balanceFor($receivable, $this->flat->id));
+        $this->assertSame('0.00', $this->journal->balanceFor(
+            $this->journal->account(AccountCode::AdvanceFromOwners), $this->flat->id
+        ));
+    }
+
+    public function test_payment_exceeding_both_bills_and_unbilled_receivable_credits_excess_to_advance(): void
+    {
+        $receivable = $this->journal->account(AccountCode::ServiceChargeReceivable);
+        $generalFund = $this->journal->account(AccountCode::GeneralFund);
+
+        $this->journal->post(
+            Carbon::parse('2026-07-31'),
+            'Opening balance',
+            [
+                JournalLineData::debit($receivable, '1200.00', $this->flat->id),
+                JournalLineData::credit($generalFund, '1200.00'),
+            ],
+            $this->flat
+        );
+
+        $this->generate('2026-08-01');
+
+        app(RecordPayment::class)->handle($this->flat, '5000.00', PaymentMethod::Cash, Carbon::parse('2026-08-20'));
+
+        $this->assertSame(BillStatus::Paid, $this->flat->serviceChargeBills()->first()->status);
+        $this->assertSame('0.00', $this->journal->balanceFor($receivable, $this->flat->id));
+        $this->assertSame('800.00', $this->journal->balanceFor(
+            $this->journal->account(AccountCode::AdvanceFromOwners), $this->flat->id
+        ));
     }
 }

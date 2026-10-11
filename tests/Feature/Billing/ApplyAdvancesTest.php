@@ -13,6 +13,7 @@ use App\Services\Billing\ApplyAdvances;
 use App\Services\Billing\GenerateMonthlyBills;
 use App\Services\Billing\RecordPayment;
 use App\Services\JournalService;
+use App\Support\JournalLineData;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -164,5 +165,44 @@ class ApplyAdvancesTest extends TestCase
         $this->assertSame('3500.00', (string) $allocations->first()->amount);
         $this->assertSame('0.00', $july->fresh()->outstandingAmount());
         $this->assertSame(BillStatus::Paid, $july->fresh()->status);
+    }
+
+    public function test_advances_are_applied_to_unbilled_opening_receivables(): void
+    {
+        $receivable = $this->journal->account(AccountCode::ServiceChargeReceivable);
+        $advance = $this->journal->account(AccountCode::AdvanceFromOwners);
+        $generalFund = $this->journal->account(AccountCode::GeneralFund);
+        $bank = $this->journal->account(AccountCode::Bank);
+
+        // Opening balance receivable
+        $this->journal->post(
+            Carbon::parse('2026-05-31'),
+            'Opening balance',
+            [
+                JournalLineData::debit($receivable, '1200.00', $this->flat->id),
+                JournalLineData::credit($generalFund, '1200.00'),
+            ],
+            $this->flat
+        );
+
+        // Advance held
+        $this->journal->post(
+            Carbon::parse('2026-06-01'),
+            'Advance received',
+            [
+                JournalLineData::debit($bank, '2000.00'),
+                JournalLineData::credit($advance, '2000.00', $this->flat->id),
+            ],
+            $this->flat
+        );
+
+        $this->assertSame('1200.00', $this->receivableBalance());
+        $this->assertSame('2000.00', $this->advanceBalance());
+
+        $applied = app(ApplyAdvances::class)->applyToUnbilledReceivables($this->flat);
+
+        $this->assertSame('1200.00', $applied);
+        $this->assertSame('0.00', $this->receivableBalance());
+        $this->assertSame('800.00', $this->advanceBalance());
     }
 }

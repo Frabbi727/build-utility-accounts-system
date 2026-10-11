@@ -7,6 +7,7 @@ return [
     'late_fee_charged' => 'Late fee for flat :flat — bill :bill',
     'late_fee_item' => 'Late fee (:month)',
     'advance_applied' => 'Advance applied for flat :flat — bill :bill',
+    'advance_applied_unbilled' => 'Advance applied for flat :flat — previous dues',
     'generate_monthly_bills' => 'Generate monthly bills',
     'generate_help' => 'Posts a receivable accrual for every active flat. Safe to re-run — flats already billed for the month are skipped.',
     'building' => 'Building',

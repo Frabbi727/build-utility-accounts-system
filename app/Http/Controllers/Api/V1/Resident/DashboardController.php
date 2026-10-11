@@ -65,17 +65,30 @@ class DashboardController extends Controller
         $serviceChargeReceivable = $journal->account(AccountCode::ServiceChargeReceivable);
         $advanceAccount = $journal->account(AccountCode::AdvanceFromOwners);
 
-        $totalDue = $journal->balanceFor($serviceChargeReceivable, $flat->id);
-        $advanceHeld = $journal->balanceFor($advanceAccount, $flat->id);
+        $grossTotalDue = $journal->balanceFor($serviceChargeReceivable, $flat->id);
+        $grossAdvanceHeld = $journal->balanceFor($advanceAccount, $flat->id);
 
         if ($latestBill !== null) {
             $summaryData = $billSummary->for($latestBill);
             $currentMonthCharges = $summaryData->monthCharges;
-            $arrears = $summaryData->broughtForward;
+            $grossArrears = $summaryData->broughtForward;
         } else {
             $currentMonthCharges = '0.00';
-            $arrears = $totalDue;
+            $grossArrears = $grossTotalDue;
         }
+
+        // Net amounts for resident presentation (advances cover outstanding dues)
+        $totalDue = bccomp($grossTotalDue, $grossAdvanceHeld, 2) > 0
+            ? bcsub($grossTotalDue, $grossAdvanceHeld, 2)
+            : '0.00';
+
+        $advanceHeld = bccomp($grossAdvanceHeld, $grossTotalDue, 2) > 0
+            ? bcsub($grossAdvanceHeld, $grossTotalDue, 2)
+            : '0.00';
+
+        $arrears = bccomp($grossArrears, $grossAdvanceHeld, 2) > 0
+            ? bcsub($grossArrears, $grossAdvanceHeld, 2)
+            : '0.00';
 
         /** @var \Illuminate\Database\Eloquent\Collection<int, Payment> $payments */
         $payments = Payment::where('flat_id', $flat->id)
@@ -166,6 +179,8 @@ class DashboardController extends Controller
                 'advance_held' => $advanceHeld,
                 'current_month_charges' => $currentMonthCharges,
                 'arrears' => $arrears,
+                'gross_total_due' => $grossTotalDue,
+                'gross_advance_held' => $grossAdvanceHeld,
             ],
             'latest_bill' => $latestBillData,
             'active_notices' => $activeNotices,
